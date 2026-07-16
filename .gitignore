@@ -1,0 +1,9 @@
+node_modules/
+.next/
+.vercel/
+backup/
+.env
+.env.local
+.env.production
+*.log
+build-error.txt
