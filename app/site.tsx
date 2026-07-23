@@ -135,6 +135,38 @@ export default function Site() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
 
+  useEffect(() => {
+    const groups = document.querySelectorAll(
+      ".hero-copy, .section-heading, .product-card, .community-copy, .center-heading, .steps article, .pricing-copy, .access-plan, .faq-heading, .faq-list, .final-cta, footer"
+    );
+    const elements = new Set<HTMLElement>();
+
+    groups.forEach((group) => {
+      group.querySelectorAll<HTMLElement>("h1, h2, h3, p, li, .eyebrow, .button, .product-link, .plan-header").forEach((element, index) => {
+        if (elements.has(element)) return;
+        element.classList.add("text-reveal");
+        element.style.setProperty("--reveal-delay", `${Math.min(index, 5) * 70}ms`);
+        elements.add(element);
+      });
+    });
+
+    if (!("IntersectionObserver" in window)) {
+      elements.forEach((element) => element.classList.add("is-visible"));
+      return;
+    }
+
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      });
+    }, { threshold: 0.14, rootMargin: "0px 0px -4%" });
+
+    elements.forEach((element) => observer.observe(element));
+    return () => observer.disconnect();
+  }, []);
+
   function closeMenu() { setMenuOpen(false); }
 
   return <main>
