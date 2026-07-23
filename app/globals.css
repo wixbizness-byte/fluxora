@@ -900,6 +900,7 @@ footer { width: min(1180px,calc(100% - 40px)); display: grid; grid-template-colu
   }
 }
 
+
 /* === FLUXORA DYNAMIC ANIMATION UPDATE END === */
 
 
@@ -1545,5 +1546,118 @@ h2 em {
   h1 em,
   h2 em {
     animation: none !important;
+  }
+}
+
+/* === HIGH-CONTRAST FEATURE SECTIONS === */
+
+:root[data-theme="light"] .hero-visual {
+  background:
+    radial-gradient(circle at 50% 48%, rgba(113, 30, 56, .12), transparent 48%),
+    radial-gradient(circle at 50% 48%, rgba(199, 122, 145, .08), transparent 66%) !important;
+}
+
+.orbit-card {
+  color: #fbf4ef !important;
+  background:
+    radial-gradient(circle at 72% 12%, rgba(199, 122, 145, .2), transparent 34%),
+    linear-gradient(150deg, #711e38 0%, #421522 48%, #211219 100%) !important;
+  border-color: rgba(199, 122, 145, .58) !important;
+  box-shadow:
+    0 30px 58px rgba(35, 10, 20, .3),
+    0 12px 24px rgba(35, 10, 20, .2),
+    inset 0 1px rgba(255, 255, 255, .14),
+    inset 0 -24px 48px rgba(0, 0, 0, .2) !important;
+}
+
+.orbit-card::after { border-color: rgba(251, 244, 239, .16); }
+.orbit-card small { color: #f0adc1; text-shadow: 0 1px 12px rgba(240, 173, 193, .24); }
+.orbit-card b { color: #fbf4ef; text-shadow: 0 2px 14px rgba(0, 0, 0, .24); }
+.orbit-card span { color: rgba(251, 244, 239, .76); }
+
+:root[data-theme="light"] .orbit-line { border-color: rgba(113, 30, 56, .3); }
+:root[data-theme="light"] .traveler {
+  background: #711e38;
+  border-color: #fbf4ef;
+  box-shadow: 0 0 0 2px #711e38, 0 0 22px rgba(113, 30, 56, .7);
+}
+:root[data-theme="light"] .visual-stamp {
+  color: #711e38;
+  background: rgba(255, 250, 247, .94);
+  border-color: rgba(113, 30, 56, .2);
+  box-shadow: 0 12px 28px rgba(113, 30, 56, .13);
+}
+
+.community-card {
+  color: #fbf4ef;
+  background:
+    radial-gradient(circle at 74% 48%, rgba(113, 30, 56, .78), transparent 35%),
+    radial-gradient(circle at 18% 16%, rgba(199, 122, 145, .08), transparent 28%),
+    linear-gradient(135deg, #211219 0%, #1a0f15 52%, #160d12 100%) !important;
+  border: 1px solid rgba(199, 122, 145, .2);
+  box-shadow: 0 34px 80px rgba(43, 23, 32, .2);
+}
+
+.community-card::before { opacity: .42; }
+.community-card h2, .final-cta h2 { color: #fbf4ef; }
+.community-card h2 em, .final-cta h2 em {
+  color: #e4a1b5;
+  text-shadow: 0 0 30px rgba(199, 122, 145, .22);
+}
+.community-copy > p:not(.eyebrow) { color: rgba(251, 244, 239, .75); }
+.community-copy li { color: rgba(251, 244, 239, .9); }
+.community-copy li::before {
+  background: #c77a91;
+  box-shadow: 0 0 12px rgba(199, 122, 145, .46);
+}
+.community-card .eyebrow.light, .final-cta .eyebrow.light { color: #e7bcc9; }
+.community-orbit { border-color: rgba(251, 244, 239, .2); }
+.community-core {
+  color: #fbf4ef;
+  border-color: rgba(199, 122, 145, .5);
+  background:
+    radial-gradient(circle at 38% 22%, rgba(199, 122, 145, .22), transparent 42%),
+    linear-gradient(150deg, #5d1930, #160d12 72%) !important;
+}
+.community-core svg { fill: #c77a91; }
+.community-core span { color: rgba(251, 244, 239, .62); }
+.member-dot {
+  color: rgba(251, 244, 239, .92);
+  background:
+    radial-gradient(circle at 35% 25%, rgba(113, 30, 56, .34), transparent 48%),
+    #211219 !important;
+  border-color: rgba(199, 122, 145, .32);
+}
+.community-card .button.cream, .final-cta .button.cream {
+  color: #711e38;
+  background: #fbf4ef;
+  border-color: #fbf4ef;
+  box-shadow: 0 16px 34px rgba(0, 0, 0, .25);
+}
+
+.final-cta {
+  color: #fbf4ef;
+  background:
+    radial-gradient(circle at 74% 22%, rgba(113, 30, 56, .72), transparent 32%),
+    radial-gradient(circle at 26% 82%, rgba(199, 122, 145, .1), transparent 30%),
+    linear-gradient(135deg, #211219 0%, #160d12 72%) !important;
+  border: 1px solid rgba(199, 122, 145, .2);
+  box-shadow: 0 30px 75px rgba(43, 23, 32, .18);
+}
+.final-cta::before { border-color: rgba(251, 244, 239, .12); }
+.final-cta > p:not(.eyebrow) { color: rgba(251, 244, 239, .76); }
+.final-cta .cta-mark { opacity: .2; }
+.final-cta .cta-mark svg { fill: #c77a91; }
+
+@media (max-width: 760px) {
+  :root[data-theme="light"] .hero-visual {
+    background:
+      radial-gradient(circle at 50% 48%, rgba(113, 30, 56, .13), transparent 52%),
+      radial-gradient(circle at 50% 48%, rgba(199, 122, 145, .07), transparent 70%) !important;
+  }
+  .community-card {
+    background:
+      radial-gradient(circle at 50% 76%, rgba(113, 30, 56, .68), transparent 34%),
+      linear-gradient(150deg, #211219 0%, #160d12 72%) !important;
   }
 }
