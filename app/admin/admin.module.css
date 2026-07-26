@@ -1,0 +1,421 @@
+.adminPage {
+  min-height: 100vh;
+  padding: 42px clamp(18px, 4vw, 64px) 80px;
+  background:
+    radial-gradient(circle at 85% 8%, rgba(122, 29, 60, 0.24), transparent 32rem),
+    #12090d;
+  color: #fff7f3;
+}
+
+.adminPage * {
+  box-sizing: border-box;
+}
+
+.adminPage input,
+.adminPage textarea,
+.adminPage select,
+.adminPage button {
+  font: inherit;
+}
+
+.adminHeader {
+  width: min(1240px, 100%);
+  margin: 0 auto 28px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.adminHeader h1,
+.loginCard h1,
+.emptyState h1 {
+  margin: 7px 0 6px;
+  font-family: Georgia, serif;
+  font-size: clamp(2.4rem, 5vw, 4.5rem);
+  line-height: 1;
+}
+
+.adminHeader p,
+.editorHeader p,
+.settingsCard p,
+.loginCard p,
+.emptyState p {
+  margin: 0;
+  color: #cdb7c0;
+  line-height: 1.6;
+}
+
+.kicker {
+  color: #d889a7;
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.headerActions {
+  display: flex;
+  gap: 10px;
+}
+
+.headerActions a,
+.headerActions button,
+.editorHeader > button,
+.settingsFields button,
+.rowActions button,
+.loginCard button,
+.emptyState button,
+.emptyState a {
+  min-height: 44px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 999px;
+  padding: 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #7a1d3c;
+  color: #fff7f3;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-decoration: none;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.headerActions a,
+.headerActions button:last-child {
+  background: transparent;
+}
+
+.settingsCard,
+.editorHeader,
+.rowCard,
+.loginCard,
+.emptyState {
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  background: rgba(31, 13, 21, 0.9);
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+}
+
+.settingsCard {
+  width: min(1240px, 100%);
+  margin: 0 auto 24px;
+  padding: 24px;
+  border-radius: 24px;
+  display: grid;
+  grid-template-columns: 0.8fr 1.2fr;
+  gap: 30px;
+  align-items: end;
+}
+
+.settingsCard h2,
+.editorHeader h2 {
+  margin: 7px 0 8px;
+  font-family: Georgia, serif;
+  font-size: 2rem;
+}
+
+.settingsFields {
+  display: grid;
+  grid-template-columns: 0.75fr 1.25fr auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.settingsFields label,
+.formGrid label,
+.loginCard label {
+  display: grid;
+  gap: 8px;
+  color: #dccad1;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.settingsFields input,
+.formGrid input,
+.formGrid textarea,
+.formGrid select,
+.loginCard input {
+  width: 100%;
+  min-height: 45px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  color: #fff8f5;
+  outline: none;
+}
+
+.formGrid textarea {
+  min-height: 112px;
+  resize: vertical;
+}
+
+.formGrid select option {
+  color: #1d0c13;
+}
+
+.settingsFields input:focus,
+.formGrid input:focus,
+.formGrid textarea:focus,
+.formGrid select:focus,
+.loginCard input:focus {
+  border-color: #d889a7;
+  box-shadow: 0 0 0 3px rgba(216, 137, 167, 0.12);
+}
+
+.tabs {
+  width: min(1240px, 100%);
+  margin: 0 auto 24px;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 4px;
+}
+
+.tabs button {
+  flex: 0 0 auto;
+  min-height: 42px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 999px;
+  padding: 0 16px;
+  background: transparent;
+  color: #cdb7c0;
+  cursor: pointer;
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.tabs button.activeTab {
+  background: #fff5f0;
+  color: #521029;
+}
+
+.editorHeader {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  padding: 24px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.editorHeader > div {
+  max-width: 760px;
+}
+
+.editorHeader > button:disabled,
+.rowActions button:disabled,
+.settingsFields button:disabled {
+  opacity: 0.48;
+  cursor: not-allowed;
+}
+
+.notice {
+  width: min(1240px, 100%);
+  min-height: 22px;
+  margin: 12px auto;
+  color: #d889a7;
+  font-size: 0.75rem;
+}
+
+.rowGrid {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.rowCard {
+  padding: 22px;
+  border-radius: 22px;
+}
+
+.rowTop {
+  min-height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.rowTop > div:first-child {
+  display: grid;
+  gap: 5px;
+}
+
+.rowTop span {
+  color: #d889a7;
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.rowTop strong {
+  font-family: Georgia, serif;
+  font-size: 1.35rem;
+}
+
+.rowTop img,
+.previewPlaceholder {
+  width: 68px;
+  height: 82px;
+  flex: 0 0 auto;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.previewPlaceholder {
+  background: linear-gradient(145deg, #4f1028, #9a3158);
+}
+
+.formGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.fullField {
+  grid-column: 1 / -1;
+}
+
+.checkboxLabel {
+  min-height: 45px;
+  display: flex !important;
+  align-items: center;
+  gap: 10px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  padding: 0 12px;
+}
+
+.checkboxLabel input {
+  width: 17px;
+  min-height: 17px;
+  accent-color: #d889a7;
+}
+
+.rowActions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.rowActions button {
+  flex: 1;
+}
+
+.rowActions .dangerButton {
+  flex: 0 0 auto;
+  background: transparent;
+  color: #f1a5b8;
+  border-color: rgba(241, 165, 184, 0.35);
+}
+
+.loginCard,
+.emptyState {
+  width: min(480px, 100%);
+  margin: 9vh auto 0;
+  padding: 34px;
+  border-radius: 28px;
+}
+
+.loginCard {
+  display: grid;
+  gap: 18px;
+}
+
+.loginCard h1 {
+  margin-bottom: 0;
+}
+
+.loginCard button {
+  width: 100%;
+  margin-top: 4px;
+}
+
+.backLink {
+  color: #d889a7;
+  font-size: 0.75rem;
+  text-decoration: none;
+}
+
+.error {
+  color: #ff9cb4 !important;
+  font-size: 0.8rem;
+}
+
+.emptyState {
+  text-align: center;
+}
+
+.emptyState code,
+.loginCard code {
+  color: #ffd3df;
+}
+
+.emptyState button,
+.emptyState a {
+  margin-top: 22px;
+}
+
+@media (max-width: 960px) {
+  .settingsCard {
+    grid-template-columns: 1fr;
+  }
+
+  .settingsFields {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .settingsFields button {
+    grid-column: 1 / -1;
+  }
+
+  .rowGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .adminPage {
+    padding-inline: 14px;
+  }
+
+  .adminHeader,
+  .editorHeader {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .headerActions,
+  .headerActions a,
+  .headerActions button,
+  .editorHeader > button {
+    width: 100%;
+  }
+
+  .settingsFields,
+  .formGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .fullField {
+    grid-column: auto;
+  }
+
+  .rowCard,
+  .settingsCard,
+  .editorHeader {
+    padding: 18px;
+  }
+}
