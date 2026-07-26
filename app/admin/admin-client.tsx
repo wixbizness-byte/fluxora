@@ -162,12 +162,13 @@ export default function AdminClient() {
       return;
     }
 
+    const userId = session.user.id;
     let cancelled = false;
     async function verifyAdmin() {
       setChecking(true);
       const result = await queryOne<{ user_id: string }>(
         "site_admins",
-        `select=user_id&user_id=eq.${encodeURIComponent(session.user.id)}`,
+        `select=user_id&user_id=eq.${encodeURIComponent(userId)}`,
         true,
       );
       if (cancelled) return;
