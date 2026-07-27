@@ -39,20 +39,6 @@ type EditorDefinition = {
 
 const editors: EditorDefinition[] = [
   {
-    table: "hero_media_cards",
-    title: "Hero floating cards",
-    description: "Four separated 2:3 image-only cards in two staggered columns. Position 1 moves down, position 2 moves left, position 3 moves right, and position 4 moves up.",
-    maxRows: 4,
-    fields: [
-      { key: "image_url", label: "Cloudinary image URL", type: "url", placeholder: "https://res.cloudinary.com/..." },
-      { key: "target_url", label: "Optional click link", type: "url", placeholder: "https://..." },
-      { key: "alt_text", label: "Image alt text", type: "text", placeholder: "Describe the image" },
-      { key: "sort_order", label: "Position order", type: "number" },
-      { key: "is_active", label: "Visible", type: "checkbox" },
-    ],
-    newRow: { image_url: "", target_url: "", alt_text: "", motion: "up-right", sort_order: 1, is_active: true },
-  },
-  {
     table: "collection_cards",
     title: "Collection cards",
     description: "The four 16:9 cards. Text and buttons stay above the image through a dark overlay layer.",
@@ -159,6 +145,7 @@ export default function AdminClient() {
   useEffect(() => {
     if (!session) {
       setIsAdmin(false);
+      setChecking(false);
       return;
     }
 

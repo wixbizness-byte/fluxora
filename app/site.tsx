@@ -4,12 +4,10 @@ import { useEffect, useMemo, useState } from "react";
 import {
   fallbackCollectionCards,
   fallbackGalleryImages,
-  fallbackHeroCards,
   fallbackMethodCards,
   fallbackSettings,
   type CollectionCard,
   type GalleryImage,
-  type HeroCard,
   type MethodCard,
   type SiteSettings,
 } from "./content";
@@ -22,7 +20,7 @@ const faqs = [
   ],
   ["Who is behind Fluxora?", "Meimei Digitals is the owner of Fluxora."],
   ["Do I need technical experience?", "No. Fluxora is structured around clear outcomes and guided steps rather than technical complexity."],
-  ["Can the library keep growing?", "Yes. The Supabase-powered sections can be updated from the admin panel without rebuilding the website."],
+  ["Can the library keep growing?", "Yes. The library is continuously growing. Established since December 2025"],
   ["Where does the community live?", "The Fluxora creator community is currently hosted on Telegram."],
 ];
 
@@ -66,29 +64,6 @@ function ImageSurface({ imageUrl, alt }: { imageUrl: string; alt: string }) {
   return <img src={imageUrl} alt={alt} loading="lazy" />;
 }
 
-function HeroMedia({ cards }: { cards: HeroCard[] }) {
-  const visibleCards = cards.slice(0, 4);
-
-  return (
-    <div className="hero-media-stage" aria-label="Four floating Fluxora image cards">
-      <div className="hero-orbit-line orbit-line-one" />
-      <div className="hero-orbit-line orbit-line-two" />
-      {visibleCards.map((card, index) => {
-        const cardBody = <ImageSurface imageUrl={card.image_url} alt={card.alt_text || `Hero image ${index + 1}`} />;
-        const className = `hero-media-card hero-card-${index + 1}`;
-
-        return card.target_url ? (
-          <a className={className} href={card.target_url} target="_blank" rel="noopener noreferrer" key={card.id}>
-            {cardBody}
-          </a>
-        ) : (
-          <div className={className} key={card.id}>{cardBody}</div>
-        );
-      })}
-    </div>
-  );
-}
-
 function CardButton({ label, url, className }: { label: string; url: string; className: string }) {
   if (!url) return <span className={`${className} disabled`}>{label}</span>;
   const internal = url.startsWith("#") || url.startsWith("/");
@@ -103,7 +78,6 @@ export default function Site() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
   const [settings, setSettings] = useState<SiteSettings>(fallbackSettings);
-  const [heroCards, setHeroCards] = useState<HeroCard[]>(fallbackHeroCards);
   const [collectionCards, setCollectionCards] = useState<CollectionCard[]>(fallbackCollectionCards);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(fallbackGalleryImages);
   const [methodCards, setMethodCards] = useState<MethodCard[]>(fallbackMethodCards);
@@ -113,9 +87,8 @@ export default function Site() {
     let cancelled = false;
 
     async function loadContent() {
-      const [settingsResult, heroResult, collectionResult, galleryResult, methodResult] = await Promise.all([
+      const [settingsResult, collectionResult, galleryResult, methodResult] = await Promise.all([
         queryOne<SiteSettings>("site_settings", "select=*&id=eq.main"),
-        queryRows<HeroCard>("hero_media_cards", "select=*&is_active=eq.true&order=sort_order.asc&limit=4"),
         queryRows<CollectionCard>("collection_cards", "select=*&is_active=eq.true&order=sort_order.asc"),
         queryRows<GalleryImage>("gallery_images", "select=*&is_active=eq.true&order=sort_order.asc&limit=10"),
         queryRows<MethodCard>("method_cards", "select=*&is_active=eq.true&order=sort_order.asc"),
@@ -123,7 +96,6 @@ export default function Site() {
 
       if (cancelled) return;
       if (settingsResult.data) setSettings(settingsResult.data);
-      if (heroResult.data?.length) setHeroCards(heroResult.data);
       if (collectionResult.data?.length) setCollectionCards(collectionResult.data);
       if (galleryResult.data?.length) setGalleryImages(galleryResult.data);
       if (methodResult.data?.length) setMethodCards(methodResult.data);
@@ -183,21 +155,17 @@ export default function Site() {
 
       <section className="hero section">
         <div className="hero-copy">
-          <p className="eyebrow"><span />Digital systems for creators</p>
-          <h1>Turn ideas into<br /><em>actual results.</em></h1>
-          <p className="hero-lede">Curated tools, practical workflows, and purpose-built GPTs that help you move from possibility to finished work—faster.</p>
-          <div className="hero-actions">
+          <p className="eyebrow hero-animate hero-animate-1"><span />Digital systems for creators</p>
+          <h1 className="hero-animate hero-animate-2">Turn ideas into<br /><em>actual results.</em></h1>
+          <p className="hero-lede hero-animate hero-animate-3">Curated tools, practical workflows, and purpose-built GPTs that help you move from possibility to finished work—faster.</p>
+          <div className="hero-actions hero-animate hero-animate-4">
             <a className="button primary" href="#products">Browse the vault</a>
             <a className="button ghost" href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Join community</a>
           </div>
-          <div className="hero-proof">
+          <div className="hero-proof hero-animate hero-animate-5">
             <div className="avatars"><i>F</i><i>L</i><i>X</i><i>+</i></div>
             <p><b>Built for momentum</b><span>Clear systems. Less trial and error.</span></p>
           </div>
-        </div>
-
-        <div className="hero-visual">
-          <HeroMedia cards={heroCards} />
         </div>
       </section>
 
@@ -211,7 +179,7 @@ export default function Site() {
       </section>
 
       <section className="products section" id="products">
-        <div className="section-heading">
+        <div className="section-heading text-motion">
           <p className="eyebrow"><span />The collection</p>
           <h2>Everything you need to<br /><em>move with clarity.</em></h2>
         </div>
@@ -236,7 +204,7 @@ export default function Site() {
       </section>
 
       <section className="gallery-section" id="gallery">
-        <div className="gallery-heading section">
+        <div className="gallery-heading section text-motion">
           <p className="eyebrow light"><span />Visual archive</p>
           <h2>A moving gallery of<br /><em>what is possible.</em></h2>
         </div>
@@ -264,7 +232,7 @@ export default function Site() {
       </section>
 
       <section className="method section">
-        <div className="center-heading">
+        <div className="center-heading text-motion">
           <p className="eyebrow"><span />The Fluxora method</p>
           <h2>A clear path from idea<br />to <em>finished work.</em></h2>
         </div>
@@ -290,7 +258,7 @@ export default function Site() {
 
       <section className="pricing section" id="pricing">
         <div className="pricing-wrap">
-          <div className="pricing-copy">
+          <div className="pricing-copy text-motion">
             <p className="eyebrow"><span />Simple access</p>
             <h2>Choose the level that<br /><em>fits your momentum.</em></h2>
             <p>Explore the offers and choose the access level that fits the way you create.</p>
@@ -299,10 +267,10 @@ export default function Site() {
           <div className="price-cards">
             <article className="access-plan">
               <div className="plan-header">Starter</div>
-              <h3>Explorer</h3>
-              <p className="plan-description">Your entry point to premium Fluxora resources.</p>
+              <h3>Explorer (Free)</h3>
+              <p className="plan-description">Your pathway to success. Completely free.</p>
               <ul className="plan-features"><li>Prompts</li><li>Tools</li><li>Custom GPTs</li><li>Courses</li></ul>
-              <a className="button ghost full" href="https://www.facebook.com/meimeidigitalAI" target="_blank" rel="noopener noreferrer">Choose Explorer</a>
+              <a className="button ghost full" href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Start free</a>
             </article>
 
             <article className="access-plan creator-plan">
@@ -317,7 +285,7 @@ export default function Site() {
       </section>
 
       <section className="faq section" id="faq">
-        <div className="faq-heading">
+        <div className="faq-heading text-motion">
           <p className="eyebrow"><span />Questions, answered</p>
           <h2>Everything you need<br />to know.</h2>
           <p>Important details about Fluxora, access, and the creator community.</p>
@@ -335,7 +303,7 @@ export default function Site() {
         </div>
       </section>
 
-      <section className="final-cta section">
+      <section className="final-cta section text-motion">
         <div className="cta-mark"><MoonMark /></div>
         <p className="eyebrow light"><span />Make the next move</p>
         <h2>Your ideas deserve<br /><em>a working system.</em></h2>
