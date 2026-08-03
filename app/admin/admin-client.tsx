@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { Fragment, useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   deleteRow as deleteSupabaseRow,
   getSession,
@@ -31,16 +31,20 @@ type EditorDefinition = {
   table: string;
   title: string;
   description: string;
+  query: string;
+  allowAdd?: boolean;
+  allowDelete?: boolean;
   maxRows?: number;
   fields: FieldDefinition[];
-  newRow: Omit<ContentRow, "id">;
+  newRow?: Omit<ContentRow, "id">;
 };
 
 const editors: EditorDefinition[] = [
   {
     table: "collection_cards",
     title: "Collection cards",
-    description: "The public 16:9 collection cards. Each card supports Cloudinary media, text, a button, visibility, and ordering.",
+    description: "Manage the existing public collection cards, including their Cloudinary image, copy, button, visibility, and order.",
+    query: "select=*&order=sort_order.asc",
     fields: [
       { key: "eyebrow", label: "Category", type: "text", placeholder: "COMMUNITY" },
       { key: "title", label: "Title", type: "text" },
@@ -67,48 +71,55 @@ const editors: EditorDefinition[] = [
   {
     table: "gallery_images",
     title: "Visual archive",
-    description: "Configure up to ten active 2:3 cards in each row. Choose Top, Middle, or Bottom, then control the Cloudinary image, click link, visibility, and order.",
-    maxRows: 30,
+    description: "Fixed archive: six editable 2:3 slots in each row. The row and slot positions cannot be added, deleted, or moved. Hidden slots are automatically replaced by repeats of the remaining visible cards on the public page.",
+    query: "select=*&sort_order=lte.6&order=row_position.asc,sort_order.asc",
+    allowAdd: false,
+    allowDelete: false,
     fields: [
       { key: "image_url", label: "Cloudinary image URL", type: "url", placeholder: "https://res.cloudinary.com/..." },
       { key: "target_url", label: "Optional click link", type: "url" },
       { key: "alt_text", label: "Image alt text", type: "text" },
-      {
-        key: "row_position",
-        label: "Gallery row",
-        type: "select",
-        options: [
-          { label: "Top — moves left", value: "top" },
-          { label: "Middle — moves right", value: "middle" },
-          { label: "Bottom — moves left", value: "bottom" },
-        ],
-      },
-      { key: "sort_order", label: "Position in row", type: "number" },
-      { key: "is_active", label: "Visible", type: "checkbox" },
+      { key: "is_active", label: "Show this card", type: "checkbox" },
     ],
-    newRow: { image_url: "", target_url: "", alt_text: "", row_position: "top", sort_order: 1, is_active: true },
   },
   {
-    table: "qr_resources",
-    title: "Optional improvements QR",
-    description: "Add the Cloudinary URL of the QR code shown beside Optional Improvements. The optional target link makes the QR box clickable.",
-    maxRows: 1,
+    table: "access_plans",
+    title: "Simple access",
+    description: "Edit the fixed Premium and Creator cards. Enter one bullet per line in the Features field. The card types and their order stay fixed.",
+    query: "select=*&order=sort_order.asc",
+    allowAdd: false,
+    allowDelete: false,
     fields: [
-      { key: "image_url", label: "Cloudinary QR image URL", type: "url", placeholder: "https://res.cloudinary.com/..." },
-      { key: "target_url", label: "Optional click link", type: "url" },
-      { key: "alt_text", label: "QR image alt text", type: "text" },
-      { key: "sort_order", label: "Position order", type: "number" },
-      { key: "is_active", label: "Visible", type: "checkbox" },
+      { key: "badge", label: "Small badge", type: "text" },
+      { key: "title", label: "Plan title", type: "text" },
+      { key: "description", label: "Description", type: "textarea" },
+      { key: "features", label: "Features — one bullet per line", type: "textarea" },
+      { key: "button_label", label: "Button label", type: "text" },
+      { key: "button_url", label: "Button link", type: "url" },
+      { key: "is_active", label: "Show this plan", type: "checkbox" },
     ],
-    newRow: {
-      image_url: "",
-      target_url: "",
-      alt_text: "Fluxora additional resource QR code",
-      sort_order: 1,
-      is_active: true,
-    },
+  },
+  {
+    table: "payment_settings",
+    title: "Easy payments",
+    description: "Edit the Easy Payments heading, description, GCash details, Cloudinary QR image, and optional QR click link.",
+    query: "select=*&id=eq.main&limit=1",
+    allowAdd: false,
+    allowDelete: false,
+    fields: [
+      { key: "eyebrow", label: "Section label", type: "text" },
+      { key: "heading", label: "Main heading", type: "text" },
+      { key: "description", label: "Description", type: "textarea" },
+      { key: "payment_label", label: "Payment label", type: "text" },
+      { key: "payment_number", label: "GCash number", type: "text" },
+      { key: "qr_image_url", label: "Cloudinary QR image URL", type: "url", placeholder: "https://res.cloudinary.com/..." },
+      { key: "qr_target_url", label: "Optional QR click link", type: "url" },
+      { key: "qr_alt_text", label: "QR image alt text", type: "text" },
+      { key: "is_active", label: "Show Easy Payments", type: "checkbox" },
+    ],
   },
 ];
+
 function cleanPayload(row: ContentRow) {
   const payload: Record<string, Primitive> = {};
   Object.entries(row).forEach(([key, value]) => {
@@ -116,6 +127,21 @@ function cleanPayload(row: ContentRow) {
     payload[key] = value;
   });
   return payload;
+}
+
+function rowHeading(editor: EditorDefinition, row: ContentRow, index: number) {
+  if (editor.table === "gallery_images") {
+    const rowName = String(row.row_position || "top");
+    return `${rowName.charAt(0).toUpperCase() + rowName.slice(1)} row · Slot ${Number(row.sort_order) || index + 1}`;
+  }
+  if (editor.table === "payment_settings") return "Easy Payments settings";
+  return String(row.title || row.alt_text || row.eyebrow || `Item ${index + 1}`);
+}
+
+function galleryGroupLabel(row: ContentRow) {
+  const rowName = String(row.row_position || "top");
+  const direction = rowName === "middle" ? "moves right" : "moves left";
+  return `${rowName.charAt(0).toUpperCase() + rowName.slice(1)} row — ${direction}`;
 }
 
 export default function AdminClient() {
@@ -176,8 +202,7 @@ export default function AdminClient() {
     setNotice("Loading content…");
     const tableResults = await Promise.all(
       editors.map(async (editor) => {
-        const order = editor.table === "gallery_images" ? "row_position.asc,sort_order.asc" : "sort_order.asc";
-        const result = await queryRows<ContentRow>(editor.table, `select=*&order=${order}`, true);
+        const result = await queryRows<ContentRow>(editor.table, editor.query, true);
         return { table: editor.table, data: result.data || [], error: result.error };
       }),
     );
@@ -213,6 +238,7 @@ export default function AdminClient() {
   }
 
   function addRow(editor: EditorDefinition) {
+    if (editor.allowAdd === false || !editor.newRow) return;
     const currentRows = rows[editor.table] || [];
     if (editor.maxRows && currentRows.length >= editor.maxRows) {
       setNotice(`This section is limited to ${editor.maxRows} rows.`);
@@ -235,7 +261,7 @@ export default function AdminClient() {
       } else if (data) {
         setRows((current) => ({
           ...current,
-          [table]: (current[table] || []).map((item) => (item.id === row.id ? (data as ContentRow) : item)),
+          [table]: (current[table] || []).map((item) => (item.id === row.id ? data : item)),
         }));
         setNotice("Saved.");
       }
@@ -246,7 +272,7 @@ export default function AdminClient() {
       } else if (data) {
         setRows((current) => ({
           ...current,
-          [table]: (current[table] || []).map((item) => (item.id === row.id ? (data as ContentRow) : item)),
+          [table]: (current[table] || []).map((item) => (item.id === row.id ? data : item)),
         }));
         setNotice("Saved.");
       }
@@ -269,7 +295,6 @@ export default function AdminClient() {
     }
     setBusyId("");
   }
-
 
   if (!isSupabaseConfigured()) {
     return (
@@ -326,7 +351,6 @@ export default function AdminClient() {
         <div className={styles.headerActions}><a href="/" target="_blank">View site</a><button type="button" onClick={signOut}>Sign out</button></div>
       </header>
 
-
       <nav className={styles.tabs} aria-label="Admin sections">
         {editors.map((editor) => (
           <button className={activeTable === editor.table ? styles.activeTab : ""} type="button" key={editor.table} onClick={() => setActiveTable(editor.table)}>
@@ -337,70 +361,83 @@ export default function AdminClient() {
 
       <section className={styles.editorHeader}>
         <div><span className={styles.kicker}>Editable section</span><h2>{activeEditor.title}</h2><p>{activeEditor.description}</p></div>
-        <button type="button" onClick={() => addRow(activeEditor)} disabled={Boolean(activeEditor.maxRows && activeRows.length >= activeEditor.maxRows)}>
-          Add item{activeEditor.maxRows ? ` (${activeRows.length}/${activeEditor.maxRows})` : ""}
-        </button>
+        {activeEditor.allowAdd !== false && (
+          <button type="button" onClick={() => addRow(activeEditor)} disabled={Boolean(activeEditor.maxRows && activeRows.length >= activeEditor.maxRows)}>
+            Add item{activeEditor.maxRows ? ` (${activeRows.length}/${activeEditor.maxRows})` : ""}
+          </button>
+        )}
       </section>
 
       <p className={styles.notice} role="status">{notice}</p>
 
       <section className={styles.rowGrid}>
-        {activeRows.map((row, rowIndex) => (
-          <article className={styles.rowCard} key={row.id}>
-            <div className={styles.rowTop}>
-              <div><span>Item {rowIndex + 1}</span><strong>{String(row.title || row.alt_text || row.eyebrow || "Untitled")}</strong></div>
-              {typeof row.image_url === "string" && row.image_url ? <img src={row.image_url} alt="Current preview" /> : <div className={styles.previewPlaceholder} />}
-            </div>
+        {activeRows.map((row, rowIndex) => {
+          const previousRow = activeRows[rowIndex - 1];
+          const showGalleryGroup = activeEditor.table === "gallery_images" && (!previousRow || previousRow.row_position !== row.row_position);
+          const previewUrl = activeEditor.table === "payment_settings" ? row.qr_image_url : row.image_url;
 
-            <div className={styles.formGrid}>
-              {activeEditor.fields.map((field) => {
-                const value = row[field.key];
-                if (field.type === "checkbox") {
-                  return (
-                    <label className={styles.checkboxLabel} key={field.key}>
-                      <input type="checkbox" checked={Boolean(value)} onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.checked)} />
-                      <span>{field.label}</span>
-                    </label>
-                  );
-                }
+          return (
+            <Fragment key={row.id}>
+              {showGalleryGroup && <h3 className={styles.groupHeading}>{galleryGroupLabel(row)}</h3>}
+              <article className={styles.rowCard}>
+                <div className={styles.rowTop}>
+                  <div><span>{activeEditor.table === "gallery_images" ? "Fixed archive slot" : `Item ${rowIndex + 1}`}</span><strong>{rowHeading(activeEditor, row, rowIndex)}</strong></div>
+                  {typeof previewUrl === "string" && previewUrl ? <img src={previewUrl} alt="Current preview" /> : <div className={styles.previewPlaceholder} />}
+                </div>
 
-                if (field.type === "textarea") {
-                  return (
-                    <label className={styles.fullField} key={field.key}>{field.label}
-                      <textarea value={String(value || "")} placeholder={field.placeholder} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.value)} />
-                    </label>
-                  );
-                }
+                <div className={styles.formGrid}>
+                  {activeEditor.fields.map((field) => {
+                    const value = row[field.key];
+                    if (field.type === "checkbox") {
+                      return (
+                        <label className={styles.checkboxLabel} key={field.key}>
+                          <input type="checkbox" checked={Boolean(value)} onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.checked)} />
+                          <span>{field.label}</span>
+                        </label>
+                      );
+                    }
 
-                if (field.type === "select") {
-                  return (
-                    <label key={field.key}>{field.label}
-                      <select value={String(value || "")} onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.value)}>
-                        {field.options?.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
-                      </select>
-                    </label>
-                  );
-                }
+                    if (field.type === "textarea") {
+                      return (
+                        <label className={styles.fullField} key={field.key}>{field.label}
+                          <textarea value={String(value || "")} placeholder={field.placeholder} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.value)} />
+                        </label>
+                      );
+                    }
 
-                return (
-                  <label className={field.type === "url" ? styles.fullField : ""} key={field.key}>{field.label}
-                    <input
-                      type={field.type}
-                      value={field.type === "number" ? Number(value || 0) : String(value || "")}
-                      placeholder={field.placeholder}
-                      onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(activeEditor.table, row.id, field.key, field.type === "number" ? Number(event.target.value) : event.target.value)}
-                    />
-                  </label>
-                );
-              })}
-            </div>
+                    if (field.type === "select") {
+                      return (
+                        <label key={field.key}>{field.label}
+                          <select value={String(value || "")} onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.value)}>
+                            {field.options?.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
+                          </select>
+                        </label>
+                      );
+                    }
 
-            <div className={styles.rowActions}>
-              <button type="button" onClick={() => saveRow(activeEditor.table, row)} disabled={busyId === row.id}>{busyId === row.id ? "Saving…" : "Save item"}</button>
-              <button className={styles.dangerButton} type="button" onClick={() => deleteRow(activeEditor.table, row)} disabled={busyId === row.id}>Delete</button>
-            </div>
-          </article>
-        ))}
+                    return (
+                      <label className={field.type === "url" ? styles.fullField : ""} key={field.key}>{field.label}
+                        <input
+                          type={field.type}
+                          value={field.type === "number" ? Number(value || 0) : String(value || "")}
+                          placeholder={field.placeholder}
+                          onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(activeEditor.table, row.id, field.key, field.type === "number" ? Number(event.target.value) : event.target.value)}
+                        />
+                      </label>
+                    );
+                  })}
+                </div>
+
+                <div className={styles.rowActions}>
+                  <button type="button" onClick={() => saveRow(activeEditor.table, row)} disabled={busyId === row.id}>{busyId === row.id ? "Saving…" : "Save item"}</button>
+                  {activeEditor.allowDelete !== false && (
+                    <button className={styles.dangerButton} type="button" onClick={() => deleteRow(activeEditor.table, row)} disabled={busyId === row.id}>Delete</button>
+                  )}
+                </div>
+              </article>
+            </Fragment>
+          );
+        })}
       </section>
     </main>
   );

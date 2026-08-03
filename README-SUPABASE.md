@@ -2,12 +2,16 @@
 
 ## Existing Supabase project
 
-Run `supabase-update-visual-archive-qr.sql` once in **Supabase Dashboard → SQL Editor** before deploying this version. It:
+Run `supabase-update-fixed-archive-access-payments.sql` once in **Supabase Dashboard → SQL Editor** before deploying this version.
 
-- Adds `row_position` to the existing `gallery_images` table.
-- Allows up to 10 active gallery cards in each row: Top, Middle, and Bottom.
-- Adds the `qr_resources` table used by the Optional Improvements panel.
-- Adds the required RLS policies and browser API grants.
+It:
+
+- Fixes the Visual Archive at six editable slots in each of the Top, Middle, and Bottom rows.
+- Preserves the first six existing images in each row and keeps additional old rows inactive.
+- Adds the fixed Premium and Creator cards used in Simple Access.
+- Adds the editable Easy Payments copy, GCash number, QR Cloudinary URL, and optional QR click link.
+- Preserves the QR image/link from the previous `qr_resources` table when one exists.
+- Adds the required RLS policies and Data API grants.
 
 ## New Supabase project
 
@@ -21,18 +25,21 @@ Run `supabase-update-visual-archive-qr.sql` once in **Supabase Dashboard → SQL
 
 ## Admin content
 
-The admin panel now manages:
+The admin panel manages:
 
 - Collection cards
-- Visual Archive cards
-- Optional Improvements QR code
+- Visual Archive: six fixed Top slots, six fixed Middle slots, and six fixed Bottom slots
+- Simple Access: fixed Premium and Creator cards
+- Easy Payments: heading, description, GCash details, QR image, and QR destination
 
-For the Visual Archive, each card has a Cloudinary image URL, optional click URL, visibility toggle, row assignment, and sort order. The public directions are:
+The Visual Archive directions are:
 
 - Top row: moves left
 - Middle row: moves right
 - Bottom row: moves left
 
-All archive cards use a 2:3 display ratio. The QR image is also stored as a Cloudinary delivery URL; Supabase stores only the URL and configuration.
+Each archive slot uses a 2:3 display ratio. The public gallery repeats the six configured cards continuously so wide screens do not show empty gaps. Hidden slots are filled by repeating the remaining visible cards. Uploaded images are shown in full without cropping.
 
-The browser uses only the public/publishable Supabase key. Never place a service-role key in a `NEXT_PUBLIC_` variable. Row Level Security allows visitors to read active content and only users registered in `site_admins` to edit it.
+Supabase stores only Cloudinary URLs and configuration. The actual images remain in Cloudinary.
+
+The browser uses only the public/publishable Supabase key. Never place a service-role key in a `NEXT_PUBLIC_` variable. Row Level Security allows visitors to read active content and only users registered in `site_admins` to update fixed content.

@@ -2,13 +2,15 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  fallbackAccessPlans,
   fallbackCollectionCards,
   fallbackGalleryImages,
-  fallbackQrResource,
+  fallbackPaymentSettings,
+  type AccessPlan,
   type CollectionCard,
   type GalleryImage,
   type GalleryRow,
-  type QrResource,
+  type PaymentSettings,
 } from "./content";
 import { isSupabaseConfigured, queryRows } from "./lib/supabase";
 
@@ -46,24 +48,32 @@ function CardButton({ label, url, className }: { label: string; url: string; cla
   );
 }
 
+function fillGalleryRow(images: GalleryImage[], row: GalleryRow) {
+  const fallback = fallbackGalleryImages.filter((image) => image.row_position === row);
+  const source = images.length ? images.slice(0, 6) : fallback;
+  return Array.from({ length: 6 }, (_, index) => source[index % source.length]);
+}
+
 function GalleryStrip({ images, direction, label }: { images: GalleryImage[]; direction: "left" | "right"; label: string }) {
-  if (!images.length) return null;
+  const repeatedSet = Array.from({ length: 3 }, (_, cycle) =>
+    images.map((image, index) => ({ image, key: `${cycle}-${index}-${image.id}` })),
+  ).flat();
 
   return (
     <div className="gallery-window" aria-label={label}>
       <div className={`gallery-track scroll-${direction}`}>
         {[0, 1].map((group) => (
           <div className="gallery-group" aria-hidden={group === 1} key={group}>
-            {images.map((image, index) => {
+            {repeatedSet.map(({ image, key }, index) => {
               const item = (
                 <div className="gallery-image">
-                  <ImageSurface imageUrl={image.image_url} alt={image.alt_text || `${label} image ${index + 1}`} />
+                  <ImageSurface imageUrl={image.image_url} alt={image.alt_text || `${label} image ${(index % 6) + 1}`} />
                 </div>
               );
               return image.target_url ? (
-                <a href={image.target_url} target="_blank" rel="noopener noreferrer" key={`${group}-${image.id}`}>{item}</a>
+                <a href={image.target_url} target="_blank" rel="noopener noreferrer" key={`${group}-${key}`}>{item}</a>
               ) : (
-                <div key={`${group}-${image.id}`}>{item}</div>
+                <div key={`${group}-${key}`}>{item}</div>
               );
             })}
           </div>
@@ -73,19 +83,26 @@ function GalleryStrip({ images, direction, label }: { images: GalleryImage[]; di
   );
 }
 
-function QrBox({ resource }: { resource: QrResource }) {
-  const content = resource.image_url ? (
-    <img src={resource.image_url} alt={resource.alt_text || "Fluxora resource QR code"} loading="lazy" />
+function QrBox({ settings }: { settings: PaymentSettings }) {
+  const content = settings.qr_image_url ? (
+    <img src={settings.qr_image_url} alt={settings.qr_alt_text || "Fluxora GCash payment QR code"} loading="lazy" />
   ) : (
     <span className="qr-placeholder"><i /><b>QR</b><small>Add your Cloudinary QR image in Admin</small></span>
   );
 
-  if (!resource.target_url) return <div className="qr-image-box">{content}</div>;
+  if (!settings.qr_target_url) return <div className="qr-image-box">{content}</div>;
   return (
-    <a className="qr-image-box" href={resource.target_url} target="_blank" rel="noopener noreferrer" aria-label="Open additional Fluxora resource">
+    <a className="qr-image-box" href={settings.qr_target_url} target="_blank" rel="noopener noreferrer" aria-label="Open Fluxora payment link">
       {content}
     </a>
   );
+}
+
+function planFeatures(plan: AccessPlan) {
+  return plan.features
+    .split("\n")
+    .map((feature) => feature.trim())
+    .filter(Boolean);
 }
 
 export default function Site() {
@@ -93,23 +110,26 @@ export default function Site() {
   const [openFaq, setOpenFaq] = useState(0);
   const [collectionCards, setCollectionCards] = useState<CollectionCard[]>(fallbackCollectionCards);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(fallbackGalleryImages);
-  const [qrResource, setQrResource] = useState<QrResource>(fallbackQrResource);
+  const [accessPlans, setAccessPlans] = useState<AccessPlan[]>(fallbackAccessPlans);
+  const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(fallbackPaymentSettings);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
 
     async function loadContent() {
-      const [collectionResult, galleryResult, qrResult] = await Promise.all([
+      const [collectionResult, galleryResult, plansResult, paymentResult] = await Promise.all([
         queryRows<CollectionCard>("collection_cards", "select=*&is_active=eq.true&order=sort_order.asc"),
-        queryRows<GalleryImage>("gallery_images", "select=*&is_active=eq.true&order=row_position.asc,sort_order.asc"),
-        queryRows<QrResource>("qr_resources", "select=*&is_active=eq.true&order=sort_order.asc&limit=1"),
+        queryRows<GalleryImage>("gallery_images", "select=*&is_active=eq.true&sort_order=lte.6&order=row_position.asc,sort_order.asc"),
+        queryRows<AccessPlan>("access_plans", "select=*&is_active=eq.true&order=sort_order.asc"),
+        queryRows<PaymentSettings>("payment_settings", "select=*&is_active=eq.true&id=eq.main&limit=1"),
       ]);
 
       if (cancelled) return;
-      if (!collectionResult.error) setCollectionCards(collectionResult.data || []);
-      if (!galleryResult.error) setGalleryImages(galleryResult.data || []);
-      if (!qrResult.error && qrResult.data?.[0]) setQrResource(qrResult.data[0]);
+      if (!collectionResult.error && collectionResult.data?.length) setCollectionCards(collectionResult.data);
+      if (!galleryResult.error) setGalleryImages(galleryResult.data?.length ? galleryResult.data : fallbackGalleryImages);
+      if (!plansResult.error && plansResult.data?.length) setAccessPlans(plansResult.data);
+      if (!paymentResult.error && paymentResult.data?.[0]) setPaymentSettings(paymentResult.data[0]);
     }
 
     loadContent().catch((error) => console.warn("Fluxora fallback content is being used.", error));
@@ -120,9 +140,13 @@ export default function Site() {
     const rows: Record<GalleryRow, GalleryImage[]> = { top: [], middle: [], bottom: [] };
     galleryImages.forEach((image) => {
       const row = image.row_position || "top";
-      rows[row].push(image);
+      if (rows[row].length < 6) rows[row].push(image);
     });
-    return rows;
+    return {
+      top: fillGalleryRow(rows.top, "top"),
+      middle: fillGalleryRow(rows.middle, "middle"),
+      bottom: fillGalleryRow(rows.bottom, "bottom"),
+    };
   }, [galleryImages]);
 
   function closeMenu() {
@@ -165,23 +189,13 @@ export default function Site() {
           <h1 className="hero-animate hero-animate-2">Turn ideas into<br /><em>actual results.</em></h1>
           <p className="hero-lede hero-animate hero-animate-3">Curated tools, practical workflows, and purpose-built GPTs that help you move from possibility to finished work—faster.</p>
           <div className="hero-actions hero-animate hero-animate-4">
-            <a className="button primary desktop-resource-button" href="#products">Browse the vault</a>
-            <a className="button primary mobile-resource-button" href="https://fluxora.wiki">View resources</a>
+            <a className="button primary" href="https://fluxora.wiki">View resources</a>
             <a className="button ghost" href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Join community</a>
           </div>
           <div className="hero-proof hero-animate hero-animate-5">
             <div className="avatars"><i>F</i><i>L</i><i>X</i><i>+</i></div>
             <p><b>Built for momentum</b><span>Clear systems. Less trial and error.</span></p>
           </div>
-        </div>
-      </section>
-
-      <section className="stats-wrap section">
-        <div className="stats">
-          <div><strong>40<sup>+</sup></strong><span>Curated resources</span></div>
-          <div><strong>03</strong><span>Core product types</span></div>
-          <div><strong>∞</strong><span>Ways to create</span></div>
-          <div><strong>01</strong><span>Organized vault</span></div>
         </div>
       </section>
 
@@ -232,37 +246,43 @@ export default function Site() {
           </div>
 
           <div className="price-cards">
-            <article className="access-plan">
-              <div className="plan-header">Starter</div>
-              <h3>Explorer (Free)</h3>
-              <p className="plan-description">Your pathway to success. Completely free.</p>
-              <ul className="plan-features"><li>Prompts</li><li>Tools</li><li>Custom GPTs</li><li>Courses</li></ul>
-              <a className="button ghost full" href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Start free</a>
-            </article>
-
-            <article className="access-plan creator-plan">
-              <div className="plan-header">Endgame</div>
-              <h3>Creator</h3>
-              <p className="plan-description">The full vault for building from idea to finished result.</p>
-              <ul className="plan-features"><li>Prompts+</li><li>Tools+</li><li>Custom GPTs+</li><li>Courses+</li><li>Workflows</li></ul>
-              <a className="button primary full" href="https://www.facebook.com/meimeidigitalAI" target="_blank" rel="noopener noreferrer">Choose Creator</a>
-            </article>
+            {accessPlans.map((plan) => (
+              <article className={plan.variant === "creator" ? "access-plan creator-plan" : "access-plan"} key={plan.id}>
+                <div className="plan-header">{plan.badge}</div>
+                <h3>{plan.title}</h3>
+                <p className="plan-description">{plan.description}</p>
+                <ul className="plan-features">
+                  {planFeatures(plan).map((feature) => <li key={feature}>{feature}</li>)}
+                </ul>
+                <CardButton
+                  label={plan.button_label}
+                  url={plan.button_url}
+                  className={plan.variant === "creator" ? "button primary full" : "button ghost full"}
+                />
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
-      <section className="optional-improvements section" id="resources">
-        <div className="optional-wrap">
-          <div className="optional-copy text-motion">
-            <p className="eyebrow"><span />Optional improvements</p>
-            <h2>Choose where<br /><em>to go.</em></h2>
-            <p>Additional resources to help you grow and succeed.</p>
+      {paymentSettings.is_active && (
+        <section className="easy-payments section" id="payments">
+          <div className="optional-wrap">
+            <div className="optional-copy text-motion">
+              <p className="eyebrow"><span />{paymentSettings.eyebrow}</p>
+              <h2>{paymentSettings.heading}</h2>
+              {paymentSettings.description && <p>{paymentSettings.description}</p>}
+              <div className="payment-point">
+                <span>{paymentSettings.payment_label}</span>
+                <strong>{paymentSettings.payment_number}</strong>
+              </div>
+            </div>
+            <div className="qr-panel">
+              <QrBox settings={paymentSettings} />
+            </div>
           </div>
-          <div className="qr-panel">
-            <QrBox resource={qrResource} />
-          </div>
-        </div>
-      </section>
+        </section>
+      )}
 
       <section className="faq section" id="faq">
         <div className="faq-heading text-motion">
@@ -281,14 +301,6 @@ export default function Site() {
             </article>
           ))}
         </div>
-      </section>
-
-      <section className="final-cta section text-motion">
-        <div className="cta-mark"><MoonMark /></div>
-        <p className="eyebrow light"><span />Make the next move</p>
-        <h2>Your ideas deserve<br /><em>a working system.</em></h2>
-        <p>Start with the vault. Shape it around your process. Build what comes next.</p>
-        <a className="button cream" href="https://www.facebook.com/meimeidigitalAI" target="_blank" rel="noopener noreferrer">Message us</a>
       </section>
 
       <footer>

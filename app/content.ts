@@ -23,12 +23,29 @@ export type GalleryImage = {
   is_active: boolean;
 };
 
-export type QrResource = {
+export type AccessPlan = {
   id: string;
-  image_url: string;
-  target_url: string;
-  alt_text: string;
+  badge: string;
+  title: string;
+  description: string;
+  features: string;
+  button_label: string;
+  button_url: string;
+  variant: "premium" | "creator";
   sort_order: number;
+  is_active: boolean;
+};
+
+export type PaymentSettings = {
+  id: string;
+  eyebrow: string;
+  heading: string;
+  description: string;
+  payment_label: string;
+  payment_number: string;
+  qr_image_url: string;
+  qr_target_url: string;
+  qr_alt_text: string;
   is_active: boolean;
 };
 
@@ -83,21 +100,54 @@ export const fallbackCollectionCards: CollectionCard[] = [
   },
 ];
 
-export const fallbackGalleryImages: GalleryImage[] = Array.from({ length: 9 }, (_, index) => ({
-  id: `gallery-${index + 1}`,
-  image_url: "",
-  target_url: "",
-  alt_text: `Fluxora gallery image ${index + 1}`,
-  row_position: index < 3 ? "top" : index < 6 ? "middle" : "bottom",
-  sort_order: (index % 3) + 1,
-  is_active: true,
-}));
+export const fallbackGalleryImages: GalleryImage[] = (["top", "middle", "bottom"] as GalleryRow[]).flatMap((row) =>
+  Array.from({ length: 6 }, (_, index) => ({
+    id: `${row}-${index + 1}`,
+    image_url: "",
+    target_url: "",
+    alt_text: `${row.charAt(0).toUpperCase() + row.slice(1)} visual archive image ${index + 1}`,
+    row_position: row,
+    sort_order: index + 1,
+    is_active: true,
+  })),
+);
 
-export const fallbackQrResource: QrResource = {
-  id: "qr-resource-1",
-  image_url: "",
-  target_url: "",
-  alt_text: "Fluxora additional resource QR code",
-  sort_order: 1,
+export const fallbackAccessPlans: AccessPlan[] = [
+  {
+    id: "premium",
+    badge: "Starter",
+    title: "Premium (₱599)",
+    description: "Premium access. Fit for aspiring creators.",
+    features: "Web Access",
+    button_label: "Start free",
+    button_url: "https://t.me/PHAICommunity",
+    variant: "premium",
+    sort_order: 1,
+    is_active: true,
+  },
+  {
+    id: "creator",
+    badge: "Endgame",
+    title: "Creator (₱1999)",
+    description: "The full vault for building from idea to finished result.",
+    features: "Web Access+\nSecret Methods",
+    button_label: "Choose Creator",
+    button_url: "https://www.facebook.com/meimeidigitalAI",
+    variant: "creator",
+    sort_order: 2,
+    is_active: true,
+  },
+];
+
+export const fallbackPaymentSettings: PaymentSettings = {
+  id: "main",
+  eyebrow: "Easy payments",
+  heading: "Pay conveniently through GCash.",
+  description: "",
+  payment_label: "GCash payment only",
+  payment_number: "09163211558",
+  qr_image_url: "",
+  qr_target_url: "",
+  qr_alt_text: "Fluxora GCash payment QR code",
   is_active: true,
 };
