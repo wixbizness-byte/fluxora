@@ -4,14 +4,13 @@ import { useEffect, useMemo, useState } from "react";
 import {
   fallbackCollectionCards,
   fallbackGalleryImages,
-  fallbackMethodCards,
-  fallbackSettings,
+  fallbackQrResource,
   type CollectionCard,
   type GalleryImage,
-  type MethodCard,
-  type SiteSettings,
+  type GalleryRow,
+  type QrResource,
 } from "./content";
-import { isSupabaseConfigured, queryOne, queryRows } from "./lib/supabase";
+import { isSupabaseConfigured, queryRows } from "./lib/supabase";
 
 const faqs = [
   [
@@ -32,33 +31,6 @@ function MoonMark() {
   );
 }
 
-function ThemeToggle() {
-  const [theme, setTheme] = useState("dark");
-
-  useEffect(() => {
-    setTheme(document.documentElement.dataset.theme || "dark");
-  }, []);
-
-  function toggleTheme() {
-    const nextTheme = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = nextTheme;
-    localStorage.setItem("fluxora-theme", nextTheme);
-    setTheme(nextTheme);
-  }
-
-  return (
-    <button
-      className="theme-toggle"
-      type="button"
-      onClick={toggleTheme}
-      aria-label={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-      title={`Switch to ${theme === "dark" ? "light" : "dark"} mode`}
-    >
-      <span className={theme === "dark" ? "theme-shape diamond" : "theme-shape circle"} />
-    </button>
-  );
-}
-
 function ImageSurface({ imageUrl, alt }: { imageUrl: string; alt: string }) {
   if (!imageUrl) return <span className="media-placeholder" aria-label={`${alt} placeholder`} />;
   return <img src={imageUrl} alt={alt} loading="lazy" />;
@@ -74,38 +46,84 @@ function CardButton({ label, url, className }: { label: string; url: string; cla
   );
 }
 
+function GalleryStrip({ images, direction, label }: { images: GalleryImage[]; direction: "left" | "right"; label: string }) {
+  if (!images.length) return null;
+
+  return (
+    <div className="gallery-window" aria-label={label}>
+      <div className={`gallery-track scroll-${direction}`}>
+        {[0, 1].map((group) => (
+          <div className="gallery-group" aria-hidden={group === 1} key={group}>
+            {images.map((image, index) => {
+              const item = (
+                <div className="gallery-image">
+                  <ImageSurface imageUrl={image.image_url} alt={image.alt_text || `${label} image ${index + 1}`} />
+                </div>
+              );
+              return image.target_url ? (
+                <a href={image.target_url} target="_blank" rel="noopener noreferrer" key={`${group}-${image.id}`}>{item}</a>
+              ) : (
+                <div key={`${group}-${image.id}`}>{item}</div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function QrBox({ resource }: { resource: QrResource }) {
+  const content = resource.image_url ? (
+    <img src={resource.image_url} alt={resource.alt_text || "Fluxora resource QR code"} loading="lazy" />
+  ) : (
+    <span className="qr-placeholder"><i /><b>QR</b><small>Add your Cloudinary QR image in Admin</small></span>
+  );
+
+  if (!resource.target_url) return <div className="qr-image-box">{content}</div>;
+  return (
+    <a className="qr-image-box" href={resource.target_url} target="_blank" rel="noopener noreferrer" aria-label="Open additional Fluxora resource">
+      {content}
+    </a>
+  );
+}
+
 export default function Site() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
-  const [settings, setSettings] = useState<SiteSettings>(fallbackSettings);
   const [collectionCards, setCollectionCards] = useState<CollectionCard[]>(fallbackCollectionCards);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(fallbackGalleryImages);
-  const [methodCards, setMethodCards] = useState<MethodCard[]>(fallbackMethodCards);
+  const [qrResource, setQrResource] = useState<QrResource>(fallbackQrResource);
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
     let cancelled = false;
 
     async function loadContent() {
-      const [settingsResult, collectionResult, galleryResult, methodResult] = await Promise.all([
-        queryOne<SiteSettings>("site_settings", "select=*&id=eq.main"),
+      const [collectionResult, galleryResult, qrResult] = await Promise.all([
         queryRows<CollectionCard>("collection_cards", "select=*&is_active=eq.true&order=sort_order.asc"),
-        queryRows<GalleryImage>("gallery_images", "select=*&is_active=eq.true&order=sort_order.asc&limit=10"),
-        queryRows<MethodCard>("method_cards", "select=*&is_active=eq.true&order=sort_order.asc"),
+        queryRows<GalleryImage>("gallery_images", "select=*&is_active=eq.true&order=row_position.asc,sort_order.asc"),
+        queryRows<QrResource>("qr_resources", "select=*&is_active=eq.true&order=sort_order.asc&limit=1"),
       ]);
 
       if (cancelled) return;
-      if (settingsResult.data) setSettings(settingsResult.data);
-      if (collectionResult.data?.length) setCollectionCards(collectionResult.data);
-      if (galleryResult.data?.length) setGalleryImages(galleryResult.data);
-      if (methodResult.data?.length) setMethodCards(methodResult.data);
+      if (!collectionResult.error) setCollectionCards(collectionResult.data || []);
+      if (!galleryResult.error) setGalleryImages(galleryResult.data || []);
+      if (!qrResult.error && qrResult.data?.[0]) setQrResource(qrResult.data[0]);
     }
 
     loadContent().catch((error) => console.warn("Fluxora fallback content is being used.", error));
     return () => { cancelled = true; };
   }, []);
 
-  const activeGallery = useMemo(() => galleryImages.slice(0, 10), [galleryImages]);
+  const galleryRows = useMemo(() => {
+    const rows: Record<GalleryRow, GalleryImage[]> = { top: [], middle: [], bottom: [] };
+    galleryImages.forEach((image) => {
+      const row = image.row_position || "top";
+      rows[row].push(image);
+    });
+    return rows;
+  }, [galleryImages]);
 
   function closeMenu() {
     setMenuOpen(false);
@@ -113,17 +131,6 @@ export default function Site() {
 
   return (
     <main id="top">
-      <div className="announcement-bar">
-        <a
-          className="announcement-button"
-          href={settings.follow_page_url || "https://www.facebook.com/meimeidigitalAI"}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {settings.follow_page_label || "Follow our Page"}
-        </a>
-      </div>
-
       <header className="nav-shell">
         <a className="brand" href="#top" onClick={closeMenu}>
           <MoonMark />
@@ -139,7 +146,6 @@ export default function Site() {
 
         <div className="nav-actions">
           <a className="nav-cta" href="#pricing">Get access</a>
-          <ThemeToggle />
           <button
             className="menu-toggle"
             type="button"
@@ -159,7 +165,8 @@ export default function Site() {
           <h1 className="hero-animate hero-animate-2">Turn ideas into<br /><em>actual results.</em></h1>
           <p className="hero-lede hero-animate hero-animate-3">Curated tools, practical workflows, and purpose-built GPTs that help you move from possibility to finished work—faster.</p>
           <div className="hero-actions hero-animate hero-animate-4">
-            <a className="button primary" href="#products">Browse the vault</a>
+            <a className="button primary desktop-resource-button" href="#products">Browse the vault</a>
+            <a className="button primary mobile-resource-button" href="https://fluxora.wiki">View resources</a>
             <a className="button ghost" href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Join community</a>
           </div>
           <div className="hero-proof hero-animate hero-animate-5">
@@ -209,50 +216,10 @@ export default function Site() {
           <h2>A moving gallery of<br /><em>what is possible.</em></h2>
         </div>
 
-        <div className="gallery-window">
-          <div className="gallery-track">
-            {[0, 1].map((group) => (
-              <div className="gallery-group" aria-hidden={group === 1} key={group}>
-                {activeGallery.map((image, index) => {
-                  const item = (
-                    <div className="gallery-image">
-                      <ImageSurface imageUrl={image.image_url} alt={image.alt_text || `Gallery image ${index + 1}`} />
-                    </div>
-                  );
-                  return image.target_url ? (
-                    <a href={image.target_url} target="_blank" rel="noopener noreferrer" key={`${group}-${image.id}`}>{item}</a>
-                  ) : (
-                    <div key={`${group}-${image.id}`}>{item}</div>
-                  );
-                })}
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="method section">
-        <div className="center-heading text-motion">
-          <p className="eyebrow"><span />The Fluxora method</p>
-          <h2>A clear path from idea<br />to <em>finished work.</em></h2>
-        </div>
-
-        <div className="method-grid">
-          {methodCards.map((card) => (
-            <article className="method-card" key={card.id}>
-              <div className="method-image">
-                <ImageSurface imageUrl={card.image_url} alt={card.title} />
-                <div className="image-overlay" />
-              </div>
-              <div className="method-content">
-                <span className="method-number">{card.step_number}</span>
-                <span className="card-eyebrow">{card.eyebrow}</span>
-                <h3>{card.title}</h3>
-                <p>{card.description}</p>
-                <CardButton label={card.button_label} url={card.button_url} className="card-button method-button" />
-              </div>
-            </article>
-          ))}
+        <div className="gallery-rows">
+          <GalleryStrip images={galleryRows.top} direction="left" label="Top visual archive row" />
+          <GalleryStrip images={galleryRows.middle} direction="right" label="Middle visual archive row" />
+          <GalleryStrip images={galleryRows.bottom} direction="left" label="Bottom visual archive row" />
         </div>
       </section>
 
@@ -280,6 +247,19 @@ export default function Site() {
               <ul className="plan-features"><li>Prompts+</li><li>Tools+</li><li>Custom GPTs+</li><li>Courses+</li><li>Workflows</li></ul>
               <a className="button primary full" href="https://www.facebook.com/meimeidigitalAI" target="_blank" rel="noopener noreferrer">Choose Creator</a>
             </article>
+          </div>
+        </div>
+      </section>
+
+      <section className="optional-improvements section" id="resources">
+        <div className="optional-wrap">
+          <div className="optional-copy text-motion">
+            <p className="eyebrow"><span />Optional improvements</p>
+            <h2>Choose where<br /><em>to go.</em></h2>
+            <p>Additional resources to help you grow and succeed.</p>
+          </div>
+          <div className="qr-panel">
+            <QrBox resource={qrResource} />
           </div>
         </div>
       </section>
@@ -317,7 +297,7 @@ export default function Site() {
           <p>Useful systems for ambitious ideas.</p>
         </div>
         <div><small>Explore</small><a href="#products">Products</a><a href="#gallery">Gallery</a><a href="#pricing">Pricing</a></div>
-        <div><small>Connect</small><a href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Community</a><a href={settings.follow_page_url} target="_blank" rel="noopener noreferrer">Facebook</a></div>
+        <div><small>Connect</small><a href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Community</a><a href="https://www.facebook.com/meimeidigitalAI" target="_blank" rel="noopener noreferrer">Facebook</a></div>
         <div><small>Manage</small><a href="/admin">Admin panel</a><a href="#faq">FAQ</a></div>
         <p className="copyright">© 2026 Fluxora. All rights reserved.</p>
       </footer>

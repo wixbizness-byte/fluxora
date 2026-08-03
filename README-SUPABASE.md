@@ -1,34 +1,38 @@
 # Fluxora Supabase setup
 
-## Current layout notes
+## Existing Supabase project
 
-- The fixed top banner contains only the **Follow Our Page** button.
-- The Fluxora navigation/header scrolls normally with the page.
-- Hero media uses four editable 2:3 cards with staggered directional motion.
-- Collection cards use 16:9 media and Method cards use 3:2 media.
+Run `supabase-update-visual-archive-qr.sql` once in **Supabase Dashboard → SQL Editor** before deploying this version. It:
 
+- Adds `row_position` to the existing `gallery_images` table.
+- Allows up to 10 active gallery cards in each row: Top, Middle, and Bottom.
+- Adds the `qr_resources` table used by the Optional Improvements panel.
+- Adds the required RLS policies and browser API grants.
 
-1. Open your existing Supabase project.
+## New Supabase project
+
+1. Open your Supabase project.
 2. Go to **SQL Editor**, paste the full contents of `supabase-schema.sql`, and run it.
 3. Go to **Authentication → Users** and create an email/password user for the admin panel.
 4. Run the final one-time `insert into public.site_admins ...` statement in `supabase-schema.sql` after replacing the placeholder email.
 5. Copy `.env.example` to `.env.local` and paste your project URL and publishable key.
 6. Run `npm install`, then `npm run dev`.
-7. Open `/admin`, sign in, and paste your Cloudinary delivery URLs into the image fields.
+7. Open `/admin` and sign in.
 
-The browser uses only the public/publishable Supabase key. Do not place a secret or service-role key in any `NEXT_PUBLIC_` variable. Row Level Security allows public visitors to read active content and allows only users registered in `site_admins` to edit it.
+## Admin content
 
-## Hero card order
-The public hero displays the first four active hero rows ordered by `sort_order`:
-1. Top-left card moves down.
-2. Top-right card moves left.
-3. Bottom-left card moves right.
-4. Bottom-right card moves up.
+The admin panel now manages:
 
+- Collection cards
+- Visual Archive cards
+- Optional Improvements QR code
 
-## Current display ratios
+For the Visual Archive, each card has a Cloudinary image URL, optional click URL, visibility toggle, row assignment, and sort order. The public directions are:
 
-- Hero floating cards: 2:3
-- Collection cards: 16:9
-- Side-scrolling gallery: 2:3
-- Fluxora Method cards: 3:2
+- Top row: moves left
+- Middle row: moves right
+- Bottom row: moves left
+
+All archive cards use a 2:3 display ratio. The QR image is also stored as a Cloudinary delivery URL; Supabase stores only the URL and configuration.
+
+The browser uses only the public/publishable Supabase key. Never place a service-role key in a `NEXT_PUBLIC_` variable. Row Level Security allows visitors to read active content and only users registered in `site_admins` to edit it.

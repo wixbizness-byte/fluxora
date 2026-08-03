@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
 import {
   deleteRow as deleteSupabaseRow,
   getSession,
@@ -11,7 +11,6 @@ import {
   signInWithPassword,
   signOut as clearSession,
   updateRow as updateSupabaseRow,
-  upsertRow,
   type SupabaseSession,
 } from "../lib/supabase";
 import styles from "./admin.module.css";
@@ -41,7 +40,7 @@ const editors: EditorDefinition[] = [
   {
     table: "collection_cards",
     title: "Collection cards",
-    description: "The four 16:9 cards. Text and buttons stay above the image through a dark overlay layer.",
+    description: "The public 16:9 collection cards. Each card supports Cloudinary media, text, a button, visibility, and ordering.",
     fields: [
       { key: "eyebrow", label: "Category", type: "text", placeholder: "COMMUNITY" },
       { key: "title", label: "Title", type: "text" },
@@ -67,47 +66,49 @@ const editors: EditorDefinition[] = [
   },
   {
     table: "gallery_images",
-    title: "Automatic image gallery",
-    description: "Add up to ten 2:3 images. The public gallery duplicates the set automatically for seamless side-scrolling.",
-    maxRows: 10,
+    title: "Visual archive",
+    description: "Configure up to ten active 2:3 cards in each row. Choose Top, Middle, or Bottom, then control the Cloudinary image, click link, visibility, and order.",
+    maxRows: 30,
     fields: [
       { key: "image_url", label: "Cloudinary image URL", type: "url", placeholder: "https://res.cloudinary.com/..." },
       { key: "target_url", label: "Optional click link", type: "url" },
       { key: "alt_text", label: "Image alt text", type: "text" },
-      { key: "sort_order", label: "Position order", type: "number" },
+      {
+        key: "row_position",
+        label: "Gallery row",
+        type: "select",
+        options: [
+          { label: "Top — moves left", value: "top" },
+          { label: "Middle — moves right", value: "middle" },
+          { label: "Bottom — moves left", value: "bottom" },
+        ],
+      },
+      { key: "sort_order", label: "Position in row", type: "number" },
       { key: "is_active", label: "Visible", type: "checkbox" },
     ],
-    newRow: { image_url: "", target_url: "", alt_text: "", sort_order: 1, is_active: true },
+    newRow: { image_url: "", target_url: "", alt_text: "", row_position: "top", sort_order: 1, is_active: true },
   },
   {
-    table: "method_cards",
-    title: "Method cards",
-    description: "The three 3:2 landscape cards below the gallery. Each supports a background image, overlay text, and a configurable button.",
+    table: "qr_resources",
+    title: "Optional improvements QR",
+    description: "Add the Cloudinary URL of the QR code shown beside Optional Improvements. The optional target link makes the QR box clickable.",
+    maxRows: 1,
     fields: [
-      { key: "step_number", label: "Step number", type: "text", placeholder: "01" },
-      { key: "eyebrow", label: "Category", type: "text", placeholder: "DIRECTION" },
-      { key: "title", label: "Title", type: "text" },
-      { key: "description", label: "Description", type: "textarea" },
-      { key: "button_label", label: "Button label", type: "text" },
-      { key: "button_url", label: "Button link", type: "url" },
-      { key: "image_url", label: "Cloudinary background image", type: "url", placeholder: "https://res.cloudinary.com/..." },
+      { key: "image_url", label: "Cloudinary QR image URL", type: "url", placeholder: "https://res.cloudinary.com/..." },
+      { key: "target_url", label: "Optional click link", type: "url" },
+      { key: "alt_text", label: "QR image alt text", type: "text" },
       { key: "sort_order", label: "Position order", type: "number" },
       { key: "is_active", label: "Visible", type: "checkbox" },
     ],
     newRow: {
-      step_number: "01",
-      eyebrow: "STEP",
-      title: "New method step",
-      description: "Add a short description.",
-      button_label: "Learn more",
-      button_url: "",
       image_url: "",
+      target_url: "",
+      alt_text: "Fluxora additional resource QR code",
       sort_order: 1,
       is_active: true,
     },
   },
 ];
-
 function cleanPayload(row: ContentRow) {
   const payload: Record<string, Primitive> = {};
   Object.entries(row).forEach(([key, value]) => {
@@ -126,7 +127,6 @@ export default function AdminClient() {
   const [authError, setAuthError] = useState("");
   const [activeTable, setActiveTable] = useState(editors[0].table);
   const [rows, setRows] = useState<Record<string, ContentRow[]>>({});
-  const [settings, setSettings] = useState<ContentRow>({ id: "main", follow_page_label: "Follow our Page", follow_page_url: "" });
   const [busyId, setBusyId] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -176,24 +176,22 @@ export default function AdminClient() {
     setNotice("Loading content…");
     const tableResults = await Promise.all(
       editors.map(async (editor) => {
-        const result = await queryRows<ContentRow>(editor.table, "select=*&order=sort_order.asc", true);
+        const order = editor.table === "gallery_images" ? "row_position.asc,sort_order.asc" : "sort_order.asc";
+        const result = await queryRows<ContentRow>(editor.table, `select=*&order=${order}`, true);
         return { table: editor.table, data: result.data || [], error: result.error };
       }),
     );
-    const settingsResult = await queryOne<ContentRow>("site_settings", "select=*&id=eq.main", true);
-
     const nextRows: Record<string, ContentRow[]> = {};
     tableResults.forEach((result) => {
       nextRows[result.table] = result.data;
     });
     setRows(nextRows);
-    if (settingsResult.data) setSettings(settingsResult.data);
 
-    const error = tableResults.find((result) => result.error)?.error || settingsResult.error;
+    const error = tableResults.find((result) => result.error)?.error;
     setNotice(error ? error.message : "Content loaded.");
   }
 
-  async function signIn(event: React.FormEvent) {
+  async function signIn(event: FormEvent) {
     event.preventDefault();
     setAuthError("");
     const result = await signInWithPassword(email, password);
@@ -272,12 +270,6 @@ export default function AdminClient() {
     setBusyId("");
   }
 
-  async function saveSettings() {
-    setBusyId("settings");
-    const { error } = await upsertRow<ContentRow>("site_settings", { id: "main", ...cleanPayload(settings) }, "id");
-    setNotice(error ? error.message : "Banner settings saved.");
-    setBusyId("");
-  }
 
   if (!isSupabaseConfigured()) {
     return (
@@ -303,8 +295,8 @@ export default function AdminClient() {
           <span className={styles.kicker}>Protected workspace</span>
           <h1>Fluxora Admin</h1>
           <p>Sign in with the Supabase Auth user registered in the <code>site_admins</code> table.</p>
-          <label>Email<input type="email" value={email} onChange={(event) => setEmail(event.target.value)} required /></label>
-          <label>Password<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} required /></label>
+          <label>Email<input type="email" value={email} onChange={(event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)} required /></label>
+          <label>Password<input type="password" value={password} onChange={(event: ChangeEvent<HTMLInputElement>) => setPassword(event.target.value)} required /></label>
           {authError && <p className={styles.error}>{authError}</p>}
           <button type="submit">Sign in</button>
         </form>
@@ -334,14 +326,6 @@ export default function AdminClient() {
         <div className={styles.headerActions}><a href="/" target="_blank">View site</a><button type="button" onClick={signOut}>Sign out</button></div>
       </header>
 
-      <section className={styles.settingsCard}>
-        <div><span className={styles.kicker}>Top banner</span><h2>Follow page banner</h2><p>The public banner contains only this label and link.</p></div>
-        <div className={styles.settingsFields}>
-          <label>Banner label<input value={String(settings.follow_page_label || "")} onChange={(event) => setSettings((current) => ({ ...current, follow_page_label: event.target.value }))} /></label>
-          <label>Banner link<input type="url" value={String(settings.follow_page_url || "")} onChange={(event) => setSettings((current) => ({ ...current, follow_page_url: event.target.value }))} /></label>
-          <button type="button" onClick={saveSettings} disabled={busyId === "settings"}>{busyId === "settings" ? "Saving…" : "Save banner"}</button>
-        </div>
-      </section>
 
       <nav className={styles.tabs} aria-label="Admin sections">
         {editors.map((editor) => (
@@ -374,7 +358,7 @@ export default function AdminClient() {
                 if (field.type === "checkbox") {
                   return (
                     <label className={styles.checkboxLabel} key={field.key}>
-                      <input type="checkbox" checked={Boolean(value)} onChange={(event) => updateRow(activeEditor.table, row.id, field.key, event.target.checked)} />
+                      <input type="checkbox" checked={Boolean(value)} onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.checked)} />
                       <span>{field.label}</span>
                     </label>
                   );
@@ -383,7 +367,7 @@ export default function AdminClient() {
                 if (field.type === "textarea") {
                   return (
                     <label className={styles.fullField} key={field.key}>{field.label}
-                      <textarea value={String(value || "")} placeholder={field.placeholder} onChange={(event) => updateRow(activeEditor.table, row.id, field.key, event.target.value)} />
+                      <textarea value={String(value || "")} placeholder={field.placeholder} onChange={(event: ChangeEvent<HTMLTextAreaElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.value)} />
                     </label>
                   );
                 }
@@ -391,7 +375,7 @@ export default function AdminClient() {
                 if (field.type === "select") {
                   return (
                     <label key={field.key}>{field.label}
-                      <select value={String(value || "")} onChange={(event) => updateRow(activeEditor.table, row.id, field.key, event.target.value)}>
+                      <select value={String(value || "")} onChange={(event: ChangeEvent<HTMLSelectElement>) => updateRow(activeEditor.table, row.id, field.key, event.target.value)}>
                         {field.options?.map((option) => <option value={option.value} key={option.value}>{option.label}</option>)}
                       </select>
                     </label>
@@ -404,7 +388,7 @@ export default function AdminClient() {
                       type={field.type}
                       value={field.type === "number" ? Number(value || 0) : String(value || "")}
                       placeholder={field.placeholder}
-                      onChange={(event) => updateRow(activeEditor.table, row.id, field.key, field.type === "number" ? Number(event.target.value) : event.target.value)}
+                      onChange={(event: ChangeEvent<HTMLInputElement>) => updateRow(activeEditor.table, row.id, field.key, field.type === "number" ? Number(event.target.value) : event.target.value)}
                     />
                   </label>
                 );
