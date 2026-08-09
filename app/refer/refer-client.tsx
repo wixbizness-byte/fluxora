@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import styles from "./refer.module.css";
 
+type AffiliateAccessScope = "premium_only" | "premium_creator";
+
 type ReferralMember = {
   id: string;
   access_code: string;
@@ -23,7 +25,12 @@ type Referral = {
 };
 
 type ReferralResponse = {
-  affiliate?: { id: number; gmail: string; display_name: string | null };
+  affiliate?: {
+    id: number;
+    gmail: string;
+    display_name: string | null;
+    access_scope: AffiliateAccessScope;
+  };
   stats?: { total: number; threeHours: number; oneDay: number };
   referrals?: Referral[];
   member?: ReferralMember;
@@ -45,6 +52,7 @@ export default function ReferClient() {
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
   const sortedReferrals = useMemo(() => referrals, [referrals]);
+  const canIssueCreator = affiliate?.access_scope === "premium_creator";
 
   async function load() {
     setLoading(true);
@@ -173,6 +181,7 @@ export default function ReferClient() {
           <p className={styles.kicker}>Fluxora affiliate</p>
           <h1>Referral Panel</h1>
           <p>{affiliate?.display_name || affiliate?.gmail}</p>
+          <p>{canIssueCreator ? "Can issue Premium + Creator" : "Can issue Premium only"}</p>
         </div>
         <div className={styles.headerActions}>
           <a href="/">Fluxora</a>
@@ -195,13 +204,19 @@ export default function ReferClient() {
         <form className={styles.form} onSubmit={issue}>
           <label><span>Customer Gmail</span><input name="gmail" type="email" required placeholder="customer@gmail.com" /></label>
           <label><span>Duration</span><select name="duration" defaultValue="3 hours"><option value="3 hours">3 Hours</option><option value="1 day">1 Day</option></select></label>
-          <label><span>Access tier</span><select name="tier" defaultValue="Premium"><option value="Premium">Premium</option><option value="Creator">Creator</option></select></label>
+          <label>
+            <span>Access tier</span>
+            <select name="tier" defaultValue="Premium">
+              <option value="Premium">Premium</option>
+              {canIssueCreator && <option value="Creator">Creator</option>}
+            </select>
+          </label>
           <button className={styles.primaryButton} type="submit" disabled={busy}>{busy ? "Creating…" : "Generate access"}</button>
         </form>
 
         {createdMember && (
           <div className={styles.createdBox}>
-            <div><span>New access code</span><strong>{createdMember.access_code}</strong><small>{createdMember.gmail} · {createdMember.status} · {createdMember.tier} · expires {createdMember.expires_at ? new Date(createdMember.expires_at).toLocaleString() : "never"}</small></div>
+            <div><span>New 5-character access code</span><strong>{createdMember.access_code}</strong><small>{createdMember.gmail} · {createdMember.status} · {createdMember.tier} · expires {createdMember.expires_at ? new Date(createdMember.expires_at).toLocaleString() : "never"}</small></div>
             <button type="button" onClick={() => copy(createdMember.access_code)}>Copy code</button>
           </div>
         )}
@@ -221,7 +236,7 @@ export default function ReferClient() {
                 </div>
                 {member && (
                   <div className={styles.codeActions}>
-                    <button type="button" className={styles.codeButton} onClick={() => toggleReveal(member.id)}>{shown ? member.access_code : "••••••••••••"}</button>
+                    <button type="button" className={styles.codeButton} onClick={() => toggleReveal(member.id)}>{shown ? member.access_code : "•••••"}</button>
                     {shown && <button type="button" className={styles.copyButton} onClick={() => copy(member.access_code)}>Copy</button>}
                   </div>
                 )}
