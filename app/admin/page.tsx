@@ -1,4 +1,4 @@
-import AdminClient from "./admin-client";
+import GoogleAdminGate from "./google-admin-gate";
 
 export const metadata = {
   title: "Fluxora Admin",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function AdminPage() {
-  return <AdminClient />;
+  return <GoogleAdminGate />;
 }
