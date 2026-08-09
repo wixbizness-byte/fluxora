@@ -38,11 +38,26 @@ function ImageSurface({ imageUrl, alt }: { imageUrl: string; alt: string }) {
   return <img src={imageUrl} alt={alt} loading="lazy" />;
 }
 
+function canonicalFluxoraUrl(url: string) {
+  const normalized = url.trim().replace(/\/+$/, "");
+
+  if (normalized === "https://fluxora-prompt-gallery.vercel.app") {
+    return "/prompts";
+  }
+
+  if (normalized === "https://tool-directory-ochre.vercel.app") {
+    return "/tools";
+  }
+
+  return url;
+}
+
 function CardButton({ label, url, className }: { label: string; url: string; className: string }) {
   if (!url) return <span className={`${className} disabled`}>{label}</span>;
-  const internal = url.startsWith("#") || url.startsWith("/");
+  const resolvedUrl = canonicalFluxoraUrl(url);
+  const internal = resolvedUrl.startsWith("#") || resolvedUrl.startsWith("/");
   return (
-    <a className={className} href={url} target={internal ? undefined : "_blank"} rel={internal ? undefined : "noopener noreferrer"}>
+    <a className={className} href={resolvedUrl} target={internal ? undefined : "_blank"} rel={internal ? undefined : "noopener noreferrer"}>
       {label}
     </a>
   );
@@ -162,14 +177,14 @@ export default function Site() {
         </a>
 
         <nav className={menuOpen ? "nav-links open" : "nav-links"} aria-label="Primary" id="primary-navigation">
-          <a href="#products" onClick={closeMenu}>Products</a>
-          <a href="#gallery" onClick={closeMenu}>Gallery</a>
-          <a href="#pricing" onClick={closeMenu}>Pricing</a>
+          <a href="/prompts" onClick={closeMenu}>Prompts</a>
+          <a href="/tools" onClick={closeMenu}>Tools</a>
+          <a href="/pricing" onClick={closeMenu}>Pricing</a>
           <a href="#faq" onClick={closeMenu}>FAQ</a>
         </nav>
 
         <div className="nav-actions">
-          <a className="nav-cta" href="#pricing">Get access</a>
+          <a className="nav-cta" href="/pricing">Get access</a>
           <button
             className="menu-toggle"
             type="button"
@@ -189,7 +204,7 @@ export default function Site() {
           <h1 className="hero-animate hero-animate-2">Turn ideas into<br /><em>actual results.</em></h1>
           <p className="hero-lede hero-animate hero-animate-3">Curated tools, practical workflows, and purpose-built GPTs that help you move from possibility to finished work—faster.</p>
           <div className="hero-actions hero-animate hero-animate-4">
-            <a className="button primary" href="https://fluxora.wiki">View resources</a>
+            <a className="button primary" href="/prompts">View resources</a>
             <a className="button ghost" href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Join community</a>
           </div>
           <div className="hero-proof hero-animate hero-animate-5">
@@ -308,7 +323,7 @@ export default function Site() {
           <a className="brand" href="#top"><MoonMark /><span><b>Fluxora</b><small>Create. Ideate. Generate.</small></span></a>
           <p>Useful systems for ambitious ideas.</p>
         </div>
-        <div><small>Explore</small><a href="#products">Products</a><a href="#gallery">Gallery</a><a href="#pricing">Pricing</a></div>
+        <div><small>Explore</small><a href="/prompts">Prompts</a><a href="/tools">Tools</a><a href="/pricing">Pricing</a></div>
         <div><small>Connect</small><a href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Community</a><a href="https://www.facebook.com/meimeidigitalAI" target="_blank" rel="noopener noreferrer">Facebook</a></div>
         <div><small>Manage</small><a href="/admin">Admin panel</a><a href="#faq">FAQ</a></div>
         <p className="copyright">© 2026 Fluxora. All rights reserved.</p>
