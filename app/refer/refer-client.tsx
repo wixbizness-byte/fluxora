@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import styles from "./refer.module.css";
 
 type ReferralMember = {
-  id: number;
+  id: string;
   access_code: string;
   gmail: string;
   tier: string;
@@ -14,7 +14,7 @@ type ReferralMember = {
 
 type Referral = {
   id: number;
-  member_id: number;
+  member_id: string;
   referred_gmail: string;
   duration: "3 hours" | "1 day";
   tier: "Premium" | "Creator";
@@ -42,7 +42,7 @@ export default function ReferClient() {
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [createdMember, setCreatedMember] = useState<ReferralMember | null>(null);
   const [busy, setBusy] = useState(false);
-  const [revealed, setRevealed] = useState<Set<number>>(new Set());
+  const [revealed, setRevealed] = useState<Set<string>>(new Set());
 
   const sortedReferrals = useMemo(() => referrals, [referrals]);
 
@@ -120,7 +120,7 @@ export default function ReferClient() {
     setBusy(false);
   }
 
-  function toggleReveal(memberId: number) {
+  function toggleReveal(memberId: string) {
     setRevealed((current) => {
       const next = new Set(current);
       if (next.has(memberId)) next.delete(memberId);
@@ -201,7 +201,7 @@ export default function ReferClient() {
 
         {createdMember && (
           <div className={styles.createdBox}>
-            <div><span>New access code</span><strong>{createdMember.access_code}</strong><small>{createdMember.gmail} · {createdMember.status} · expires {createdMember.expires_at ? new Date(createdMember.expires_at).toLocaleString() : "never"}</small></div>
+            <div><span>New access code</span><strong>{createdMember.access_code}</strong><small>{createdMember.gmail} · {createdMember.status} · {createdMember.tier} · expires {createdMember.expires_at ? new Date(createdMember.expires_at).toLocaleString() : "never"}</small></div>
             <button type="button" onClick={() => copy(createdMember.access_code)}>Copy code</button>
           </div>
         )}
