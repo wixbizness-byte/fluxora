@@ -1,17 +1,5 @@
-import type { Metadata } from "next";
-import MemberManager from "./member-manager";
-import AffiliateAdmin from "./affiliate-admin";
-
-export const metadata: Metadata = {
-  title: "Member Manager | Fluxora",
-  description: "Manage Fluxora member access securely.",
-};
+import { redirect } from "next/navigation";
 
 export default function MemberPage() {
-  return (
-    <>
-      <MemberManager />
-      <AffiliateAdmin />
-    </>
-  );
+  redirect("/members");
 }
