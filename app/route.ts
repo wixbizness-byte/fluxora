@@ -365,7 +365,7 @@ export function GET() {
   return new Response(html, {
     headers: {
       "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "public, max-age=0, must-revalidate",
+      "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
     },
   });
 }
