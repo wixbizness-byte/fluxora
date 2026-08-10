@@ -71,8 +71,8 @@ export default function MembersPortal() {
     });
   }, []);
 
-  async function act(action: string, extra: Record<string, unknown> = {}) {
-    setBusy(action);
+  async function act(action: string, extra: Record<string, unknown> = {}, busyKey = action) {
+    setBusy(busyKey);
     setNotice("");
     setError("");
     const response = await fetch("/prompts/api/member-portal", {
@@ -186,6 +186,7 @@ export default function MembersPortal() {
         <div className={styles.deviceList}>
           {devices.map((device) => {
             const isCurrent = data.current_device_id === device.id;
+            const busyKey = `remove-${device.id}`;
             return (
               <article className={styles.device} key={device.id}>
                 <div>
@@ -193,12 +194,9 @@ export default function MembersPortal() {
                   <span>{device.browser || "Browser"} · {device.platform || "Unknown platform"}{isCurrent ? " · This device" : ""}</span>
                   <small>First used {formatDate(device.first_seen_at)} · Last active {formatDate(device.last_seen_at)}</small>
                 </div>
-                <button type="button" className={styles.removeButton} disabled={busy === `remove-${device.id}`} onClick={() => {
-                  if (window.confirm(`Remove ${device.device_name}?`)) {
-                    setBusy(`remove-${device.id}`);
-                    act("remove_device", { device_id: device.id });
-                  }
-                }}>{busy === `remove-${device.id}` ? "Removing…" : "Remove"}</button>
+                <button type="button" className={styles.removeButton} disabled={busy === busyKey} onClick={() => {
+                  if (window.confirm(`Remove ${device.device_name}?`)) act("remove_device", { device_id: device.id }, busyKey);
+                }}>{busy === busyKey ? "Removing…" : "Remove"}</button>
               </article>
             );
           })}
