@@ -5,6 +5,8 @@ import { fallbackAccessPlans, fallbackPaymentSettings, type AccessPlan, type Pay
 import { isSupabaseConfigured, queryRows } from "../lib/supabase";
 import styles from "./checkout.module.css";
 
+const TELEGRAM_URL = "https://t.me/PHAICommunity";
+
 type CheckoutPlan = AccessPlan & {
   price_php?: number | null;
   member_tier?: "Premium" | "Creator" | null;
@@ -138,14 +140,14 @@ export default function CheckoutClient() {
       </header>
 
       <section className={styles.hero}>
-        <p className={styles.kicker}>Temporary checkout</p>
-        <h1>Pay with GCash. We’ll activate your Fluxora access after confirmation.</h1>
-        <p>Your order is recorded immediately. Once payment is confirmed by admin, your member account is provisioned automatically.</p>
+        <p className={styles.kicker}>GCash checkout</p>
+        <h1>Pay with GCash. We’ll activate your Fluxora access after verification.</h1>
+        <p>Send the exact amount, submit your GCash reference, then continue to Telegram. Your access is activated only after the payment is verified.</p>
       </section>
 
       <section className={styles.grid}>
         <div className={styles.card}>
-          <h2>1. Choose access</h2>
+          <h2>1. Pay with GCash</h2>
           <div className={styles.planGrid}>
             {plans.map((plan) => {
               const price = plan.price_php || (plan.id === "creator" ? 1999 : 599);
@@ -159,30 +161,33 @@ export default function CheckoutClient() {
             <div><span>{payment.payment_label}</span><strong>{payment.payment_number}</strong></div>
             {payment.qr_image_url && <img src={payment.qr_image_url} alt={payment.qr_alt_text || "Fluxora GCash QR"} />}
           </div>
-          <p className={styles.note}>Send exactly <strong>₱{amount.toLocaleString()}</strong> and keep the GCash reference number.</p>
+          <p className={styles.note}>Send exactly <strong>₱{amount.toLocaleString()}</strong>. Save the GCash reference number shown after payment—you’ll need it below.</p>
         </div>
 
         <form className={styles.card} onSubmit={submit}>
-          <h2>2. Submit your order</h2>
+          <h2>2. Submit payment details</h2>
           <label>Full name<input name="buyer_name" required /></label>
           <label>Gmail for Fluxora access<input name="buyer_email" type="email" required placeholder="you@gmail.com" /></label>
           <label>Mobile number <span>optional</span><input name="buyer_phone" inputMode="tel" /></label>
           <label>GCash payer name<input name="payer_name" required /></label>
           <label>GCash reference number<input name="payment_reference" required inputMode="numeric" /></label>
           <label>Payment proof link <span>optional</span><input name="payment_proof_url" type="url" placeholder="Cloudinary/Drive image link" /></label>
-          <button className={styles.primary} disabled={submitting} type="submit">{submitting ? "Submitting…" : `Submit ₱${amount.toLocaleString()} order`}</button>
+          <button className={styles.primary} disabled={submitting} type="submit">{submitting ? "Submitting…" : `I paid ₱${amount.toLocaleString()} — Submit`}</button>
+          <p className={styles.formHint}>Submitting this form does not activate access by itself. Fluxora verifies the GCash payment first.</p>
           {error && <p className={styles.error}>{error}</p>}
         </form>
       </section>
 
       {order && <section className={styles.success}>
-        <p className={styles.kicker}>Order received</p>
+        <p className={styles.kicker}>Payment details received</p>
         <h2>{order.order_number}</h2>
-        <p>Your payment is awaiting manual confirmation. Keep this order number. Once approved, the status checker below will show your access code automatically.</p>
+        <p>Your order is now <strong>Pending Review</strong>. Keep this order number. After Fluxora verifies your GCash payment, your member access will be provisioned automatically.</p>
+        <a className={styles.telegramButton} href={TELEGRAM_URL} target="_blank" rel="noreferrer">Continue to Telegram</a>
+        <p className={styles.successNote}>For faster assistance, send your order number in Telegram: <strong>{order.order_number}</strong></p>
       </section>}
 
       <section className={styles.statusCard}>
-        <div><p className={styles.kicker}>Already paid?</p><h2>Check order status</h2><p>Use the order number and Gmail from checkout.</p></div>
+        <div><p className={styles.kicker}>Already submitted?</p><h2>Check order status</h2><p>Use the order number and Gmail from checkout.</p></div>
         <form onSubmit={checkStatus}>
           <input value={statusOrder} onChange={(e) => setStatusOrder(e.target.value)} required placeholder="Order number" />
           <input value={statusEmail} onChange={(e) => setStatusEmail(e.target.value)} required type="email" placeholder="Gmail" />
@@ -192,7 +197,7 @@ export default function CheckoutClient() {
           <strong>{statusResult.status.replaceAll("_", " ")}</strong>
           <span>{statusResult.plan_title} · ₱{statusResult.amount_php.toLocaleString()}</span>
           {statusResult.status === "approved" && statusResult.access_code && <><p>Your Fluxora access is active.</p><code>{statusResult.access_code}</code><a href="/members">Open member portal</a></>}
-          {statusResult.status === "rejected" && <p>{statusResult.rejection_reason || "Please contact Fluxora support for payment review."}</p>}
+          {statusResult.status === "rejected" && <><p>{statusResult.rejection_reason || "Please contact Fluxora support for payment review."}</p><a href={TELEGRAM_URL} target="_blank" rel="noreferrer">Contact Fluxora on Telegram</a></>}
         </div>}
       </section>
     </main>
