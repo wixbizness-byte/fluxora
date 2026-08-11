@@ -24,6 +24,10 @@ type Order = {
   rejection_reason: string | null;
   approved_at: string | null;
   created_at: string;
+  notification_status: string;
+  notification_attempts: number;
+  notification_sent_at: string | null;
+  notification_last_error: string | null;
 };
 
 type ProvisionResult = {
@@ -31,6 +35,14 @@ type ProvisionResult = {
   member_id: string;
   access_code: string;
   order_status: string;
+};
+
+type EmailSettings = {
+  enabled: boolean;
+  sender_email: string | null;
+  recipients: string[];
+  configured: boolean;
+  updated_at: string;
 };
 
 function config() {
@@ -72,6 +84,13 @@ export default function OrdersAdmin() {
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [emailEnabled, setEmailEnabled] = useState(false);
+  const [emailSender, setEmailSender] = useState("");
+  const [emailRecipients, setEmailRecipients] = useState("");
+  const [emailPassword, setEmailPassword] = useState("");
+  const [emailConfigured, setEmailConfigured] = useState(false);
+  const [emailSaving, setEmailSaving] = useState(false);
+  const [emailTesting, setEmailTesting] = useState(false);
 
   async function verify() {
     if (!isSupabaseConfigured()) { setChecking(false); return; }
@@ -90,11 +109,94 @@ export default function OrdersAdmin() {
     setOrders(data);
   }
 
+  async function loadEmailSettings(activeSession = session) {
+    if (!activeSession) return;
+    const rows = await adminFetch<EmailSettings[]>(activeSession, "rpc/get_order_email_settings", { method: "POST", body: "{}" });
+    const settings = rows[0];
+    if (!settings) return;
+    setEmailEnabled(settings.enabled);
+    setEmailSender(settings.sender_email || "");
+    setEmailRecipients((settings.recipients || []).join(", "));
+    setEmailConfigured(settings.configured);
+  }
+
   useEffect(() => { verify().catch((reason) => { setError(reason instanceof Error ? reason.message : "Could not verify admin access."); setChecking(false); }); }, []);
-  useEffect(() => { if (authorized && session) load(session).catch((reason) => setError(reason instanceof Error ? reason.message : "Could not load orders.")); }, [authorized, session]);
+  useEffect(() => {
+    if (!authorized || !session) return;
+    Promise.all([load(session), loadEmailSettings(session)]).catch((reason) => setError(reason instanceof Error ? reason.message : "Could not load order admin data."));
+  }, [authorized, session]);
 
   const visible = useMemo(() => filter === "all" ? orders : orders.filter((order) => order.status === filter), [orders, filter]);
   const pendingCount = orders.filter((order) => order.status === "pending_review").length;
+  const emailBadge = emailConfigured ? (emailEnabled ? "Live" : "Ready · disabled") : "Needs app password";
+
+  async function saveEmailSettings() {
+    if (!session) return;
+    setEmailSaving(true); setNotice(""); setError("");
+    try {
+      const recipients = emailRecipients.split(",").map((value) => value.trim()).filter(Boolean);
+      const rows = await adminFetch<EmailSettings[]>(session, "rpc/save_order_email_settings", {
+        method: "POST",
+        body: JSON.stringify({
+          p_enabled: emailEnabled,
+          p_sender_email: emailSender,
+          p_recipients: recipients,
+          p_app_password: emailPassword,
+        }),
+      });
+      const settings = rows[0];
+      if (settings) {
+        setEmailEnabled(settings.enabled);
+        setEmailSender(settings.sender_email || "");
+        setEmailRecipients((settings.recipients || []).join(", "));
+        setEmailConfigured(settings.configured);
+      }
+      setEmailPassword("");
+      setNotice(settings?.enabled ? "Gmail order alerts saved and enabled." : "Gmail order alert settings saved.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not save Gmail alert settings.");
+    } finally {
+      setEmailSaving(false);
+    }
+  }
+
+  async function testEmail() {
+    if (!session) return;
+    const { url, key } = config();
+    setEmailTesting(true); setNotice(""); setError("");
+    try {
+      const response = await fetch(`${url}/functions/v1/order-email-notify`, {
+        method: "POST",
+        headers: {
+          apikey: key,
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ mode: "test" }),
+      });
+      const data = await response.json().catch(() => null);
+      if (!response.ok) throw new Error(data?.error || "Test email failed.");
+      setNotice("Test email sent. Check the configured inboxes.");
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Test email failed.");
+    } finally {
+      setEmailTesting(false);
+    }
+  }
+
+  async function retryEmail(order: Order) {
+    if (!session) return;
+    setBusy(`email-${order.id}`); setNotice(""); setError("");
+    try {
+      await adminFetch<number | null>(session, "rpc/retry_order_email", { method: "POST", body: JSON.stringify({ p_order_id: order.id }) });
+      setNotice("Email alert retry queued.");
+      await load(session);
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : "Could not retry email alert.");
+    } finally {
+      setBusy("");
+    }
+  }
 
   async function approve(order: Order) {
     if (!session) return;
@@ -134,6 +236,24 @@ export default function OrdersAdmin() {
 
     {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
 
+    <section className={styles.emailCard}>
+      <div className={styles.emailHead}>
+        <div><p className={styles.kicker}>Notifications</p><h2>Gmail order alerts</h2><p>Get an email as soon as a buyer submits GCash payment details. The alert is not proof of payment — verify the actual GCash transaction before approving access.</p></div>
+        <span className={styles.emailBadge}>{emailBadge}</span>
+      </div>
+      <div className={styles.emailGrid}>
+        <label>Sender Gmail<input type="email" value={emailSender} onChange={(event) => setEmailSender(event.target.value)} placeholder="yourbusiness@gmail.com" /></label>
+        <label>Gmail App Password<input type="password" value={emailPassword} onChange={(event) => setEmailPassword(event.target.value)} placeholder={emailConfigured ? "Leave blank to keep current password" : "16-character Google app password"} autoComplete="new-password" /></label>
+        <label>Alert recipients <span>comma-separated</span><input value={emailRecipients} onChange={(event) => setEmailRecipients(event.target.value)} placeholder="owner@gmail.com, assistant@gmail.com" /></label>
+      </div>
+      <label className={styles.emailToggle}><input type="checkbox" checked={emailEnabled} onChange={(event) => setEmailEnabled(event.target.checked)} /><span>Enable new-order email alerts</span></label>
+      <div className={styles.emailActions}>
+        <button type="button" disabled={emailSaving} onClick={saveEmailSettings}>{emailSaving ? "Saving…" : "Save settings"}</button>
+        <button type="button" disabled={!emailConfigured || emailTesting} onClick={testEmail}>{emailTesting ? "Sending…" : "Send test email"}</button>
+      </div>
+      <p className={styles.emailSecurity}>The Gmail app password is encrypted in Supabase Vault and is never displayed again after saving.</p>
+    </section>
+
     <nav className={styles.filters}>
       {["pending_review", "approved", "rejected", "all"].map((value) => <button className={filter === value ? styles.active : ""} key={value} type="button" onClick={() => setFilter(value)}>{value.replaceAll("_", " ")}</button>)}
     </nav>
@@ -146,9 +266,12 @@ export default function OrdersAdmin() {
           <span><b>GCash payer</b>{order.payer_name}</span>
           <span><b>Reference</b>{order.payment_reference}</span>
           <span><b>Submitted</b>{formatDate(order.created_at)}</span>
+          <span><b>Email alert</b>{(order.notification_status || "pending").replaceAll("_", " ")}{order.notification_sent_at && <small>{formatDate(order.notification_sent_at)}</small>}</span>
           {order.buyer_phone && <span><b>Phone</b>{order.buyer_phone}</span>}
           {order.approved_at && <span><b>Approved</b>{formatDate(order.approved_at)}</span>}
         </div>
+        {order.notification_last_error && <p className={styles.emailError}>Email: {order.notification_last_error}</p>}
+        {(order.notification_status === "failed" || order.notification_status === "disabled") && <button className={styles.emailRetry} disabled={busy === `email-${order.id}` || !emailConfigured || !emailEnabled} type="button" onClick={() => retryEmail(order)}>{busy === `email-${order.id}` ? "Retrying…" : "Retry email alert"}</button>}
         {order.payment_proof_url && <a className={styles.proof} href={order.payment_proof_url} target="_blank" rel="noopener noreferrer">Open payment proof ↗</a>}
         {order.rejection_reason && <p className={styles.reason}>{order.rejection_reason}</p>}
         {order.status === "pending_review" && <div className={styles.orderActions}><button className={styles.approve} disabled={busy === order.id} type="button" onClick={() => approve(order)}>{busy === order.id ? "Working…" : "Confirm & Provision"}</button><button className={styles.reject} disabled={busy === order.id} type="button" onClick={() => reject(order)}>Reject</button></div>}
