@@ -28,8 +28,8 @@ type ApiResponse = {
 
 const PAGE_SIZE = 10;
 const MEMBER_STATUSES = [
-  "active", "fixed", "3 hours", "1 day", "1 week", "1 month", "3 months", "6 months", "1 year", "lifetime",
-  "used_up", "inactive", "blocked", "disabled", "denied", "expired",
+  "active", "3 hours", "1 day", "1 week", "1 month", "3 months", "6 months", "1 year",
+  "inactive", "blocked",
 ];
 
 function formatLocalDate(value: string | null) {
