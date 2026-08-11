@@ -42,6 +42,7 @@ export default function TrialAdmin() {
   const [summary, setSummary] = useState({ total: 0, active: 0, expired: 0 });
   const [query, setQuery] = useState("");
   const [loading, setLoading] = useState(true);
+  const [unauthorized, setUnauthorized] = useState(false);
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
@@ -50,11 +51,17 @@ export default function TrialAdmin() {
     setLoading(true);
     const response = await fetch("/prompts/api/trials", { cache: "no-store", credentials: "include" });
     const body = (await response.json().catch(() => ({}))) as TrialResponse;
+    if (response.status === 401 || response.status === 403) {
+      setUnauthorized(true);
+      setLoading(false);
+      return;
+    }
     if (!response.ok) {
       setError(body.error || "Could not load Google trial claims.");
       setLoading(false);
       return;
     }
+    setUnauthorized(false);
     setTrials(body.trials || []);
     setSummary(body.summary || { total: 0, active: 0, expired: 0 });
     setError("");
@@ -97,6 +104,8 @@ export default function TrialAdmin() {
     }
     setBusy("");
   }
+
+  if (unauthorized) return null;
 
   return (
     <section className={styles.panel}>
