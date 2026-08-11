@@ -16,6 +16,10 @@ const nextConfig: NextConfig = {
         destination: `${PROMPTS_ORIGIN}/prompts/:path*`,
       },
       {
+        source: "/trial",
+        destination: `${TOOLS_ORIGIN}/tools/trial`,
+      },
+      {
         source: "/tools",
         destination: `${TOOLS_ORIGIN}/tools`,
       },
