@@ -56,7 +56,7 @@ function payloadFromForm(form: HTMLFormElement) {
     tier: String(data.get("tier") || "Premium"),
     status: String(data.get("status") || "active"),
     max_uses: String(data.get("max_uses") || "").trim() || null,
-    max_devices: String(data.get("max_devices") || "3").trim() || "3",
+    max_devices: String(data.get("max_devices") || "5").trim() || "5",
     expires_at: String(data.get("expires_at") || "").trim() || null,
     notes: String(data.get("notes") || "").trim() || null,
     account_link: String(data.get("account_link") || "").trim() || null,
@@ -88,7 +88,7 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Max web devices</span>
-        <input name="max_devices" type="number" min="1" max="20" required defaultValue={member?.max_devices ?? 3} />
+        <input name="max_devices" type="number" min="1" max="20" required defaultValue={member?.max_devices ?? 5} />
       </label>
       <label className={styles.field}>
         <span>Expires at</span>
@@ -229,7 +229,7 @@ export default function MemberManager() {
         return <article className={styles.item} key={member.id}>
           <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}</span></div><span className={`${styles.status} ${member.status === "active" ? styles.active : styles.inactive}`}>{member.status}</span></div>
           <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
-          <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Web devices: {member.device_count ?? 0} / {member.max_devices ?? 3}</span><span>Canvas: {member.canvas_count ?? 0} / {canvasLimit}</span><span>{displayDate(member.expires_at)}</span></div>
+          <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Web devices: {member.device_count ?? 0} / {member.max_devices ?? 5}</span><span>Canvas: {member.canvas_count ?? 0} / {canvasLimit}</span><span>{displayDate(member.expires_at)}</span></div>
           {member.notes && <p className={styles.notes}>{member.notes}</p>}
           {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
           <div className={styles.quickActions}><button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : member.status === "active" ? "Disable" : "Activate"}</button>
