@@ -20,6 +20,14 @@ const nextConfig: NextConfig = {
         destination: `${TOOLS_ORIGIN}/tools/trial`,
       },
       {
+        source: "/legacy",
+        destination: `${TOOLS_ORIGIN}/tools/legacy`,
+      },
+      {
+        source: "/legacy/:path*",
+        destination: `${TOOLS_ORIGIN}/tools/legacy/:path*`,
+      },
+      {
         source: "/tools",
         destination: `${TOOLS_ORIGIN}/tools`,
       },
