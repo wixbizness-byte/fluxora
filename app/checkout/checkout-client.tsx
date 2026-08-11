@@ -67,6 +67,7 @@ export default function CheckoutClient() {
   const [statusOrder, setStatusOrder] = useState("");
   const [statusResult, setStatusResult] = useState<StatusResult | null>(null);
   const [checking, setChecking] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<"" | "payment" | "order" | "access">("");
 
   useEffect(() => {
     const requested = new URLSearchParams(window.location.search).get("plan");
@@ -83,6 +84,16 @@ export default function CheckoutClient() {
 
   const selected = useMemo(() => plans.find((plan) => plan.id === selectedId) || plans[0], [plans, selectedId]);
   const amount = selected?.price_php || (selected?.id === "creator" ? 1999 : 599);
+
+  async function copyValue(value: string, key: "payment" | "order" | "access") {
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopiedKey(key);
+      window.setTimeout(() => setCopiedKey((current) => current === key ? "" : current), 1600);
+    } catch {
+      setError("Could not copy automatically. Press and hold the value to copy it.");
+    }
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -158,7 +169,13 @@ export default function CheckoutClient() {
           </div>
 
           <div className={styles.paymentBox}>
-            <div><span>{payment.payment_label}</span><strong>{payment.payment_number}</strong></div>
+            <div>
+              <span>{payment.payment_label}</span>
+              <button type="button" className={styles.copyValue} onClick={() => copyValue(payment.payment_number, "payment")}>
+                <strong>{payment.payment_number}</strong>
+                <small>{copiedKey === "payment" ? "Copied!" : "Tap to copy"}</small>
+              </button>
+            </div>
             {payment.qr_image_url && <img src={payment.qr_image_url} alt={payment.qr_alt_text || "Fluxora GCash QR"} />}
           </div>
           <p className={styles.note}>Send exactly <strong>₱{amount.toLocaleString()}</strong>. Save the GCash reference number shown after payment—you’ll need it below.</p>
@@ -180,7 +197,10 @@ export default function CheckoutClient() {
 
       {order && <section className={styles.success}>
         <p className={styles.kicker}>Payment details received</p>
-        <h2>{order.order_number}</h2>
+        <button type="button" className={styles.orderCopy} onClick={() => copyValue(order.order_number, "order")}>
+          <strong>{order.order_number}</strong>
+          <small>{copiedKey === "order" ? "Copied!" : "Tap to copy order number"}</small>
+        </button>
         <p>Your order is now <strong>Pending Review</strong>. Keep this order number. After Fluxora verifies your GCash payment, your member access will be provisioned automatically.</p>
         <a className={styles.telegramButton} href={TELEGRAM_URL} target="_blank" rel="noreferrer">Continue to Telegram</a>
         <p className={styles.successNote}>For faster assistance, send your order number in Telegram: <strong>{order.order_number}</strong></p>
@@ -196,7 +216,14 @@ export default function CheckoutClient() {
         {statusResult && <div className={styles.statusResult}>
           <strong>{statusResult.status.replaceAll("_", " ")}</strong>
           <span>{statusResult.plan_title} · ₱{statusResult.amount_php.toLocaleString()}</span>
-          {statusResult.status === "approved" && statusResult.access_code && <><p>Your Fluxora access is active.</p><code>{statusResult.access_code}</code><a href="/members">Open member portal</a></>}
+          {statusResult.status === "approved" && statusResult.access_code && <>
+            <p>Your Fluxora access is active.</p>
+            <button type="button" className={styles.accessCodeCopy} onClick={() => copyValue(statusResult.access_code!, "access")}>
+              <code>{statusResult.access_code}</code>
+              <small>{copiedKey === "access" ? "Copied!" : "Tap to copy"}</small>
+            </button>
+            <a href="/members">Open member portal</a>
+          </>}
           {statusResult.status === "rejected" && <><p>{statusResult.rejection_reason || "Please contact Fluxora support for payment review."}</p><a href={TELEGRAM_URL} target="_blank" rel="noreferrer">Contact Fluxora on Telegram</a></>}
         </div>}
       </section>
