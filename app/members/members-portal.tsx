@@ -32,6 +32,8 @@ type PortalResponse = {
   email?: string;
   member?: Member;
   devices?: Device[];
+  canvas_devices?: Device[];
+  canvas_limit?: number | null;
   current_device_id?: string | null;
   access_code?: string;
   message?: string;
@@ -98,8 +100,11 @@ export default function MembersPortal() {
   }
 
   const devices = data?.devices || [];
+  const canvasDevices = data?.canvas_devices || [];
   const member = data?.member;
+  const canvasLimit = data?.canvas_limit ?? (member?.status === "google_trial" ? 3 : 5);
   const remaining = useMemo(() => member ? Math.max(0, member.max_devices - devices.length) : 0, [member, devices.length]);
+  const canvasRemaining = useMemo(() => Math.max(0, canvasLimit - canvasDevices.length), [canvasLimit, canvasDevices.length]);
 
   if (loading) {
     return <main className={styles.page}><section className={styles.centerCard}><p>Loading your Fluxora membership…</p></section></main>;
@@ -134,6 +139,7 @@ export default function MembersPortal() {
   }
 
   const atLimit = devices.length >= member.max_devices;
+  const canvasAtLimit = canvasDevices.length >= canvasLimit;
 
   return (
     <main className={styles.page}>
@@ -156,10 +162,12 @@ export default function MembersPortal() {
         <article><span>Tier</span><strong>{member.tier}</strong></article>
         <article><span>Status</span><strong>{member.status}</strong></article>
         <article><span>Web devices</span><strong>{devices.length} / {member.max_devices}</strong></article>
+        <article><span>Canvas sessions</span><strong>{canvasDevices.length} / {canvasLimit}</strong></article>
         <article><span>Expires</span><strong className={styles.smallStrong}>{formatDate(member.expires_at)}</strong></article>
       </section>
 
-      {atLimit && <div className={styles.warning}>Your web-device limit is full. Remove one registered browser before enrolling another Fluxora web device. CustomGPT and Gemini code checks do not use these slots.</div>}
+      {atLimit && <div className={styles.warning}>Your web-device limit is full. Remove one registered browser before enrolling another Fluxora web device.</div>}
+      {canvasAtLimit && <div className={styles.warning}>Your Gemini Canvas session limit is full. Remove an old Canvas session before authorizing a new Canvas.</div>}
 
       <section className={styles.panel}>
         <div className={styles.panelHeading}>
@@ -169,7 +177,7 @@ export default function MembersPortal() {
           <button type="button" onClick={() => setRevealed((value) => !value)}>{revealed ? member.access_code : "••••••••"}</button>
           {revealed && <button className={styles.secondaryButton} type="button" onClick={() => navigator.clipboard.writeText(member.access_code).then(() => setNotice("Access code copied."))}>Copy</button>}
         </div>
-        <p className={styles.help}>Resetting your code invalidates the old code for new verifications, including CustomGPT/Gemini checks. Your already-registered Fluxora web devices stay authorized.</p>
+        <p className={styles.help}>Resetting your code invalidates the old code for new verifications. Already-authorized web devices and Canvas sessions stay registered until removed.</p>
         <button className={styles.dangerButton} type="button" disabled={busy === "reset_code"} onClick={() => {
           if (window.confirm("Generate a new access code? The old code will stop working for new verifications.")) act("reset_code");
         }}>{busy === "reset_code" ? "Resetting…" : "Reset access code"}</button>
@@ -177,7 +185,7 @@ export default function MembersPortal() {
 
       <section className={styles.panel}>
         <div className={styles.panelHeading}>
-          <div><p className={styles.kicker}>Web access</p><h2>Current Devices</h2><p>{remaining} slot{remaining === 1 ? "" : "s"} available · default limit is controlled by your membership.</p></div>
+          <div><p className={styles.kicker}>Web access</p><h2>Current Devices</h2><p>{remaining} slot{remaining === 1 ? "" : "s"} available · Canvas sessions do not consume these slots.</p></div>
           {devices.length > 0 && <button className={styles.secondaryButton} type="button" disabled={busy === "reset_devices"} onClick={() => {
             if (window.confirm("Remove every registered Fluxora web device? Each browser will need the current code to register again.")) act("reset_devices");
           }}>{busy === "reset_devices" ? "Removing…" : "Remove all"}</button>}
@@ -204,9 +212,37 @@ export default function MembersPortal() {
         </div>
       </section>
 
+      <section className={styles.panel}>
+        <div className={styles.panelHeading}>
+          <div><p className={styles.kicker}>Gemini access</p><h2>Canvas Sessions</h2><p>{canvasRemaining} slot{canvasRemaining === 1 ? "" : "s"} available · separate from your web-device quota.</p></div>
+          {canvasDevices.length > 0 && <button className={styles.secondaryButton} type="button" disabled={busy === "reset_canvas_devices"} onClick={() => {
+            if (window.confirm("Remove every registered Gemini Canvas session? Each Canvas will need the current code to authorize again.")) act("reset_canvas_devices");
+          }}>{busy === "reset_canvas_devices" ? "Removing…" : "Remove all"}</button>}
+        </div>
+
+        <div className={styles.deviceList}>
+          {canvasDevices.map((device) => {
+            const busyKey = `remove-canvas-${device.id}`;
+            return (
+              <article className={styles.device} key={device.id}>
+                <div>
+                  <strong>{device.device_name || "Fluxora Canvas"}</strong>
+                  <span>Gemini Canvas session</span>
+                  <small>First authorized {formatDate(device.first_seen_at)} · Last active {formatDate(device.last_seen_at)}</small>
+                </div>
+                <button type="button" className={styles.removeButton} disabled={busy === busyKey} onClick={() => {
+                  if (window.confirm("Remove this Gemini Canvas session?")) act("remove_canvas_device", { device_id: device.id }, busyKey);
+                }}>{busy === busyKey ? "Removing…" : "Remove"}</button>
+              </article>
+            );
+          })}
+          {!canvasDevices.length && <div className={styles.empty}>No Gemini Canvas sessions are registered yet.</div>}
+        </div>
+      </section>
+
       <section className={styles.infoPanel}>
         <strong>What counts as a device?</strong>
-        <p>Only Fluxora web browser enrollment counts toward this limit. CustomGPT, Gemini, Canvas, and other external code validations do not consume a device slot.</p>
+        <p>Fluxora web browsers and Gemini Canvas sessions use separate quotas. CustomGPT code checks do not consume either device quota.</p>
       </section>
     </main>
   );
