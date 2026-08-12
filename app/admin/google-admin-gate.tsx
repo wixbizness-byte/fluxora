@@ -121,7 +121,39 @@ export default function GoogleAdminGate() {
     return <main className={styles.adminPage}><section className={styles.emptyState}><p>Checking access…</p></section></main>;
   }
 
-  if (hasSession) return <AdminClient />;
+  if (hasSession) {
+    return (
+      <>
+        <a
+          href="/admin/accounts"
+          style={{
+            position: "fixed",
+            right: 18,
+            bottom: 18,
+            zIndex: 1000,
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 42,
+            padding: "0 18px",
+            borderRadius: 999,
+            border: "1px solid rgba(255,255,255,.18)",
+            background: "#7a1d3c",
+            color: "#fff7f3",
+            boxShadow: "0 14px 35px rgba(0,0,0,.3)",
+            fontSize: ".72rem",
+            fontWeight: 800,
+            letterSpacing: ".06em",
+            textDecoration: "none",
+            textTransform: "uppercase",
+          }}
+        >
+          Admin Accounts
+        </a>
+        <AdminClient />
+      </>
+    );
+  }
 
   return (
     <main className={styles.adminPage}>
