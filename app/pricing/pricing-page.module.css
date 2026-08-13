@@ -66,26 +66,35 @@
 
 .pricingPage :global(.pricing-tier-tabs button) {
   min-height: 48px;
+  display: grid;
+  place-items: center;
   padding: 0 16px;
-  border: 1px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--rose) 48%, transparent);
   border-radius: 14px;
-  background: transparent;
-  color: var(--muted);
+  background: color-mix(in srgb, var(--wine) 26%, var(--paper));
+  color: #fbf4ef;
+  text-align: center;
+  line-height: 1;
   font: inherit;
   font-size: 13px;
   font-weight: 900;
   letter-spacing: 0.02em;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+  box-shadow: inset 0 1px 0 rgba(251, 244, 239, 0.04);
+  transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .pricingPage :global(.pricing-tier-tabs button:hover) {
   transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--rose) 72%, transparent);
+  background: color-mix(in srgb, var(--wine) 40%, var(--paper));
 }
 
 .pricingPage :global(.pricing-tier-tabs button.active) {
   color: #fbf4ef;
+  border-color: var(--rose);
   background: var(--wine);
+  box-shadow: 0 10px 24px rgba(113, 30, 56, 0.28);
 }
 
 .pricingPage :global(.pricing-tier-summary) {
@@ -105,8 +114,13 @@
 
 .pricingPage :global(.pricing-tier-summary p) {
   width: min(760px, 100%);
-  margin: 0;
+  display: block;
+  justify-self: center;
+  align-self: center;
+  margin: 0 auto;
+  padding-inline: 12px;
   color: var(--muted);
+  text-align: center;
   font-size: 15px;
   line-height: 1.7;
   white-space: pre-line;
@@ -118,13 +132,16 @@
   display: inline-grid;
   place-items: center;
   padding: 0 24px;
+  border: 1px solid var(--rose);
   border-radius: 999px;
   color: #fbf4ef;
   background: var(--wine);
+  text-align: center;
+  line-height: 1;
   font-size: 12px;
   font-weight: 900;
   letter-spacing: 0.02em;
-  box-shadow: 0 14px 30px rgba(113, 30, 56, 0.2);
+  box-shadow: 0 14px 30px rgba(113, 30, 56, 0.28);
 }
 
 .pricingPage :global(.pricing-resource-groups) {
@@ -269,6 +286,9 @@
   }
 
   .pricingPage :global(.pricing-tier-summary p) {
+    width: 100%;
+    padding-inline: 6px;
+    text-align: center;
     font-size: 14px;
   }
 
