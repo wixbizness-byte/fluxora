@@ -374,6 +374,19 @@ export const homeHtml = String.raw`<!doctype html>
     .card-button:hover::after,
     .card-button:focus-visible::after { transform: translate(3px, -3px); }
 
+    .card-button.disabled {
+      opacity: 0.58;
+      cursor: not-allowed;
+      user-select: none;
+      pointer-events: none;
+      box-shadow: none;
+    }
+
+    .card-button.disabled::after {
+      content: "";
+      margin-left: 0;
+    }
+
     .footer {
       padding: 52px 0 10px;
       text-align: center;
@@ -513,7 +526,7 @@ export const homeHtml = String.raw`<!doctype html>
       <article class="destination-card" style="--delay:80ms">
         <div class="card-number" aria-hidden="true">03</div>
         <div class="card-content"><span class="card-label">Gallery</span><h2>Prompt Gallery</h2><p>Discover, study, copy, and adapt prompts behind standout AI visuals and creator-ready concepts.</p></div>
-        <a class="card-button" href="/prompts" target="_blank" rel="noopener noreferrer">Browse Gallery</a>
+        <span class="card-button disabled" aria-disabled="true">In Construction</span>
       </article>
 
       <article class="destination-card" style="--delay:80ms">
