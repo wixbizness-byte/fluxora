@@ -4,7 +4,7 @@ export default function PricingPage() {
   return (
     <div className="pricing-page">
       <style>{`.pricing-page .easy-payments { display: none !important; }`}</style>
-      <Site />
+      <Site pricingMode />
     </div>
   );
 }
