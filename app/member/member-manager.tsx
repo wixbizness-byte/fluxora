@@ -254,8 +254,9 @@ export default function MemberManager() {
   async function copyCode(code: string) { await navigator.clipboard.writeText(code); setNotice("Access code copied."); }
 
   function focusActivity(item: Activity) {
+    const isTrial = item.status.toLowerCase() === "google_trial";
     setFilter("all");
-    setQuery(item.access_code);
+    setQuery(isTrial ? item.access_code : item.gmail);
     window.scrollTo({ top: 180, behavior: "smooth" });
   }
 
@@ -319,14 +320,17 @@ export default function MemberManager() {
       </section>
 
       <aside className={layout.activityRail}>
-        <div className={layout.activityHeading}><p className={styles.kicker}>Since 12:00 AM PH</p><h2>Active codes today</h2></div>
+        <div className={layout.activityHeading}><p className={styles.kicker}>Since 12:00 AM PH</p><h2>Active access today</h2></div>
         <div className={layout.activityList}>
-          {activity.map((item) => <button type="button" key={item.member_id} className={layout.activityItem} onClick={() => focusActivity(item)}>
-            <span className={layout.activityCode}>{item.access_code}</span>
-            <strong>{item.uses} {item.uses === 1 ? "use" : "uses"}</strong>
-            <small>{item.tier} • Last {phTime(item.last_used_at)}</small>
-            {item.canvas_devices >= 4 && <em>{item.canvas_devices} Canvas registrations today{item.canvas_devices >= 6 ? " • Check" : ""}</em>}
-          </button>)}
+          {activity.map((item) => {
+            const isTrial = item.status.toLowerCase() === "google_trial";
+            return <button type="button" key={item.member_id} className={layout.activityItem} onClick={() => focusActivity(item)}>
+              <span className={layout.activityCode}>{isTrial ? item.access_code : item.gmail}</span>
+              <strong>{item.uses} {item.uses === 1 ? "use" : "uses"}</strong>
+              <small>{isTrial ? "Trial" : item.tier} • Last {phTime(item.last_used_at)}</small>
+              {item.canvas_devices >= 4 && <em>{item.canvas_devices} Canvas registrations today{item.canvas_devices >= 6 ? " • Check" : ""}</em>}
+            </button>;
+          })}
           {!activity.length && <p className={layout.activityEmpty}>No successful code authorizations yet today.</p>}
         </div>
       </aside>
