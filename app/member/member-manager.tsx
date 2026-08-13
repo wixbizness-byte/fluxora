@@ -108,7 +108,10 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Status *</span>
-        <select name="status" defaultValue={member?.status || "active"}>{MEMBER_STATUSES.map((status) => <option value={status} key={status}>{status}</option>)}</select>
+        <select name="status" defaultValue={member?.status || "active"}>
+          {member?.status === "google_trial" && <option value="google_trial">Google Trial</option>}
+          {MEMBER_STATUSES.map((status) => <option value={status} key={status}>{status}</option>)}
+        </select>
       </label>
       <label className={styles.field}>
         <span>Max uses</span>
@@ -298,14 +301,17 @@ export default function MemberManager() {
           const isRevealed = revealed.has(member.id);
           const canvasLimit = member.canvas_limit === null ? "unlimited" : String(member.canvas_limit ?? (member.status === "google_trial" ? 6 : 8));
           const activeLike = member.status === "active" || member.status === "google_trial";
+          const isTrial = member.status.toLowerCase() === "google_trial";
           return <article className={styles.item} key={member.id}>
             <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{member.status}</span></div>
             <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
             <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Web devices: {member.device_count ?? 0} / {member.max_devices ?? 5}</span><span>Canvas: {member.canvas_count ?? 0} / {canvasLimit}</span><span>{displayDate(member.expires_at)}</span></div>
             {member.notes && <p className={styles.notes}>{member.notes}</p>}
             {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
-            <div className={styles.quickActions}><button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : member.status === "active" ? "Disable" : "Activate"}</button>
-              <details className={styles.editPanel}><summary>Edit</summary><form className={styles.form} onSubmit={(event) => updateMember(event, member.id)}><MemberFields member={member} /><button className={styles.primaryButton} disabled={busy === `update-${member.id}`} type="submit">{busy === `update-${member.id}` ? "Saving…" : "Save Member"}</button></form></details></div>
+            <div className={styles.quickActions}>
+              {!isTrial && <button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : member.status === "active" ? "Disable" : "Activate"}</button>}
+              <details className={styles.editPanel}><summary>Edit</summary><form className={styles.form} onSubmit={(event) => updateMember(event, member.id)}><MemberFields member={member} /><button className={styles.primaryButton} disabled={busy === `update-${member.id}`} type="submit">{busy === `update-${member.id}` ? "Saving…" : "Save Member"}</button></form></details>
+            </div>
           </article>;
         })}{!visible.length && <div className={styles.emptyState}>No members match this filter.</div>}</div>
 
