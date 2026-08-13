@@ -15,6 +15,14 @@ function fallbackPrice(planId: string | undefined) {
   return 599;
 }
 
+function planDisplayName(plan: CheckoutPlan | undefined) {
+  if (!plan) return "Fluxora access";
+  if (plan.id === "tool") return "Tool";
+  if (plan.id === "premium") return "Premium";
+  if (plan.id === "creator") return "Creator";
+  return plan.title.replace(/\s*\(₱?[\d,]+\)\s*$/i, "").trim() || plan.title;
+}
+
 export default function CheckoutClient() {
   const [plans, setPlans] = useState<CheckoutPlan[]>(fallbackAccessPlans);
   const [payment, setPayment] = useState<PaymentSettings>(fallbackPaymentSettings);
@@ -78,7 +86,7 @@ export default function CheckoutClient() {
                     onClick={() => setSelectedId(plan.id)}
                     className={selected?.id === plan.id ? styles.planActive : styles.plan}
                   >
-                    <span>{plan.title}</span>
+                    <span>{planDisplayName(plan)}</span>
                     <strong>₱{price.toLocaleString()}</strong>
                   </button>
                 );
@@ -99,7 +107,7 @@ export default function CheckoutClient() {
             </div>
 
             <p className={styles.note}>
-              Send exactly <strong>₱{amount.toLocaleString()}</strong> for <strong>{selected?.title || "Fluxora access"}</strong>.
+              Send exactly <strong>₱{amount.toLocaleString()}</strong> for <strong>{planDisplayName(selected)}</strong>.
             </p>
           </div>
 
