@@ -1,0 +1,109 @@
+.draft :global(.pricing-tier-summary > p) {
+  width: min(620px, 100%);
+}
+
+.copyBlock {
+  width: 100%;
+  display: grid;
+  gap: 14px;
+  color: var(--muted);
+}
+
+.copyIntro,
+.copyFooter {
+  margin: 0;
+  text-align: left;
+  line-height: 1.65;
+}
+
+.copyFooter {
+  padding-top: 4px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.benefitList {
+  width: 100%;
+  margin: 0;
+  padding-left: 1.5rem;
+  display: grid;
+  gap: 8px;
+  text-align: left;
+  line-height: 1.55;
+}
+
+.benefitList li {
+  padding-left: 4px;
+}
+
+.counts {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  width: 100%;
+  margin-top: 2px;
+}
+
+.countChip {
+  min-width: 108px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 9px 13px;
+  border: 2px solid rgba(75, 16, 36, 0.22);
+  border-radius: 999px;
+  background: rgba(255, 250, 247, 0.94);
+  color: var(--ink);
+}
+
+.countChip strong {
+  font-size: 14px;
+  line-height: 1;
+  color: var(--wine);
+}
+
+.countChip span {
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .draft :global(.pricing-tier-tabs) {
+    position: sticky;
+    top: 70px;
+    z-index: 45;
+    margin-inline: -2px;
+    border: 2px solid rgba(75, 16, 36, 0.28) !important;
+    border-radius: 16px !important;
+    background: rgba(251, 244, 239, 0.97) !important;
+    box-shadow: 0 10px 30px rgba(75, 16, 36, 0.10) !important;
+    backdrop-filter: blur(12px);
+  }
+
+  .draft :global(.pricing-tier-summary) {
+    border-top: 2px solid rgba(75, 16, 36, 0.24) !important;
+    border-radius: 16px !important;
+    margin-top: 12px !important;
+  }
+
+  .copyBlock {
+    gap: 12px;
+  }
+
+  .benefitList {
+    gap: 7px;
+    padding-left: 1.35rem;
+  }
+
+  .counts {
+    gap: 7px;
+  }
+
+  .countChip {
+    min-width: 0;
+    padding: 8px 11px;
+  }
+}
