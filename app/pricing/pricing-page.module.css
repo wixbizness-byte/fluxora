@@ -109,20 +109,18 @@
   border-radius: 0 0 20px 20px;
   background: color-mix(in srgb, var(--paper) 92%, transparent);
   box-shadow: var(--shadow);
-  text-align: center;
 }
 
 .pricingPage :global(.pricing-tier-summary p) {
-  width: min(760px, 100%);
+  width: min(520px, 100%);
   display: block;
   justify-self: center;
-  align-self: center;
   margin: 0 auto;
-  padding-inline: 12px;
+  padding: 0;
   color: var(--muted);
-  text-align: center;
+  text-align: left;
   font-size: 15px;
-  line-height: 1.7;
+  line-height: 1.8;
   white-space: pre-line;
 }
 
@@ -286,9 +284,9 @@
   }
 
   .pricingPage :global(.pricing-tier-summary p) {
-    width: 100%;
-    padding-inline: 6px;
-    text-align: center;
+    width: min(520px, 100%);
+    padding: 0;
+    text-align: left;
     font-size: 14px;
   }
 
