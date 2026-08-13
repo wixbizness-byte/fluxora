@@ -277,7 +277,7 @@ export default function Site({ pricingMode = false }: { pricingMode?: boolean })
           <h1 className="hero-animate hero-animate-2">Turn ideas into<br /><em>actual results.</em></h1>
           <p className="hero-lede hero-animate hero-animate-3">Curated tools, practical workflows, and purpose-built GPTs that help you move from possibility to finished work—faster.</p>
           <div className="hero-actions hero-animate hero-animate-4">
-            <a className="button primary" href="/prompts">View resources</a>
+            <a className="button primary" href="https://t.me/meimeiwix" target="_blank" rel="noopener noreferrer">Contact Fluxora</a>
             <a className="button ghost" href="https://t.me/PHAICommunity" target="_blank" rel="noopener noreferrer">Join community</a>
           </div>
           <div className="hero-proof hero-animate hero-animate-5">
