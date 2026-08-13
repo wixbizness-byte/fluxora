@@ -232,7 +232,11 @@ export default function Site() {
                 <span className="card-eyebrow">{card.eyebrow}</span>
                 <h3>{card.title}</h3>
                 <p>{card.description}</p>
-                <CardButton label={card.button_label} url={card.button_url} className="card-button" />
+                <CardButton
+                  label={card.title.trim().toLowerCase() === "prompt builder" ? "In Construction" : card.button_label}
+                  url={card.title.trim().toLowerCase() === "prompt builder" ? "" : card.button_url}
+                  className="card-button"
+                />
               </div>
             </article>
           ))}
