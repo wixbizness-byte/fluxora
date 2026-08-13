@@ -8,7 +8,7 @@ type Member = {
   id: string;
   access_code: string;
   gmail: string;
-  tier: "Premium" | "Creator";
+  tier: "Tool" | "Premium" | "Creator";
   status: string;
   max_uses: number | null;
   use_count: number | null;
@@ -26,7 +26,7 @@ type Activity = {
   member_id: string;
   access_code: string;
   gmail: string;
-  tier: "Premium" | "Creator";
+  tier: "Tool" | "Premium" | "Creator";
   status: string;
   uses: number;
   last_used_at: string;
@@ -43,7 +43,7 @@ type ApiResponse = {
   error?: string;
 };
 
-type MemberFilter = "all" | "trial" | "members" | "premium" | "creator" | "affiliate";
+type MemberFilter = "all" | "trial" | "members" | "tool" | "premium" | "creator" | "affiliate";
 
 const PAGE_SIZE = 10;
 const MEMBER_STATUSES = [
@@ -78,13 +78,14 @@ function phTime(value: string) {
 
 function payloadFromForm(form: HTMLFormElement) {
   const data = new FormData(form);
+  const tier = String(data.get("tier") || "Premium");
   return {
     access_code: String(data.get("access_code") || "").trim(),
     gmail: String(data.get("gmail") || "").trim(),
-    tier: String(data.get("tier") || "Premium"),
+    tier,
     status: String(data.get("status") || "active"),
     max_uses: String(data.get("max_uses") || "").trim() || null,
-    max_devices: String(data.get("max_devices") || "5").trim() || "5",
+    max_devices: tier === "Tool" ? "2" : (String(data.get("max_devices") || "5").trim() || "5"),
     expires_at: String(data.get("expires_at") || "").trim() || null,
     notes: String(data.get("notes") || "").trim() || null,
     account_link: String(data.get("account_link") || "").trim() || null,
@@ -104,7 +105,7 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Tier *</span>
-        <select name="tier" defaultValue={member?.tier || "Premium"}><option value="Premium">Premium</option><option value="Creator">Creator</option></select>
+        <select name="tier" defaultValue={member?.tier || "Premium"}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option></select>
       </label>
       <label className={styles.field}>
         <span>Status *</span>
@@ -119,7 +120,8 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Max web devices</span>
-        <input name="max_devices" type="number" min="1" max="20" required defaultValue={member?.max_devices ?? 5} />
+        <input name="max_devices" type="number" min="1" max="20" required defaultValue={member?.tier === "Tool" ? 2 : (member?.max_devices ?? 5)} />
+        <small>Tool tier is always limited to 2 web devices.</small>
       </label>
       <label className={styles.field}>
         <span>Expires at</span>
@@ -174,6 +176,7 @@ export default function MemberManager() {
     all: members.length,
     trial: members.filter((m) => m.status.toLowerCase() === "google_trial").length,
     members: members.filter((m) => m.status.toLowerCase() !== "google_trial" && (m.tier === "Premium" || m.tier === "Creator")).length,
+    tool: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Tool").length,
     premium: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Premium").length,
     creator: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Creator").length,
     affiliate: members.filter((m) => m.is_affiliate).length,
@@ -187,6 +190,7 @@ export default function MemberManager() {
         filter === "all" ? true :
         filter === "trial" ? status === "google_trial" :
         filter === "members" ? status !== "google_trial" && (member.tier === "Premium" || member.tier === "Creator") :
+        filter === "tool" ? status !== "google_trial" && member.tier === "Tool" :
         filter === "premium" ? status !== "google_trial" && member.tier === "Premium" :
         filter === "creator" ? status !== "google_trial" && member.tier === "Creator" :
         Boolean(member.is_affiliate);
@@ -274,6 +278,7 @@ export default function MemberManager() {
     { key: "all", label: "All" },
     { key: "trial", label: "Trial" },
     { key: "members", label: "Members" },
+    { key: "tool", label: "Tool" },
     { key: "premium", label: "Premium" },
     { key: "creator", label: "Creator" },
     { key: "affiliate", label: "Affiliate" },
@@ -300,13 +305,13 @@ export default function MemberManager() {
 
         <div className={styles.list}>{visible.map((member) => {
           const isRevealed = revealed.has(member.id);
-          const canvasLimit = member.canvas_limit === null ? "unlimited" : String(member.canvas_limit ?? (member.status === "google_trial" ? 6 : 8));
+          const canvasLimit = member.canvas_limit === null ? "unlimited" : String(member.canvas_limit ?? (member.status === "google_trial" ? 6 : member.tier === "Tool" ? 3 : 8));
           const activeLike = member.status === "active" || member.status === "google_trial";
           const isTrial = member.status.toLowerCase() === "google_trial";
           return <article className={styles.item} key={member.id}>
             <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{member.status}</span></div>
             <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
-            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Web devices: {member.device_count ?? 0} / {member.max_devices ?? 5}</span><span>Canvas: {member.canvas_count ?? 0} / {canvasLimit}</span><span>{displayDate(member.expires_at)}</span></div>
+            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Web devices: {member.device_count ?? 0} / {member.max_devices ?? (member.tier === "Tool" ? 2 : 5)}</span><span>Canvas: {member.canvas_count ?? 0} / {canvasLimit}</span><span>{displayDate(member.expires_at)}</span></div>
             {member.notes && <p className={styles.notes}>{member.notes}</p>}
             {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
             <div className={styles.quickActions}>
