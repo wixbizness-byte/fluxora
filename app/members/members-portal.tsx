@@ -91,7 +91,7 @@ export default function MembersPortal() {
     }
     setNotice(body.message || "Updated.");
     if (action === "reset_code" && body.access_code) {
-      setData((current) => current?.member ? { ...current, member: { ...current.member, access_code: body.access_code! } } : current);
+      setData((current) => current?.member ? { ...current, member: { ...current.member, access_code: body.access_code! }, canvas_devices: [] } : current);
       setRevealed(true);
     } else {
       await load();
@@ -102,7 +102,7 @@ export default function MembersPortal() {
   const devices = data?.devices || [];
   const canvasDevices = data?.canvas_devices || [];
   const member = data?.member;
-  const canvasLimit = data?.canvas_limit ?? (member?.status === "google_trial" ? 3 : 5);
+  const canvasLimit = data?.canvas_limit ?? (member?.status === "google_trial" ? 6 : 8);
   const remaining = useMemo(() => member ? Math.max(0, member.max_devices - devices.length) : 0, [member, devices.length]);
   const canvasRemaining = useMemo(() => Math.max(0, canvasLimit - canvasDevices.length), [canvasLimit, canvasDevices.length]);
 
@@ -167,7 +167,7 @@ export default function MembersPortal() {
       </section>
 
       {atLimit && <div className={styles.warning}>Your web-device limit is full. Remove one registered browser before enrolling another Fluxora web device.</div>}
-      {canvasAtLimit && <div className={styles.warning}>Your Gemini Canvas session limit is full. Remove an old Canvas session before authorizing a new Canvas.</div>}
+      {canvasAtLimit && <div className={styles.notice}>Your Canvas slots are full, but you are not locked out. Authorizing another Canvas automatically retires the least-recently-used Canvas and keeps you at {canvasLimit} active sessions.</div>}
 
       <section className={styles.panel}>
         <div className={styles.panelHeading}>
@@ -177,10 +177,10 @@ export default function MembersPortal() {
           <button type="button" onClick={() => setRevealed((value) => !value)}>{revealed ? member.access_code : "••••••••"}</button>
           {revealed && <button className={styles.secondaryButton} type="button" onClick={() => navigator.clipboard.writeText(member.access_code).then(() => setNotice("Access code copied."))}>Copy</button>}
         </div>
-        <p className={styles.help}>Resetting your code invalidates the old code for new verifications. Already-authorized web devices and Canvas sessions stay registered until removed.</p>
+        <p className={styles.help}>Changing your code immediately disables the old code and resets all Gemini Canvas sessions. Your registered web browsers stay authorized.</p>
         <button className={styles.dangerButton} type="button" disabled={busy === "reset_code"} onClick={() => {
-          if (window.confirm("Generate a new access code? The old code will stop working for new verifications.")) act("reset_code");
-        }}>{busy === "reset_code" ? "Resetting…" : "Reset access code"}</button>
+          if (window.confirm("Generate a new access code? The old code will stop working immediately and all Gemini Canvas sessions will be reset. Your registered web browsers will stay authorized.")) act("reset_code");
+        }}>{busy === "reset_code" ? "Changing…" : "Change access code"}</button>
       </section>
 
       <section className={styles.panel}>
@@ -214,7 +214,7 @@ export default function MembersPortal() {
 
       <section className={styles.panel}>
         <div className={styles.panelHeading}>
-          <div><p className={styles.kicker}>Gemini access</p><h2>Canvas Sessions</h2><p>{canvasRemaining} slot{canvasRemaining === 1 ? "" : "s"} available · separate from your web-device quota.</p></div>
+          <div><p className={styles.kicker}>Gemini access</p><h2>Canvas Sessions</h2><p>{canvasRemaining} slot{canvasRemaining === 1 ? "" : "s"} available · separate from your web-device quota. Sessions inactive for 30 days stop counting automatically.</p></div>
           {canvasDevices.length > 0 && <button className={styles.secondaryButton} type="button" disabled={busy === "reset_canvas_devices"} onClick={() => {
             if (window.confirm("Remove every registered Gemini Canvas session? Each Canvas will need the current code to authorize again.")) act("reset_canvas_devices");
           }}>{busy === "reset_canvas_devices" ? "Removing…" : "Remove all"}</button>}
@@ -242,7 +242,7 @@ export default function MembersPortal() {
 
       <section className={styles.infoPanel}>
         <strong>What counts as a device?</strong>
-        <p>Fluxora web browsers and Gemini Canvas sessions use separate quotas. CustomGPT code checks do not consume either device quota.</p>
+        <p>Fluxora web browsers and Gemini Canvas sessions use separate quotas. CustomGPT code checks do not consume either device quota. If your Canvas quota is full, the least-recently-used Canvas is automatically retired when a new one is authorized.</p>
       </section>
     </main>
   );
