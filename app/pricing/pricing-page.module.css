@@ -1,0 +1,307 @@
+.pricingPage :global(.easy-payments) {
+  display: none !important;
+}
+
+.pricingPage :global(.collection-card) {
+  aspect-ratio: auto;
+  min-height: 205px;
+}
+
+.pricingPage :global(.collection-content) {
+  height: auto;
+  min-height: 205px;
+  padding: 22px 22px 20px;
+}
+
+.pricingPage :global(.card-eyebrow) {
+  font-size: 10px;
+}
+
+.pricingPage :global(.collection-content h3) {
+  margin: 13px 0 8px;
+}
+
+.pricingPage :global(.collection-content p) {
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.pricingPage :global(.collection-content .card-button) {
+  min-height: 40px;
+  margin-top: 20px;
+  font-size: 9.5px;
+}
+
+.pricingPage :global(.pricing-catalog) {
+  padding-top: 84px;
+}
+
+.pricingPage :global(.pricing-catalog-wrap) {
+  max-width: 1120px;
+  margin: 0 auto;
+}
+
+.pricingPage :global(.pricing-catalog-heading) {
+  max-width: 760px;
+  margin-bottom: 34px;
+}
+
+.pricingPage :global(.pricing-catalog-heading > p:last-child) {
+  max-width: 620px;
+  margin-top: 20px;
+  color: var(--muted);
+  line-height: 1.65;
+}
+
+.pricingPage :global(.pricing-tier-tabs) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 8px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  box-shadow: var(--shadow);
+}
+
+.pricingPage :global(.pricing-tier-tabs button) {
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.pricingPage :global(.pricing-tier-tabs button:hover) {
+  transform: translateY(-1px);
+}
+
+.pricingPage :global(.pricing-tier-tabs button.active) {
+  color: #fbf4ef;
+  background: var(--wine);
+}
+
+.pricingPage :global(.pricing-tier-summary) {
+  display: grid;
+  justify-items: center;
+  gap: 18px;
+  max-width: 760px;
+  margin: 28px auto 46px;
+  text-align: center;
+}
+
+.pricingPage :global(.pricing-tier-summary p) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.7;
+  white-space: pre-line;
+}
+
+.pricingPage :global(.pricing-buy-button) {
+  min-width: min(320px, 100%);
+  min-height: 48px;
+  display: inline-grid;
+  place-items: center;
+  padding: 0 24px;
+  border-radius: 999px;
+  color: #fbf4ef;
+  background: var(--wine);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  box-shadow: 0 14px 30px rgba(113, 30, 56, 0.2);
+}
+
+.pricingPage :global(.pricing-resource-groups) {
+  display: grid;
+  gap: 48px;
+}
+
+.pricingPage :global(.pricing-resource-group) {
+  display: grid;
+  gap: 18px;
+}
+
+.pricingPage :global(.pricing-resource-heading) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.pricingPage :global(.pricing-resource-heading span) {
+  font: 600 clamp(27px, 3vw, 38px)/1.05 "Fraunces", Georgia, serif;
+  color: var(--ink);
+}
+
+.pricingPage :global(.pricing-resource-heading strong) {
+  min-width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: var(--wine);
+  background: color-mix(in srgb, var(--rose) 18%, transparent);
+  font-size: 11px;
+}
+
+.pricingPage :global(.pricing-resource-grid) {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.pricingPage :global(.pricing-resource-card) {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  box-shadow: 0 14px 32px rgba(43, 23, 32, 0.12);
+}
+
+.pricingPage :global(.pricing-resource-image) {
+  aspect-ratio: 16 / 8.5;
+  overflow: hidden;
+  background: var(--wine-deep);
+}
+
+.pricingPage :global(.pricing-resource-image img),
+.pricingPage :global(.pricing-resource-image .media-placeholder) {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.pricingPage :global(.pricing-resource-copy) {
+  min-height: 150px;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+
+.pricingPage :global(.pricing-resource-copy h3) {
+  margin: 0 0 7px;
+  font-size: 21px;
+  line-height: 1.08;
+}
+
+.pricingPage :global(.pricing-resource-copy p) {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.pricingPage :global(.pricing-resource-copy span) {
+  align-self: flex-start;
+  margin-top: auto;
+  padding-top: 13px;
+  color: var(--rose);
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 760px) {
+  .pricingPage :global(.collection-card),
+  .pricingPage :global(.collection-content) {
+    min-height: 0;
+  }
+
+  .pricingPage :global(.collection-content) {
+    padding: 20px 18px 18px;
+  }
+
+  .pricingPage :global(.collection-content p) {
+    font-size: 12.5px;
+  }
+
+  .pricingPage :global(.pricing-catalog) {
+    padding-top: 70px;
+  }
+
+  .pricingPage :global(.pricing-tier-tabs) {
+    gap: 7px;
+    padding: 6px;
+    border-radius: 16px;
+  }
+
+  .pricingPage :global(.pricing-tier-tabs button) {
+    min-height: 44px;
+    padding-inline: 7px;
+    font-size: 11px;
+  }
+
+  .pricingPage :global(.pricing-tier-summary) {
+    margin: 24px auto 38px;
+  }
+
+  .pricingPage :global(.pricing-tier-summary p) {
+    font-size: 14px;
+  }
+
+  .pricingPage :global(.pricing-resource-grid) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .pricingPage :global(.pricing-resource-copy) {
+    min-height: 132px;
+    padding: 13px;
+  }
+
+  .pricingPage :global(.pricing-resource-copy h3) {
+    font-size: 18px;
+  }
+
+  .pricingPage :global(.pricing-resource-copy p) {
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 430px) {
+  .pricingPage :global(.collection-content) {
+    padding: 18px 17px 17px;
+  }
+
+  .pricingPage :global(.collection-content h3) {
+    margin-top: 10px;
+    font-size: 27px;
+  }
+
+  .pricingPage :global(.collection-content .card-button) {
+    min-height: 40px;
+    margin-top: 16px;
+  }
+
+  .pricingPage :global(.pricing-resource-grid) {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .pricingPage :global(.pricing-resource-image) {
+    aspect-ratio: 16 / 9;
+  }
+
+  .pricingPage :global(.pricing-resource-copy h3) {
+    font-size: 16px;
+  }
+
+  .pricingPage :global(.pricing-resource-copy p) {
+    display: none;
+  }
+
+  .pricingPage :global(.pricing-resource-copy) {
+    min-height: 104px;
+  }
+}
