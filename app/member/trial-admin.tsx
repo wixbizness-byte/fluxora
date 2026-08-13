@@ -19,6 +19,7 @@ type TrialResponse = {
   adminEmail?: string;
   summary?: { total: number; active: number; expired: number };
   trials?: Trial[];
+  resetCount?: number;
   message?: string;
   error?: string;
 };
@@ -83,7 +84,7 @@ export default function TrialAdmin() {
 
   async function resetTrial(trial: Trial) {
     const confirmed = window.confirm(
-      `Reset the free trial for ${trial.gmail}?\n\nThis removes their current trial member record and lets this Google account claim a fresh 80-minute trial.`
+      `Reset the free trial for ${trial.gmail}?\n\nThis removes their current trial member record and lets this Google account claim a fresh 3-hour trial.`
     );
     if (!confirmed) return;
 
@@ -105,6 +106,31 @@ export default function TrialAdmin() {
     setBusy("");
   }
 
+  async function resetAllInactive() {
+    if (!summary.expired) return;
+    const confirmed = window.confirm(
+      `Reset all ${summary.expired} inactive/expired Google trial accounts?\n\nThis removes expired trial claims and their trial-only member records so those Gmail accounts can claim a fresh 3-hour trial. Paid or upgraded member accounts are protected and will not be removed.`
+    );
+    if (!confirmed) return;
+
+    setBusy("__all__");
+    setNotice("");
+    setError("");
+    const response = await fetch("/prompts/api/trials", {
+      method: "DELETE",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: "reset_inactive" }),
+    });
+    const body = (await response.json().catch(() => ({}))) as TrialResponse;
+    if (!response.ok) setError(body.error || "Could not reset inactive trials.");
+    else {
+      setNotice(body.message || "Inactive trials reset.");
+      await load();
+    }
+    setBusy("");
+  }
+
   if (unauthorized) return null;
 
   return (
@@ -113,9 +139,19 @@ export default function TrialAdmin() {
         <div>
           <p>Free access analytics</p>
           <h2>Google Trial Claims</h2>
-          <span>Every Google account that claims the one-time 80-minute trial is recorded here.</span>
+          <span>Every Google account that claims the one-time 3-hour trial is recorded here.</span>
         </div>
-        <strong>{summary.total}</strong>
+        <div className={styles.headingActions}>
+          <strong>{summary.total}</strong>
+          <button
+            className={styles.resetAllButton}
+            type="button"
+            disabled={!summary.expired || busy === "__all__"}
+            onClick={resetAllInactive}
+          >
+            {busy === "__all__" ? "Resetting…" : "Reset all inactive"}
+          </button>
+        </div>
       </div>
 
       {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
@@ -157,7 +193,7 @@ export default function TrialAdmin() {
               <button
                 className={styles.resetButton}
                 type="button"
-                disabled={!trial.resettable || busy === trial.gmail}
+                disabled={!trial.resettable || busy === trial.gmail || busy === "__all__"}
                 onClick={() => resetTrial(trial)}
                 title={trial.resettable ? "Allow this Google account to claim another free trial" : "This claim is linked to a non-trial member and cannot be reset here"}
               >
