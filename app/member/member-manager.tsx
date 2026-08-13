@@ -18,15 +18,31 @@ type Member = {
   expires_at: string | null;
   notes: string | null;
   account_link: string | null;
+  is_affiliate?: boolean;
+};
+
+type Activity = {
+  member_id: string;
+  access_code: string;
+  gmail: string;
+  tier: "Premium" | "Creator";
+  status: string;
+  uses: number;
+  last_used_at: string;
+  canvas_devices: number;
 };
 
 type ApiResponse = {
   members?: Member[];
   member?: Member;
+  activity?: Activity[];
+  activityTimezone?: string;
   adminEmail?: string;
   message?: string;
   error?: string;
 };
+
+type MemberFilter = "all" | "trial" | "members" | "premium" | "creator" | "affiliate";
 
 const PAGE_SIZE = 10;
 const MEMBER_STATUSES = [
@@ -46,6 +62,17 @@ function displayDate(value: string | null) {
   if (!value) return "No expiry";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "No expiry" : date.toLocaleString();
+}
+
+function phTime(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return new Intl.DateTimeFormat("en-PH", {
+    timeZone: "Asia/Manila",
+    hour: "numeric",
+    minute: "2-digit",
+    hour12: true,
+  }).format(date);
 }
 
 function payloadFromForm(form: HTMLFormElement) {
@@ -102,8 +129,10 @@ function MemberFields({ member }: { member?: Member }) {
 
 export default function MemberManager() {
   const [members, setMembers] = useState<Member[]>([]);
+  const [activity, setActivity] = useState<Activity[]>([]);
   const [adminEmail, setAdminEmail] = useState("");
   const [query, setQuery] = useState("");
+  const [filter, setFilter] = useState<MemberFilter>("all");
   const [page, setPage] = useState(1);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
   const [notice, setNotice] = useState("");
@@ -126,6 +155,7 @@ export default function MemberManager() {
       if (!response.ok) throw new Error(body.error || "Could not load members.");
       setUnauthorized(false);
       setMembers(body.members || []);
+      setActivity(body.activity || []);
       setAdminEmail(body.adminEmail || "");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not load members.");
@@ -136,16 +166,36 @@ export default function MemberManager() {
 
   useEffect(() => { loadMembers(); }, []);
 
+  const filterCounts = useMemo(() => ({
+    all: members.length,
+    trial: members.filter((m) => m.status.toLowerCase() === "google_trial").length,
+    members: members.filter((m) => m.status.toLowerCase() !== "google_trial" && (m.tier === "Premium" || m.tier === "Creator")).length,
+    premium: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Premium").length,
+    creator: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Creator").length,
+    affiliate: members.filter((m) => m.is_affiliate).length,
+  }), [members]);
+
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return members;
-    return members.filter((member) => [member.gmail, member.access_code, member.tier, member.status, member.notes || "", member.account_link || ""].some((value) => value.toLowerCase().includes(needle)));
-  }, [members, query]);
+    return members.filter((member) => {
+      const status = member.status.toLowerCase();
+      const matchesFilter =
+        filter === "all" ? true :
+        filter === "trial" ? status === "google_trial" :
+        filter === "members" ? status !== "google_trial" && (member.tier === "Premium" || member.tier === "Creator") :
+        filter === "premium" ? status !== "google_trial" && member.tier === "Premium" :
+        filter === "creator" ? status !== "google_trial" && member.tier === "Creator" :
+        Boolean(member.is_affiliate);
+      if (!matchesFilter) return false;
+      if (!needle) return true;
+      return [member.gmail, member.access_code, member.tier, member.status, member.notes || "", member.account_link || ""].some((value) => value.toLowerCase().includes(needle));
+    });
+  }, [filter, members, query]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const safePage = Math.min(page, pageCount);
   const visible = filtered.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
-  useEffect(() => { setPage(1); }, [query]);
+  useEffect(() => { setPage(1); }, [query, filter]);
 
   function replaceMember(member: Member) {
     setMembers((current) => current.map((item) => item.id === member.id ? { ...item, ...member } : item));
@@ -199,6 +249,12 @@ export default function MemberManager() {
 
   async function copyCode(code: string) { await navigator.clipboard.writeText(code); setNotice("Access code copied."); }
 
+  function focusActivity(item: Activity) {
+    setFilter("all");
+    setQuery(item.access_code);
+    window.scrollTo({ top: 180, behavior: "smooth" });
+  }
+
   if (loading) return <main className={styles.page}><section className={styles.centerCard}><p>Loading members…</p></section></main>;
 
   if (unauthorized) {
@@ -209,35 +265,64 @@ export default function MemberManager() {
     </section></main>;
   }
 
+  const filterOptions: Array<{ key: MemberFilter; label: string }> = [
+    { key: "all", label: "All" },
+    { key: "trial", label: "Trial" },
+    { key: "members", label: "Members" },
+    { key: "premium", label: "Premium" },
+    { key: "creator", label: "Creator" },
+    { key: "affiliate", label: "Affiliate" },
+  ];
+
   return <main className={styles.page}>
     <header className={styles.header}><div><p className={styles.kicker}>Fluxora access control</p><h1>Member Manager</h1><p className={styles.adminEmail}>{adminEmail}</p></div>
       <div className={styles.headerActions}><a className={styles.secondaryButton} href="/">Home</a><a className={styles.secondaryButton} href="/prompts/admin?tab=members">Prompt Admin</a></div>
     </header>
 
     {(notice || error) && <div className={error ? styles.errorNotice : styles.successNotice}>{error || notice}</div>}
-    <section className={styles.summaryGrid}><article><span>Total members</span><strong>{members.length}</strong></article><article><span>Active</span><strong>{members.filter((m) => m.status === "active").length}</strong></article><article><span>Creator</span><strong>{members.filter((m) => m.tier === "Creator").length}</strong></article></section>
+    <section className={styles.summaryGrid}><article><span>Total members</span><strong>{members.length}</strong></article><article><span>Active</span><strong>{members.filter((m) => m.status === "active").length}</strong></article><article><span>Creator</span><strong>{members.filter((m) => m.tier === "Creator" && m.status.toLowerCase() !== "google_trial").length}</strong></article></section>
 
-    <section className={styles.section}>
-      <div className={styles.sectionHeading}><div><p className={styles.kicker}>Access control</p><h2>Members</h2></div><span className={styles.count}>{filtered.length}</span></div>
-      <div className={styles.searchBar}><label><span>Search members</span><input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search Gmail, code, tier, status, or notes..." /></label>{query && <button type="button" className={styles.secondaryButton} onClick={() => setQuery("")}>Clear</button>}</div>
+    <div className={styles.managerLayout}>
+      <aside className={styles.filterRail} aria-label="Member filters">
+        {filterOptions.map((option) => <button key={option.key} type="button" className={filter === option.key ? styles.filterActive : ""} onClick={() => setFilter(option.key)}><span>{option.label}</span><small>{filterCounts[option.key]}</small></button>)}
+      </aside>
 
-      <details className={styles.createPanel}><summary>Add a new member</summary><form className={styles.form} onSubmit={createMember}><MemberFields /><button className={styles.primaryButton} disabled={busy === "create"} type="submit">{busy === "create" ? "Adding…" : "Add Member"}</button></form></details>
+      <section className={styles.section}>
+        <div className={styles.sectionHeading}><div><p className={styles.kicker}>Access control</p><h2>Members</h2></div><span className={styles.count}>{filtered.length}</span></div>
+        <div className={styles.searchBar}><label><span>Search members</span><input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search Gmail, code, tier, status, or notes..." /></label>{query && <button type="button" className={styles.secondaryButton} onClick={() => setQuery("")}>Clear</button>}</div>
 
-      <div className={styles.list}>{visible.map((member) => {
-        const isRevealed = revealed.has(member.id);
-        const canvasLimit = member.canvas_limit === null ? "unlimited" : String(member.canvas_limit ?? (member.status === "google_trial" ? 3 : 5));
-        return <article className={styles.item} key={member.id}>
-          <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}</span></div><span className={`${styles.status} ${member.status === "active" ? styles.active : styles.inactive}`}>{member.status}</span></div>
-          <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
-          <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Web devices: {member.device_count ?? 0} / {member.max_devices ?? 5}</span><span>Canvas: {member.canvas_count ?? 0} / {canvasLimit}</span><span>{displayDate(member.expires_at)}</span></div>
-          {member.notes && <p className={styles.notes}>{member.notes}</p>}
-          {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
-          <div className={styles.quickActions}><button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : member.status === "active" ? "Disable" : "Activate"}</button>
-            <details className={styles.editPanel}><summary>Edit</summary><form className={styles.form} onSubmit={(event) => updateMember(event, member.id)}><MemberFields member={member} /><button className={styles.primaryButton} disabled={busy === `update-${member.id}`} type="submit">{busy === `update-${member.id}` ? "Saving…" : "Save Member"}</button></form></details></div>
-        </article>;
-      })}{!visible.length && <div className={styles.emptyState}>No members match your search.</div>}</div>
+        <details className={styles.createPanel}><summary>Add a new member</summary><form className={styles.form} onSubmit={createMember}><MemberFields /><button className={styles.primaryButton} disabled={busy === "create"} type="submit">{busy === "create" ? "Adding…" : "Add Member"}</button></form></details>
 
-      {pageCount > 1 && <nav className={styles.pagination} aria-label="Member pages">{Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button key={number} type="button" className={number === safePage ? styles.pageActive : ""} onClick={() => setPage(number)}>{number}</button>)}</nav>}
-    </section>
+        <div className={styles.list}>{visible.map((member) => {
+          const isRevealed = revealed.has(member.id);
+          const canvasLimit = member.canvas_limit === null ? "unlimited" : String(member.canvas_limit ?? (member.status === "google_trial" ? 6 : 8));
+          const activeLike = member.status === "active" || member.status === "google_trial";
+          return <article className={styles.item} key={member.id}>
+            <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{member.status}</span></div>
+            <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
+            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Web devices: {member.device_count ?? 0} / {member.max_devices ?? 5}</span><span>Canvas: {member.canvas_count ?? 0} / {canvasLimit}</span><span>{displayDate(member.expires_at)}</span></div>
+            {member.notes && <p className={styles.notes}>{member.notes}</p>}
+            {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
+            <div className={styles.quickActions}><button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : member.status === "active" ? "Disable" : "Activate"}</button>
+              <details className={styles.editPanel}><summary>Edit</summary><form className={styles.form} onSubmit={(event) => updateMember(event, member.id)}><MemberFields member={member} /><button className={styles.primaryButton} disabled={busy === `update-${member.id}`} type="submit">{busy === `update-${member.id}` ? "Saving…" : "Save Member"}</button></form></details></div>
+          </article>;
+        })}{!visible.length && <div className={styles.emptyState}>No members match this filter.</div>}</div>
+
+        {pageCount > 1 && <nav className={styles.pagination} aria-label="Member pages">{Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button key={number} type="button" className={number === safePage ? styles.pageActive : ""} onClick={() => setPage(number)}>{number}</button>)}</nav>}
+      </section>
+
+      <aside className={styles.activityRail}>
+        <div className={styles.activityHeading}><p className={styles.kicker}>Since 12:00 AM PH</p><h2>Active codes today</h2></div>
+        <div className={styles.activityList}>
+          {activity.map((item) => <button type="button" key={item.member_id} className={styles.activityItem} onClick={() => focusActivity(item)}>
+            <span className={styles.activityCode}>{item.access_code}</span>
+            <strong>{item.uses} {item.uses === 1 ? "use" : "uses"}</strong>
+            <small>{item.tier} • Last {phTime(item.last_used_at)}</small>
+            {item.canvas_devices >= 4 && <em>{item.canvas_devices} Canvas registrations today{item.canvas_devices >= 6 ? " • Check" : ""}</em>}
+          </button>)}
+          {!activity.length && <p className={styles.activityEmpty}>No successful code authorizations yet today.</p>}
+        </div>
+      </aside>
+    </div>
   </main>;
 }
