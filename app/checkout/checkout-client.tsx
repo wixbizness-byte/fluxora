@@ -7,11 +7,7 @@ import styles from "./checkout.module.css";
 
 const TELEGRAM_URL = "https://t.me/PHAICommunity";
 
-type CheckoutPlan = AccessPlan & {
-  price_php?: number | null;
-  member_tier?: "Premium" | "Creator" | null;
-  checkout_enabled?: boolean;
-};
+type CheckoutPlan = AccessPlan;
 
 type OrderResult = {
   order_id: string;
@@ -30,7 +26,7 @@ type StatusResult = {
   status: string;
   buyer_email: string;
   access_code: string | null;
-  member_tier: "Premium" | "Creator" | null;
+  member_tier: "Tool" | "Premium" | "Creator" | null;
   created_at: string;
   approved_at: string | null;
   rejection_reason: string | null;
@@ -41,6 +37,12 @@ function config() {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") || "",
     key: process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || "",
   };
+}
+
+function fallbackPrice(planId: string | undefined) {
+  if (planId === "tool") return 249;
+  if (planId === "creator") return 1999;
+  return 599;
 }
 
 async function rpc<T>(name: string, body: Record<string, unknown>) {
@@ -57,7 +59,7 @@ async function rpc<T>(name: string, body: Record<string, unknown>) {
 }
 
 export default function CheckoutClient() {
-  const [plans, setPlans] = useState<CheckoutPlan[]>(fallbackAccessPlans as CheckoutPlan[]);
+  const [plans, setPlans] = useState<CheckoutPlan[]>(fallbackAccessPlans);
   const [payment, setPayment] = useState<PaymentSettings>(fallbackPaymentSettings);
   const [selectedId, setSelectedId] = useState("premium");
   const [submitting, setSubmitting] = useState(false);
@@ -83,7 +85,7 @@ export default function CheckoutClient() {
   }, []);
 
   const selected = useMemo(() => plans.find((plan) => plan.id === selectedId) || plans[0], [plans, selectedId]);
-  const amount = selected?.price_php || (selected?.id === "creator" ? 1999 : 599);
+  const amount = selected?.price_php || fallbackPrice(selected?.id);
 
   async function copyValue(value: string, key: "payment" | "order" | "access") {
     try {
@@ -161,7 +163,7 @@ export default function CheckoutClient() {
           <h2>1. Pay with GCash</h2>
           <div className={styles.planGrid}>
             {plans.map((plan) => {
-              const price = plan.price_php || (plan.id === "creator" ? 1999 : 599);
+              const price = plan.price_php || fallbackPrice(plan.id);
               return <button type="button" key={plan.id} onClick={() => setSelectedId(plan.id)} className={selected?.id === plan.id ? styles.planActive : styles.plan}>
                 <span>{plan.title}</span><strong>₱{price.toLocaleString()}</strong>
               </button>;
