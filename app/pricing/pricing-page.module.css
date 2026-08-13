@@ -344,3 +344,179 @@
     min-height: 104px;
   }
 }
+
+/* Fluxora light-mode skin for /pricing only. */
+.pricingPage {
+  min-height: 100vh;
+  --bg: #fbf4ef;
+  --paper: #fffaf7;
+  --paper-2: #f8ece9;
+  --ink: #4b1024;
+  --muted: #76545f;
+  --line: rgba(75, 16, 36, 0.13);
+  --line-soft: rgba(75, 16, 36, 0.08);
+  --wine: #711e38;
+  --rose: #c77a91;
+  --wine-deep: #f8ece9;
+  --cream: #fffaf7;
+  --shadow: 0 18px 44px rgba(75, 16, 36, 0.08);
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 85% 8%, rgba(199, 122, 145, 0.18), transparent 28rem),
+    linear-gradient(180deg, #fbf4ef 0%, #f6e8e5 100%);
+}
+
+.pricingPage :global(main) {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 85% 8%, rgba(199, 122, 145, 0.18), transparent 28rem),
+    linear-gradient(180deg, #fbf4ef 0%, #f6e8e5 100%);
+}
+
+.pricingPage :global(.nav-shell) {
+  background: rgba(251, 244, 239, 0.9);
+  border-bottom-color: var(--line-soft);
+}
+
+.pricingPage :global(.nav-links a),
+.pricingPage :global(.hero-lede),
+.pricingPage :global(.hero-proof span),
+.pricingPage :global(.pricing-copy > p:last-child),
+.pricingPage :global(.faq-heading > p:last-child),
+.pricingPage :global(.faq-answer p),
+.pricingPage :global(footer a),
+.pricingPage :global(.footer-brand p) {
+  color: var(--muted);
+}
+
+.pricingPage :global(.collection-card) {
+  border-color: var(--line);
+  background: rgba(255, 250, 247, 0.86);
+  box-shadow: 0 18px 44px rgba(75, 16, 36, 0.08);
+}
+
+.pricingPage :global(.image-overlay) {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 250, 247, 0.94) 0%,
+    rgba(255, 250, 247, 0.86) 52%,
+    rgba(248, 236, 233, 0.97) 100%
+  );
+}
+
+.pricingPage :global(.collection-content) {
+  color: var(--ink);
+}
+
+.pricingPage :global(.card-eyebrow) {
+  color: var(--wine);
+}
+
+.pricingPage :global(.collection-content p) {
+  color: var(--muted);
+}
+
+.pricingPage :global(.collection-content .card-button) {
+  border-color: var(--wine);
+  color: #fffaf7;
+  background: var(--wine);
+}
+
+.pricingPage :global(.popular) {
+  color: #fffaf7;
+  background: var(--wine);
+}
+
+.pricingPage :global(.gallery-section) {
+  color: var(--ink);
+  background:
+    radial-gradient(circle at 72% 45%, rgba(199, 122, 145, 0.16), transparent 35rem),
+    linear-gradient(180deg, #f6e8e5 0%, #fbf4ef 100%);
+}
+
+.pricingPage :global(.gallery-section .eyebrow),
+.pricingPage :global(.gallery-heading h2) {
+  color: var(--ink);
+}
+
+.pricingPage :global(.gallery-image) {
+  border-color: var(--line);
+  background: #fffaf7;
+  box-shadow: 0 14px 32px rgba(75, 16, 36, 0.09);
+}
+
+.pricingPage :global(.gallery-image img) {
+  background: #fffaf7;
+}
+
+.pricingPage :global(.pricing-tier-tabs),
+.pricingPage :global(.pricing-tier-summary),
+.pricingPage :global(.pricing-resource-card) {
+  background: rgba(255, 250, 247, 0.9);
+  border-color: var(--line);
+  box-shadow: 0 18px 44px rgba(75, 16, 36, 0.08);
+}
+
+.pricingPage :global(.pricing-tier-tabs button) {
+  border-color: rgba(113, 30, 56, 0.18);
+  background: #f8ece9;
+  color: var(--wine);
+  box-shadow: none;
+}
+
+.pricingPage :global(.pricing-tier-tabs button:hover) {
+  border-color: rgba(113, 30, 56, 0.32);
+  background: #f3dedb;
+}
+
+.pricingPage :global(.pricing-tier-tabs button.active) {
+  color: #fffaf7;
+  border-color: var(--wine);
+  background: var(--wine);
+  box-shadow: 0 10px 24px rgba(113, 30, 56, 0.18);
+}
+
+.pricingPage :global(.pricing-tier-summary p) {
+  color: var(--muted);
+}
+
+.pricingPage :global(.pricing-buy-button) {
+  color: #fffaf7;
+  border-color: var(--wine);
+  background: var(--wine);
+  box-shadow: 0 12px 26px rgba(113, 30, 56, 0.16);
+}
+
+.pricingPage :global(.pricing-resource-heading strong) {
+  color: var(--wine);
+  background: #f8ece9;
+  border: 1px solid rgba(113, 30, 56, 0.1);
+}
+
+.pricingPage :global(.pricing-resource-card) {
+  background: rgba(255, 250, 247, 0.94);
+}
+
+.pricingPage :global(.pricing-resource-image) {
+  background: #f8ece9;
+}
+
+.pricingPage :global(.pricing-resource-copy span) {
+  color: var(--wine);
+}
+
+.pricingPage :global(.faq-list) {
+  border-top-color: var(--line);
+}
+
+.pricingPage :global(.faq-list article) {
+  border-bottom-color: var(--line);
+}
+
+.pricingPage :global(.faq-list button) {
+  color: var(--ink);
+}
+
+.pricingPage :global(footer) {
+  border-top-color: var(--line);
+}
