@@ -1,9 +1,9 @@
 import Site from "../site";
+import styles from "./pricing-page.module.css";
 
 export default function PricingPage() {
   return (
-    <div className="pricing-page">
-      <style>{`.pricing-page .easy-payments { display: none !important; }`}</style>
+    <div className={styles.pricingPage}>
       <Site pricingMode />
     </div>
   );
