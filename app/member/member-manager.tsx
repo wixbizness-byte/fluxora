@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import styles from "./member.module.css";
+import layout from "./member-manager-layout.module.css";
 
 type Member = {
   id: string;
@@ -282,9 +283,9 @@ export default function MemberManager() {
     {(notice || error) && <div className={error ? styles.errorNotice : styles.successNotice}>{error || notice}</div>}
     <section className={styles.summaryGrid}><article><span>Total members</span><strong>{members.length}</strong></article><article><span>Active</span><strong>{members.filter((m) => m.status === "active").length}</strong></article><article><span>Creator</span><strong>{members.filter((m) => m.tier === "Creator" && m.status.toLowerCase() !== "google_trial").length}</strong></article></section>
 
-    <div className={styles.managerLayout}>
-      <aside className={styles.filterRail} aria-label="Member filters">
-        {filterOptions.map((option) => <button key={option.key} type="button" className={filter === option.key ? styles.filterActive : ""} onClick={() => setFilter(option.key)}><span>{option.label}</span><small>{filterCounts[option.key]}</small></button>)}
+    <div className={layout.managerLayout}>
+      <aside className={layout.filterRail} aria-label="Member filters">
+        {filterOptions.map((option) => <button key={option.key} type="button" className={filter === option.key ? layout.filterActive : ""} onClick={() => setFilter(option.key)}><span>{option.label}</span><small>{filterCounts[option.key]}</small></button>)}
       </aside>
 
       <section className={styles.section}>
@@ -311,16 +312,16 @@ export default function MemberManager() {
         {pageCount > 1 && <nav className={styles.pagination} aria-label="Member pages">{Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button key={number} type="button" className={number === safePage ? styles.pageActive : ""} onClick={() => setPage(number)}>{number}</button>)}</nav>}
       </section>
 
-      <aside className={styles.activityRail}>
-        <div className={styles.activityHeading}><p className={styles.kicker}>Since 12:00 AM PH</p><h2>Active codes today</h2></div>
-        <div className={styles.activityList}>
-          {activity.map((item) => <button type="button" key={item.member_id} className={styles.activityItem} onClick={() => focusActivity(item)}>
-            <span className={styles.activityCode}>{item.access_code}</span>
+      <aside className={layout.activityRail}>
+        <div className={layout.activityHeading}><p className={styles.kicker}>Since 12:00 AM PH</p><h2>Active codes today</h2></div>
+        <div className={layout.activityList}>
+          {activity.map((item) => <button type="button" key={item.member_id} className={layout.activityItem} onClick={() => focusActivity(item)}>
+            <span className={layout.activityCode}>{item.access_code}</span>
             <strong>{item.uses} {item.uses === 1 ? "use" : "uses"}</strong>
             <small>{item.tier} • Last {phTime(item.last_used_at)}</small>
             {item.canvas_devices >= 4 && <em>{item.canvas_devices} Canvas registrations today{item.canvas_devices >= 6 ? " • Check" : ""}</em>}
           </button>)}
-          {!activity.length && <p className={styles.activityEmpty}>No successful code authorizations yet today.</p>}
+          {!activity.length && <p className={layout.activityEmpty}>No successful code authorizations yet today.</p>}
         </div>
       </aside>
     </div>
