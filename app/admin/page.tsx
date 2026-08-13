@@ -1,4 +1,5 @@
 import GoogleAdminGate from "./google-admin-gate";
+import PricingTierAdminEnhancer from "./pricing-tier-admin-enhancer";
 
 export const metadata = {
   title: "Fluxora Admin",
@@ -6,5 +7,10 @@ export const metadata = {
 };
 
 export default function AdminPage() {
-  return <GoogleAdminGate />;
+  return (
+    <>
+      <GoogleAdminGate />
+      <PricingTierAdminEnhancer />
+    </>
+  );
 }

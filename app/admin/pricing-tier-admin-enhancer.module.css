@@ -1,0 +1,142 @@
+.editor {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  border: 1px solid rgba(75, 16, 36, 0.16);
+  border-radius: 18px;
+  background: rgba(255, 250, 247, 0.72);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.heading strong,
+.heading span {
+  display: block;
+}
+
+.heading strong {
+  color: #4b1024;
+  font-size: 14px;
+}
+
+.heading span {
+  margin-top: 4px;
+  color: #76545f;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.fullField {
+  display: grid;
+  gap: 7px;
+  color: #4b1024;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.fullField textarea,
+.fullField input,
+.benefitRow input {
+  width: 100%;
+  border: 1px solid rgba(75, 16, 36, 0.16);
+  border-radius: 12px;
+  background: #fffaf7;
+  color: #4b1024;
+  font: inherit;
+  font-weight: 500;
+}
+
+.fullField textarea {
+  min-height: 72px;
+  resize: vertical;
+  padding: 11px 12px;
+}
+
+.fullField input,
+.benefitRow input {
+  min-height: 42px;
+  padding: 0 12px;
+}
+
+.benefitsHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.benefitsHeader strong {
+  color: #4b1024;
+  font-size: 12px;
+}
+
+.addButton,
+.removeButton {
+  border: 0;
+  border-radius: 999px;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.addButton {
+  min-height: 34px;
+  padding: 0 13px;
+  background: #711e38;
+  color: #fffaf7;
+}
+
+.benefitsList {
+  display: grid;
+  gap: 9px;
+}
+
+.benefitRow {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+}
+
+.benefitNumber {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f8ece9;
+  color: #711e38;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.removeButton {
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(141, 31, 56, 0.18);
+  background: #fffaf7;
+  color: #8d1f38;
+}
+
+.removeButton:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+@media (max-width: 640px) {
+  .benefitRow {
+    grid-template-columns: 28px minmax(0, 1fr);
+  }
+
+  .removeButton {
+    grid-column: 2;
+    justify-self: start;
+  }
+}
