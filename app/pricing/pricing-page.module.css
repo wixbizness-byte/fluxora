@@ -59,9 +59,9 @@
   gap: 12px;
   padding: 8px;
   border: 1px solid var(--line);
-  border-radius: 20px;
+  border-bottom: 0;
+  border-radius: 20px 20px 0 0;
   background: color-mix(in srgb, var(--paper) 92%, transparent);
-  box-shadow: var(--shadow);
 }
 
 .pricingPage :global(.pricing-tier-tabs button) {
@@ -89,15 +89,22 @@
 }
 
 .pricingPage :global(.pricing-tier-summary) {
+  width: 100%;
   display: grid;
   justify-items: center;
   gap: 18px;
-  max-width: 760px;
-  margin: 28px auto 46px;
+  margin: 0 0 46px;
+  padding: 26px 24px 30px;
+  border: 1px solid var(--line);
+  border-top: 0;
+  border-radius: 0 0 20px 20px;
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  box-shadow: var(--shadow);
   text-align: center;
 }
 
 .pricingPage :global(.pricing-tier-summary p) {
+  width: min(760px, 100%);
   margin: 0;
   color: var(--muted);
   font-size: 15px;
@@ -131,28 +138,37 @@
 }
 
 .pricingPage :global(.pricing-resource-heading) {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 36px;
   align-items: center;
-  justify-content: space-between;
   gap: 16px;
+  min-height: 48px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
 
 .pricingPage :global(.pricing-resource-heading span) {
+  min-height: 36px;
+  display: flex;
+  align-items: center;
   font: 600 clamp(27px, 3vw, 38px)/1.05 "Fraunces", Georgia, serif;
   color: var(--ink);
 }
 
 .pricingPage :global(.pricing-resource-heading strong) {
+  width: 34px;
   min-width: 34px;
   height: 34px;
   display: grid;
   place-items: center;
+  justify-self: end;
+  align-self: center;
+  margin: 0;
   border-radius: 999px;
   color: var(--wine);
   background: color-mix(in srgb, var(--rose) 18%, transparent);
   font-size: 11px;
+  line-height: 1;
 }
 
 .pricingPage :global(.pricing-resource-grid) {
@@ -234,7 +250,7 @@
   .pricingPage :global(.pricing-tier-tabs) {
     gap: 7px;
     padding: 6px;
-    border-radius: 16px;
+    border-radius: 16px 16px 0 0;
   }
 
   .pricingPage :global(.pricing-tier-tabs button) {
@@ -244,7 +260,9 @@
   }
 
   .pricingPage :global(.pricing-tier-summary) {
-    margin: 24px auto 38px;
+    margin: 0 0 38px;
+    padding: 22px 18px 24px;
+    border-radius: 0 0 16px 16px;
   }
 
   .pricingPage :global(.pricing-tier-summary p) {
