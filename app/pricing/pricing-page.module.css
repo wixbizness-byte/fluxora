@@ -142,16 +142,18 @@
   grid-template-columns: minmax(0, 1fr) 36px;
   align-items: center;
   gap: 16px;
-  min-height: 48px;
+  min-height: 52px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--line);
 }
 
 .pricingPage :global(.pricing-resource-heading span) {
-  min-height: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
-  font: 600 clamp(27px, 3vw, 38px)/1.05 "Fraunces", Georgia, serif;
+  margin: 0;
+  padding: 0;
+  font: 600 clamp(27px, 3vw, 38px)/1 "Fraunces", Georgia, serif;
   color: var(--ink);
 }
 
@@ -164,6 +166,7 @@
   justify-self: end;
   align-self: center;
   margin: 0;
+  padding: 0;
   border-radius: 999px;
   color: var(--wine);
   background: color-mix(in srgb, var(--rose) 18%, transparent);
