@@ -60,54 +60,56 @@ export default function CheckoutClient() {
       <section className={styles.hero}>
         <p className={styles.kicker}>GCash checkout</p>
         <h1>Pay with GCash, then message Fluxora to confirm your purchase.</h1>
-        <p>Send the exact amount using the details below. Once payment is complete, tap “I purchased” to continue directly to Fluxora on Telegram.</p>
+        <p>Choose your plan, send the exact amount, then tap “I purchased” to continue directly to Fluxora on Telegram.</p>
       </section>
 
-      <section className={styles.grid}>
-        <div className={styles.card}>
-          <h2>1. Pay with GCash</h2>
+      <section className={styles.checkoutWrap}>
+        <div className={`${styles.card} ${styles.checkoutCard}`}>
+          <div className={styles.checkoutSection}>
+            <h2>1. Pay with GCash</h2>
 
-          <div className={styles.planGrid}>
-            {plans.map((plan) => {
-              const price = plan.price_php || fallbackPrice(plan.id);
-              return (
-                <button
-                  type="button"
-                  key={plan.id}
-                  onClick={() => setSelectedId(plan.id)}
-                  className={selected?.id === plan.id ? styles.planActive : styles.plan}
-                >
-                  <span>{plan.title}</span>
-                  <strong>₱{price.toLocaleString()}</strong>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className={styles.paymentBox}>
-            <div>
-              <span>{payment.payment_label}</span>
-              <button type="button" className={styles.copyValue} onClick={copyPaymentNumber}>
-                <strong>{payment.payment_number}</strong>
-                <small>{copied ? "Copied!" : "Tap to copy"}</small>
-              </button>
+            <div className={styles.planGrid}>
+              {plans.map((plan) => {
+                const price = plan.price_php || fallbackPrice(plan.id);
+                return (
+                  <button
+                    type="button"
+                    key={plan.id}
+                    onClick={() => setSelectedId(plan.id)}
+                    className={selected?.id === plan.id ? styles.planActive : styles.plan}
+                  >
+                    <span>{plan.title}</span>
+                    <strong>₱{price.toLocaleString()}</strong>
+                  </button>
+                );
+              })}
             </div>
-            {payment.qr_image_url && (
-              <img src={payment.qr_image_url} alt={payment.qr_alt_text || "Fluxora GCash QR"} />
-            )}
+
+            <div className={styles.paymentBox}>
+              <div>
+                <span>{payment.payment_label}</span>
+                <button type="button" className={styles.copyValue} onClick={copyPaymentNumber}>
+                  <strong>{payment.payment_number}</strong>
+                  <small>{copied ? "Copied!" : "Tap to copy"}</small>
+                </button>
+              </div>
+              {payment.qr_image_url && (
+                <img src={payment.qr_image_url} alt={payment.qr_alt_text || "Fluxora GCash QR"} />
+              )}
+            </div>
+
+            <p className={styles.note}>
+              Send exactly <strong>₱{amount.toLocaleString()}</strong> for <strong>{selected?.title || "Fluxora access"}</strong>.
+            </p>
           </div>
 
-          <p className={styles.note}>
-            Send exactly <strong>₱{amount.toLocaleString()}</strong> for <strong>{selected?.title || "Fluxora access"}</strong>.
-          </p>
-        </div>
-
-        <div className={styles.card}>
-          <h2>2. Finished paying?</h2>
-          <p className={styles.formHint}>Tap the button below and send Fluxora your payment confirmation on Telegram.</p>
-          <a className={styles.primary} href={PURCHASED_URL} target="_blank" rel="noreferrer">
-            I purchased
-          </a>
+          <div className={styles.finishSection}>
+            <h2>2. Finished paying?</h2>
+            <p className={styles.formHint}>Tap below and send Fluxora your payment confirmation on Telegram.</p>
+            <a className={styles.primary} href={PURCHASED_URL} target="_blank" rel="noreferrer">
+              I purchased
+            </a>
+          </div>
         </div>
       </section>
     </main>
