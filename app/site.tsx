@@ -6,23 +6,31 @@ import {
   fallbackCollectionCards,
   fallbackGalleryImages,
   fallbackPaymentSettings,
+  fallbackPricingFaqs,
+  fallbackPricingPageSettings,
   type AccessPlan,
   type CollectionCard,
   type GalleryImage,
   type GalleryRow,
   type PaymentSettings,
+  type PricingFaq,
+  type PricingPageSettings,
+  type PricingResource,
 } from "./content";
 import { isSupabaseConfigured, queryRows } from "./lib/supabase";
 
-const faqs = [
-  [
-    "What is included in each access plan?",
-    "Explorer includes premium prompts, tools, Custom GPTs, and courses. Creator adds the complete workflows collection and the expanded vault.",
-  ],
-  ["Who is behind Fluxora?", "Meimei Digitals is the owner of Fluxora."],
-  ["Do I need technical experience?", "No. Fluxora is structured around clear outcomes and guided steps rather than technical complexity."],
-  ["Can the library keep growing?", "Yes. The library is continuously growing. Established since December 2025"],
-  ["Where does the community live?", "The Fluxora creator community is currently hosted on Telegram."],
+const homeFaqs: PricingFaq[] = [
+  {
+    id: "home-faq-1",
+    question: "What is included in each access plan?",
+    answer: "Explorer includes premium prompts, tools, Custom GPTs, and courses. Creator adds the complete workflows collection and the expanded vault.",
+    sort_order: 1,
+    is_active: true,
+  },
+  { id: "home-faq-2", question: "Who is behind Fluxora?", answer: "Meimei Digitals is the owner of Fluxora.", sort_order: 2, is_active: true },
+  { id: "home-faq-3", question: "Do I need technical experience?", answer: "No. Fluxora is structured around clear outcomes and guided steps rather than technical complexity.", sort_order: 3, is_active: true },
+  { id: "home-faq-4", question: "Can the library keep growing?", answer: "Yes. The library is continuously growing. Established since December 2025", sort_order: 4, is_active: true },
+  { id: "home-faq-5", question: "Where does the community live?", answer: "The Fluxora creator community is currently hosted on Telegram.", sort_order: 5, is_active: true },
 ];
 
 function MoonMark() {
@@ -120,13 +128,40 @@ function planFeatures(plan: AccessPlan) {
     .filter(Boolean);
 }
 
-export default function Site() {
+function planTier(plan: AccessPlan): "Tool" | "Premium" | "Creator" {
+  if (plan.member_tier === "Tool" || plan.id === "tool") return "Tool";
+  if (plan.member_tier === "Creator" || plan.id === "creator") return "Creator";
+  return "Premium";
+}
+
+function planTabLabel(plan: AccessPlan) {
+  const tier = planTier(plan);
+  return tier === "Tool" ? "Tools" : tier;
+}
+
+function resourceAllowed(resource: PricingResource, tier: "Tool" | "Premium" | "Creator") {
+  if (tier === "Tool") return resource.tool_type === "Tool";
+  if (tier === "Creator") return true;
+  return resource.access_level === "All" || resource.access_level === "Premium";
+}
+
+function categoryLabel(category: PricingResource["tool_type"]) {
+  if (category === "CustomGPT") return "CustomGPTs";
+  if (category === "Workflow") return "Workflows";
+  return "Tools";
+}
+
+export default function Site({ pricingMode = false }: { pricingMode?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [openFaq, setOpenFaq] = useState(0);
   const [collectionCards, setCollectionCards] = useState<CollectionCard[]>(fallbackCollectionCards);
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>(fallbackGalleryImages);
   const [accessPlans, setAccessPlans] = useState<AccessPlan[]>(fallbackAccessPlans);
   const [paymentSettings, setPaymentSettings] = useState<PaymentSettings>(fallbackPaymentSettings);
+  const [pricingResources, setPricingResources] = useState<PricingResource[]>([]);
+  const [pricingFaqs, setPricingFaqs] = useState<PricingFaq[]>(fallbackPricingFaqs);
+  const [pricingPageSettings, setPricingPageSettings] = useState<PricingPageSettings>(fallbackPricingPageSettings);
+  const [selectedPricingPlanId, setSelectedPricingPlanId] = useState("tool");
 
   useEffect(() => {
     if (!isSupabaseConfigured()) return;
@@ -151,6 +186,27 @@ export default function Site() {
     return () => { cancelled = true; };
   }, []);
 
+  useEffect(() => {
+    if (!pricingMode || !isSupabaseConfigured()) return;
+    let cancelled = false;
+
+    async function loadPricingCatalog() {
+      const [resourcesResult, faqResult, settingsResult] = await Promise.all([
+        queryRows<PricingResource>("pricing_resources_public", "select=*&order=sort_order.asc,title.asc"),
+        queryRows<PricingFaq>("pricing_faqs", "select=*&is_active=eq.true&order=sort_order.asc"),
+        queryRows<PricingPageSettings>("pricing_page_settings", "select=*&id=eq.main&limit=1"),
+      ]);
+
+      if (cancelled) return;
+      if (!resourcesResult.error && resourcesResult.data) setPricingResources(resourcesResult.data);
+      if (!faqResult.error) setPricingFaqs(faqResult.data?.length ? faqResult.data : []);
+      if (!settingsResult.error && settingsResult.data?.[0]) setPricingPageSettings(settingsResult.data[0]);
+    }
+
+    loadPricingCatalog().catch((error) => console.warn("Fluxora pricing catalog fallback is being used.", error));
+    return () => { cancelled = true; };
+  }, [pricingMode]);
+
   const galleryRows = useMemo(() => {
     const rows: Record<GalleryRow, GalleryImage[]> = { top: [], middle: [], bottom: [] };
     galleryImages.forEach((image) => {
@@ -163,6 +219,23 @@ export default function Site() {
       bottom: fillGalleryRow(rows.bottom, "bottom"),
     };
   }, [galleryImages]);
+
+  const pricingPlans = useMemo(
+    () => accessPlans.filter((plan) => ["tool", "premium", "creator"].includes(plan.id)).sort((a, b) => a.sort_order - b.sort_order),
+    [accessPlans],
+  );
+  const selectedPlan = pricingPlans.find((plan) => plan.id === selectedPricingPlanId) || pricingPlans[0];
+  const selectedTier = selectedPlan ? planTier(selectedPlan) : "Tool";
+  const selectedResources = useMemo(
+    () => pricingResources.filter((resource) => resourceAllowed(resource, selectedTier)),
+    [pricingResources, selectedTier],
+  );
+  const categoryOrder: PricingResource["tool_type"][] = selectedTier === "Creator"
+    ? ["Workflow", "CustomGPT", "Tool"]
+    : selectedTier === "Premium"
+      ? ["CustomGPT", "Tool"]
+      : ["Tool"];
+  const visibleFaqs = pricingMode ? pricingFaqs : homeFaqs;
 
   function closeMenu() {
     setMenuOpen(false);
@@ -252,32 +325,97 @@ export default function Site() {
         </div>
       </section>
 
-      <section className="pricing section" id="pricing">
-        <div className="pricing-wrap">
-          <div className="pricing-copy text-motion">
-            <p className="eyebrow"><span />Simple access</p>
-            <h2>Choose the level that<br /><em>fits your momentum.</em></h2>
-            <p>Explore the offers and choose the access level that fits the way you create.</p>
-          </div>
+      <section className={pricingMode ? "pricing pricing-catalog section" : "pricing section"} id="pricing">
+        {pricingMode ? (
+          <div className="pricing-catalog-wrap">
+            <div className="pricing-copy pricing-catalog-heading text-motion">
+              <p className="eyebrow"><span />Simple access</p>
+              <h2>Choose the level that<br /><em>fits your momentum.</em></h2>
+              <p>Pick a tier to see exactly which Fluxora resources are included.</p>
+            </div>
 
-          <div className="price-cards">
-            {accessPlans.map((plan) => (
-              <article className={plan.variant === "creator" ? "access-plan creator-plan" : "access-plan"} key={plan.id}>
-                <div className="plan-header">{plan.badge}</div>
-                <h3>{plan.title}</h3>
-                <p className="plan-description">{plan.description}</p>
-                <ul className="plan-features">
-                  {planFeatures(plan).map((feature) => <li key={feature}>{feature}</li>)}
-                </ul>
-                <CardButton
-                  label={plan.button_label}
-                  url={plan.button_url}
-                  className={plan.variant === "creator" ? "button primary full" : "button ghost full"}
-                />
-              </article>
-            ))}
+            <div className="pricing-tier-tabs" role="tablist" aria-label="Fluxora membership tiers">
+              {pricingPlans.map((plan) => (
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={selectedPlan?.id === plan.id}
+                  className={selectedPlan?.id === plan.id ? "active" : ""}
+                  key={plan.id}
+                  onClick={() => setSelectedPricingPlanId(plan.id)}
+                >
+                  {planTabLabel(plan)}
+                </button>
+              ))}
+            </div>
+
+            {selectedPlan && (
+              <div className="pricing-tier-summary">
+                {selectedPlan.show_description !== false && selectedPlan.description && <p>{selectedPlan.description}</p>}
+                {selectedPlan.checkout_enabled !== false && (
+                  <a className="pricing-buy-button" href={`/checkout?plan=${encodeURIComponent(selectedPlan.id)}`}>
+                    Buy for ₱{Number(selectedPlan.price_php || (selectedPlan.id === "tool" ? 249 : selectedPlan.id === "creator" ? 1999 : 599)).toLocaleString()}
+                  </a>
+                )}
+              </div>
+            )}
+
+            <div className="pricing-resource-groups">
+              {categoryOrder.map((category) => {
+                const categoryResources = selectedResources.filter((resource) => resource.tool_type === category);
+                if (!categoryResources.length) return null;
+                return (
+                  <section className="pricing-resource-group" key={category}>
+                    <div className="pricing-resource-heading">
+                      <span>{categoryLabel(category)}</span>
+                      <strong>{categoryResources.length}</strong>
+                    </div>
+                    <div className="pricing-resource-grid">
+                      {categoryResources.map((resource) => (
+                        <article className="pricing-resource-card" key={resource.slug}>
+                          <div className="pricing-resource-image">
+                            <ImageSurface imageUrl={resource.image_url || ""} alt={resource.title} />
+                          </div>
+                          <div className="pricing-resource-copy">
+                            <h3>{resource.title}</h3>
+                            {resource.short_description && <p>{resource.short_description}</p>}
+                            <span>Included with {planTabLabel(selectedPlan!)}</span>
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="pricing-wrap">
+            <div className="pricing-copy text-motion">
+              <p className="eyebrow"><span />Simple access</p>
+              <h2>Choose the level that<br /><em>fits your momentum.</em></h2>
+              <p>Explore the offers and choose the access level that fits the way you create.</p>
+            </div>
+
+            <div className="price-cards">
+              {accessPlans.filter((plan) => plan.id !== "tool").map((plan) => (
+                <article className={plan.variant === "creator" ? "access-plan creator-plan" : "access-plan"} key={plan.id}>
+                  <div className="plan-header">{plan.badge}</div>
+                  <h3>{plan.title}</h3>
+                  <p className="plan-description">{plan.description}</p>
+                  <ul className="plan-features">
+                    {planFeatures(plan).map((feature) => <li key={feature}>{feature}</li>)}
+                  </ul>
+                  <CardButton
+                    label={plan.button_label}
+                    url={plan.button_url}
+                    className={plan.variant === "creator" ? "button primary full" : "button ghost full"}
+                  />
+                </article>
+              ))}
+            </div>
+          </div>
+        )}
       </section>
 
       {paymentSettings.is_active && (
@@ -299,24 +437,26 @@ export default function Site() {
         </section>
       )}
 
-      <section className="faq section" id="faq">
-        <div className="faq-heading text-motion">
-          <p className="eyebrow"><span />Questions, answered</p>
-          <h2>Everything you need<br />to know.</h2>
-          <p>Important details about Fluxora, access, and the creator community.</p>
-        </div>
+      {(!pricingMode || pricingPageSettings.faq_enabled) && visibleFaqs.length > 0 && (
+        <section className="faq section" id="faq">
+          <div className="faq-heading text-motion">
+            <p className="eyebrow"><span />Questions, answered</p>
+            <h2>Everything you need<br />to know.</h2>
+            <p>Important details about Fluxora, access, and the creator community.</p>
+          </div>
 
-        <div className="faq-list">
-          {faqs.map(([question, answer], index) => (
-            <article className={openFaq === index ? "open" : ""} key={question}>
-              <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)} aria-expanded={openFaq === index}>
-                <span>{String(index + 1).padStart(2, "0")}</span><b>{question}</b><i>+</i>
-              </button>
-              <div className="faq-answer"><p>{answer}</p></div>
-            </article>
-          ))}
-        </div>
-      </section>
+          <div className="faq-list">
+            {visibleFaqs.map((faq, index) => (
+              <article className={openFaq === index ? "open" : ""} key={faq.id}>
+                <button type="button" onClick={() => setOpenFaq(openFaq === index ? -1 : index)} aria-expanded={openFaq === index}>
+                  <span>{String(index + 1).padStart(2, "0")}</span><b>{faq.question}</b><i>+</i>
+                </button>
+                <div className="faq-answer"><p>{faq.answer}</p></div>
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <footer>
         <div className="footer-brand">
