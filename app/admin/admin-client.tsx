@@ -84,20 +84,52 @@ const editors: EditorDefinition[] = [
   },
   {
     table: "access_plans",
-    title: "Simple access",
-    description: "Edit the fixed Premium and Creator cards. Enter one bullet per line in the Features field. The card types and their order stay fixed.",
+    title: "Pricing tiers",
+    description: "Edit the fixed Tool, Premium, and Creator tiers. Price controls the public Buy button and checkout amount. Tier text appears beneath the three tier buttons on the Pricing page.",
     query: "select=*&order=sort_order.asc",
     allowAdd: false,
     allowDelete: false,
     fields: [
-      { key: "badge", label: "Small badge", type: "text" },
       { key: "title", label: "Plan title", type: "text" },
-      { key: "description", label: "Description", type: "textarea" },
-      { key: "features", label: "Features — one bullet per line", type: "textarea" },
-      { key: "button_label", label: "Button label", type: "text" },
-      { key: "button_url", label: "Button link", type: "url" },
-      { key: "is_active", label: "Show this plan", type: "checkbox" },
+      { key: "price_php", label: "Price (PHP)", type: "number" },
+      { key: "description", label: "Tier text", type: "textarea" },
+      { key: "show_description", label: "Show tier text", type: "checkbox" },
+      { key: "badge", label: "Small badge / home card badge", type: "text" },
+      { key: "features", label: "Home card features — one bullet per line", type: "textarea" },
+      { key: "button_label", label: "Home card button label", type: "text" },
+      { key: "button_url", label: "Checkout link", type: "url" },
+      { key: "checkout_enabled", label: "Checkout enabled", type: "checkbox" },
+      { key: "is_active", label: "Show this tier", type: "checkbox" },
     ],
+  },
+  {
+    table: "pricing_page_settings",
+    title: "Pricing page settings",
+    description: "Control Pricing-page sections without changing membership entitlement logic.",
+    query: "select=*&id=eq.main&limit=1",
+    allowAdd: false,
+    allowDelete: false,
+    fields: [
+      { key: "faq_enabled", label: "Show Pricing FAQ section", type: "checkbox" },
+    ],
+  },
+  {
+    table: "pricing_faqs",
+    title: "Pricing FAQ",
+    description: "Edit, reorder, show, hide, add, or remove questions shown on the Pricing page.",
+    query: "select=*&order=sort_order.asc",
+    fields: [
+      { key: "question", label: "Question", type: "text" },
+      { key: "answer", label: "Answer", type: "textarea" },
+      { key: "sort_order", label: "Position order", type: "number" },
+      { key: "is_active", label: "Visible", type: "checkbox" },
+    ],
+    newRow: {
+      question: "New pricing question",
+      answer: "Add the answer here.",
+      sort_order: 1,
+      is_active: true,
+    },
   },
   {
     table: "payment_settings",
@@ -135,6 +167,8 @@ function rowHeading(editor: EditorDefinition, row: ContentRow, index: number) {
     return `${rowName.charAt(0).toUpperCase() + rowName.slice(1)} row · Slot ${Number(row.sort_order) || index + 1}`;
   }
   if (editor.table === "payment_settings") return "Easy Payments settings";
+  if (editor.table === "pricing_page_settings") return "Pricing page settings";
+  if (editor.table === "pricing_faqs") return String(row.question || `Question ${index + 1}`);
   return String(row.title || row.alt_text || row.eyebrow || `Item ${index + 1}`);
 }
 
