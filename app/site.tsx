@@ -140,7 +140,7 @@ function planTabLabel(plan: AccessPlan) {
 }
 
 function resourceAllowed(resource: PricingResource, tier: "Tool" | "Premium" | "Creator") {
-  if (tier === "Tool") return resource.tool_type === "Tool";
+  if (tier === "Tool") return resource.tool_type === "Tool" && resource.access_level === "All";
   if (tier === "Creator") return true;
   return resource.access_level === "All" || resource.access_level === "Premium";
 }
