@@ -47,7 +47,7 @@ type MemberFilter = "all" | "trial" | "members" | "tool" | "premium" | "creator"
 
 const PAGE_SIZE = 10;
 const MEMBER_STATUSES = [
-  "active", "3 hours", "1 day", "1 week", "1 month", "3 months", "6 months", "1 year",
+  "active", "3 hours", "1 day", "1 week", "2 weeks", "3 weeks", "1 month", "3 months", "6 months", "1 year",
   "inactive", "blocked",
 ];
 
