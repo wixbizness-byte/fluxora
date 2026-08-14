@@ -84,7 +84,7 @@ export default function TrialAdmin() {
 
   async function resetTrial(trial: Trial) {
     const confirmed = window.confirm(
-      `Reset the free trial for ${trial.gmail}?\n\nThis removes their current trial member record and lets this Google account claim a fresh 3-hour trial.`
+      `Reset the free trial for ${trial.gmail}?\n\nThis removes their current trial member record and lets this Google account claim a fresh 1-day trial.`
     );
     if (!confirmed) return;
 
@@ -109,7 +109,7 @@ export default function TrialAdmin() {
   async function resetAllInactive() {
     if (!summary.expired) return;
     const confirmed = window.confirm(
-      `Reset all ${summary.expired} inactive/expired Google trial accounts?\n\nThis removes expired trial claims and their trial-only member records so those Gmail accounts can claim a fresh 3-hour trial. Paid or upgraded member accounts are protected and will not be removed.`
+      `Reset all ${summary.expired} inactive/expired Google trial accounts?\n\nThis removes expired trial claims and their trial-only member records so those Gmail accounts can claim a fresh 1-day trial. Paid or upgraded member accounts are protected and will not be removed.`
     );
     if (!confirmed) return;
 
@@ -139,7 +139,7 @@ export default function TrialAdmin() {
         <div>
           <p>Free access analytics</p>
           <h2>Google Trial Claims</h2>
-          <span>Every Google account that claims the one-time 3-hour trial is recorded here.</span>
+          <span>Every Google account that claims the one-time 1-day trial is recorded here.</span>
         </div>
         <div className={styles.headingActions}>
           <strong>{summary.total}</strong>

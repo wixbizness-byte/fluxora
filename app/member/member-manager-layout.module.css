@@ -1,8 +1,8 @@
 .managerLayout {
-  width: min(1320px, 100%);
+  width: min(1500px, 100%);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr) 270px;
+  grid-template-columns: 150px minmax(540px, 1fr) 250px 250px;
   gap: 18px;
   align-items: start;
 }
@@ -137,14 +137,46 @@
   line-height: 1.5;
 }
 
-@media (max-width: 1120px) {
+.managerLayout > [data-resource-usage-host] {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.managerLayout > [data-active-access-host] {
+  grid-column: 4;
+  grid-row: 1;
+}
+
+@media (max-width: 1280px) {
   .managerLayout {
-    grid-template-columns: 1fr;
+    width: min(1040px, 100%);
+    grid-template-columns: 150px minmax(0, 1fr);
+  }
+
+  .managerLayout > [data-resource-usage-host] {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .managerLayout > [data-active-access-host] {
+    grid-column: 2;
+    grid-row: 3;
   }
 
   .filterRail,
   .activityRail {
     position: static;
+  }
+
+  .activityList {
+    max-height: 360px;
+  }
+}
+
+@media (max-width: 760px) {
+  .managerLayout {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .filterRail {
@@ -155,28 +187,23 @@
 
   .filterRail button {
     flex: 0 0 auto;
-    min-width: 120px;
-  }
-
-  .activityList {
-    max-height: 360px;
-  }
-}
-
-@media (max-width: 680px) {
-  .managerLayout {
-    gap: 12px;
-  }
-
-  .filterRail {
-    margin-inline: -2px;
-  }
-
-  .filterRail button {
     min-width: 104px;
     min-height: 46px;
     border-radius: 15px;
     font-size: 13px;
+  }
+
+  .managerLayout > [data-resource-usage-host],
+  .managerLayout > [data-active-access-host] {
+    grid-column: 1;
+  }
+
+  .managerLayout > [data-resource-usage-host] {
+    grid-row: auto;
+  }
+
+  .managerLayout > [data-active-access-host] {
+    grid-row: auto;
   }
 
   .activityRail {

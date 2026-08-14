@@ -80,10 +80,14 @@ export default function ResourceUsagePortal() {
     const attach = () => {
       if (host?.isConnected) return true;
       const rail = document.querySelector<HTMLElement>('aside[class*="activityRail"]');
-      if (!rail) return false;
+      const parent = rail?.parentElement;
+      if (!rail || !parent) return false;
+
       host = document.createElement("div");
-      host.dataset.resourceUsagePortal = "true";
-      rail.prepend(host);
+      host.dataset.resourceUsageHost = "true";
+      host.className = styles.portalHost;
+      const activeHost = parent.querySelector<HTMLElement>("[data-active-access-host]");
+      parent.insertBefore(host, activeHost || rail);
       setMountNode(host);
       return true;
     };
