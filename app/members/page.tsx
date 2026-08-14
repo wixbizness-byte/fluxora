@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import MembersPortal from "./members-portal";
 import ResourceUsagePortal from "./resource-usage-portal";
+import ActiveAccessPortal from "./active-access-portal";
 import TrialAdmin from "../member/trial-admin";
 
 export const metadata: Metadata = {
@@ -8,7 +9,6 @@ export const metadata: Metadata = {
   description: "Manage your Fluxora membership and registered devices.",
 };
 
-// Keep the admin-only resource usage panel mounted beside the existing member analytics.
 export default function MembersPage() {
-  return <><MembersPortal /><ResourceUsagePortal /><TrialAdmin /></>;
+  return <><MembersPortal /><ResourceUsagePortal /><ActiveAccessPortal /><TrialAdmin /></>;
 }
