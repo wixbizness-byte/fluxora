@@ -284,13 +284,20 @@ export default function MemberManager() {
     { key: "affiliate", label: "Affiliate" },
   ];
 
+  const activeTrials = members.filter((member) => {
+    if (member.status.toLowerCase() !== "google_trial") return false;
+    if (!member.expires_at) return true;
+    const expiry = new Date(member.expires_at).getTime();
+    return !Number.isFinite(expiry) || expiry > Date.now();
+  }).length;
+
   return <main className={styles.page}>
     <header className={styles.header}><div><p className={styles.kicker}>Fluxora access control</p><h1>Member Manager</h1><p className={styles.adminEmail}>{adminEmail}</p></div>
       <div className={styles.headerActions}><a className={styles.secondaryButton} href="/">Home</a><a className={styles.secondaryButton} href="/prompts/admin?tab=members">Prompt Admin</a></div>
     </header>
 
     {(notice || error) && <div className={error ? styles.errorNotice : styles.successNotice}>{error || notice}</div>}
-    <section className={styles.summaryGrid}><article><span>Total members</span><strong>{members.length}</strong></article><article><span>Active</span><strong>{members.filter((m) => m.status === "active").length}</strong></article><article><span>Creator</span><strong>{members.filter((m) => m.tier === "Creator" && m.status.toLowerCase() !== "google_trial").length}</strong></article></section>
+    <section className={styles.summaryGrid}><article><span>Total members</span><strong>{members.length}</strong></article><article><span>Active Trials</span><strong>{activeTrials}</strong></article><article><span>Members</span><strong>{filterCounts.members}</strong></article></section>
 
     <div className={layout.managerLayout}>
       <aside className={layout.filterRail} aria-label="Member filters">
