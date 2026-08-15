@@ -13,9 +13,7 @@ type Member = {
   max_uses: number | null;
   use_count: number | null;
   max_devices: number;
-  device_count?: number;
-  canvas_count?: number;
-  canvas_limit?: number | null;
+  registered_device_count?: number;
   expires_at: string | null;
   notes: string | null;
   account_link: string | null;
@@ -40,6 +38,11 @@ type ApiResponse = {
   activityTimezone?: string;
   adminEmail?: string;
   message?: string;
+  error?: string;
+};
+
+type RegisteredCountsResponse = {
+  counts?: Record<string, number>;
   error?: string;
 };
 
@@ -119,9 +122,9 @@ function MemberFields({ member }: { member?: Member }) {
         <input name="max_uses" type="number" min="1" defaultValue={member?.max_uses ?? ""} placeholder="Blank = unlimited" />
       </label>
       <label className={styles.field}>
-        <span>Max web devices</span>
+        <span>Max registered devices</span>
         <input name="max_devices" type="number" min="1" max="20" required defaultValue={member?.tier === "Tool" ? 2 : (member?.max_devices ?? 5)} />
-        <small>Tool tier is always limited to 2 web devices.</small>
+        <small>Tool tier is always limited to 2 registered devices.</small>
       </label>
       <label className={styles.field}>
         <span>Expires at</span>
@@ -151,8 +154,12 @@ export default function MemberManager() {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/prompts/api/members", { cache: "no-store", credentials: "include" });
+      const [response, countsResponse] = await Promise.all([
+        fetch("/prompts/api/members", { cache: "no-store", credentials: "include" }),
+        fetch("/prompts/api/registered-device-counts", { cache: "no-store", credentials: "include" }),
+      ]);
       const body = (await response.json()) as ApiResponse;
+      const countsBody = (await countsResponse.json().catch(() => ({}))) as RegisteredCountsResponse;
       if (response.status === 401 || response.status === 403) {
         setUnauthorized(true);
         setMembers([]);
@@ -160,7 +167,11 @@ export default function MemberManager() {
       }
       if (!response.ok) throw new Error(body.error || "Could not load members.");
       setUnauthorized(false);
-      setMembers(body.members || []);
+      const counts = countsResponse.ok ? (countsBody.counts || {}) : {};
+      setMembers((body.members || []).map((member) => ({
+        ...member,
+        registered_device_count: counts[member.id] || 0,
+      })));
       setActivity(body.activity || []);
       setAdminEmail(body.adminEmail || "");
     } catch (reason) {
@@ -225,7 +236,7 @@ export default function MemberManager() {
     const form = event.currentTarget;
     try {
       const result = await mutate(payloadFromForm(form), "POST");
-      if (result.member) setMembers((current) => [result.member!, ...current]);
+      if (result.member) setMembers((current) => [{ ...result.member!, registered_device_count: 0 }, ...current]);
       setNotice("Member added successfully."); form.reset();
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not add member."); }
     finally { setBusy(""); }
@@ -312,13 +323,12 @@ export default function MemberManager() {
 
         <div className={styles.list}>{visible.map((member) => {
           const isRevealed = revealed.has(member.id);
-          const canvasLimit = member.canvas_limit === null ? "unlimited" : String(member.canvas_limit ?? (member.status === "google_trial" ? 6 : member.tier === "Tool" ? 3 : 8));
           const activeLike = member.status === "active" || member.status === "google_trial";
           const isTrial = member.status.toLowerCase() === "google_trial";
           return <article className={styles.item} key={member.id}>
             <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{member.status}</span></div>
             <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
-            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Web devices: {member.device_count ?? 0} / {member.max_devices ?? (member.tier === "Tool" ? 2 : 5)}</span><span>Canvas: {member.canvas_count ?? 0} / {canvasLimit}</span><span>{displayDate(member.expires_at)}</span></div>
+            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {member.max_devices ?? (member.tier === "Tool" ? 2 : 5)}</span><span>{displayDate(member.expires_at)}</span></div>
             {member.notes && <p className={styles.notes}>{member.notes}</p>}
             {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
             <div className={styles.quickActions}>
@@ -340,7 +350,6 @@ export default function MemberManager() {
               <span className={layout.activityCode}>{isTrial ? item.access_code : item.gmail}</span>
               <strong>{item.uses} {item.uses === 1 ? "use" : "uses"}</strong>
               <small>{isTrial ? "Trial" : item.tier} • Last {phTime(item.last_used_at)}</small>
-              {item.canvas_devices >= 4 && <em>{item.canvas_devices} Canvas registrations today{item.canvas_devices >= 6 ? " • Check" : ""}</em>}
             </button>;
           })}
           {!activity.length && <p className={layout.activityEmpty}>No successful code authorizations yet today.</p>}
