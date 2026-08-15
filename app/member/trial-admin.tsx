@@ -38,6 +38,11 @@ function formatPht(value: string) {
   }).format(date) + " PHT";
 }
 
+function displayTrialCode(value: string | null) {
+  if (!value) return null;
+  return /^expired-[0-9a-f]{32}$/i.test(value) ? "Recycled" : value;
+}
+
 export default function TrialAdmin() {
   const [trials, setTrials] = useState<Trial[]>([]);
   const [summary, setSummary] = useState({ total: 0, active: 0, expired: 0 });
@@ -79,7 +84,7 @@ export default function TrialAdmin() {
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     if (!needle) return trials;
-    return trials.filter((trial) => [trial.gmail, trial.member_status, trial.tier || "", trial.access_code || ""].some((value) => value.toLowerCase().includes(needle)));
+    return trials.filter((trial) => [trial.gmail, trial.member_status, trial.tier || "", displayTrialCode(trial.access_code) || ""].some((value) => value.toLowerCase().includes(needle)));
   }, [query, trials]);
 
   async function resetTrial(trial: Trial) {
@@ -172,35 +177,38 @@ export default function TrialAdmin() {
 
       {loading ? <div className={styles.empty}>Loading free trials…</div> : (
         <div className={styles.list}>
-          {filtered.map((trial) => (
-            <article className={styles.row} key={trial.gmail}>
-              <div className={styles.identity}>
-                <strong>{trial.gmail}</strong>
-                <span>Claimed {formatPht(trial.claimed_at)}</span>
-              </div>
+          {filtered.map((trial) => {
+            const code = displayTrialCode(trial.access_code);
+            return (
+              <article className={styles.row} key={trial.gmail}>
+                <div className={styles.identity}>
+                  <strong>{trial.gmail}</strong>
+                  <span>Claimed {formatPht(trial.claimed_at)}</span>
+                </div>
 
-              <div className={styles.timeBlock}>
-                <span>Expires</span>
-                <strong>{formatPht(trial.expires_at)}</strong>
-              </div>
+                <div className={styles.timeBlock}>
+                  <span>Expires</span>
+                  <strong>{formatPht(trial.expires_at)}</strong>
+                </div>
 
-              <div className={styles.meta}>
-                <b className={trial.active ? styles.active : styles.expired}>{trial.active ? "Active" : "Expired"}</b>
-                <span>{trial.tier || "Trial"}</span>
-                {trial.access_code && <code>{trial.access_code}</code>}
-              </div>
+                <div className={styles.meta}>
+                  <b className={trial.active ? styles.active : styles.expired}>{trial.active ? "Active" : "Expired"}</b>
+                  <span>{trial.tier || "Trial"}</span>
+                  {code && <code title={code === "Recycled" ? "Previous trial code has been recycled" : undefined}>{code}</code>}
+                </div>
 
-              <button
-                className={styles.resetButton}
-                type="button"
-                disabled={!trial.resettable || busy === trial.gmail || busy === "__all__"}
-                onClick={() => resetTrial(trial)}
-                title={trial.resettable ? "Allow this Google account to claim another free trial" : "This claim is linked to a non-trial member and cannot be reset here"}
-              >
-                {busy === trial.gmail ? "Resetting…" : trial.resettable ? "Reset trial" : "Protected"}
-              </button>
-            </article>
-          ))}
+                <button
+                  className={styles.resetButton}
+                  type="button"
+                  disabled={!trial.resettable || busy === trial.gmail || busy === "__all__"}
+                  onClick={() => resetTrial(trial)}
+                  title={trial.resettable ? "Allow this Google account to claim another free trial" : "This claim is linked to a non-trial member and cannot be reset here"}
+                >
+                  {busy === trial.gmail ? "Resetting…" : trial.resettable ? "Reset trial" : "Protected"}
+                </button>
+              </article>
+            );
+          })}
           {!filtered.length && !error && <div className={styles.empty}>{query ? "No trial claims match your search." : "No Google trials claimed yet."}</div>}
         </div>
       )}
