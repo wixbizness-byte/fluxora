@@ -25,15 +25,28 @@ type Device = {
   platform: string | null;
   first_seen_at: string;
   last_seen_at: string;
+  last_tool?: string | null;
+  seen_count?: number | null;
+  observed_over_limit?: boolean | null;
 };
 
 type PortalResponse = {
   role?: "admin" | "member" | "none";
   email?: string;
   member?: Member;
-  registered_devices?: Device[];
-  registered_limit?: number | null;
   access_code?: string;
+  message?: string;
+  error?: string;
+  tracked_devices?: Device[];
+  tracked_limit?: number;
+  tracked_over_limit?: boolean;
+};
+
+type TrackedResponse = {
+  devices?: Device[];
+  limit?: number;
+  count?: number;
+  over_limit?: boolean;
   message?: string;
   error?: string;
 };
@@ -59,8 +72,27 @@ export default function MembersPortal() {
     const response = await fetch("/prompts/api/member-portal", { cache: "no-store", credentials: "include" });
     const body = (await response.json().catch(() => ({}))) as PortalResponse;
     setStatus(response.status);
+
+    if (!response.ok && response.status !== 401 && response.status !== 403) {
+      setData(body);
+      setError(body.error || "Could not load member portal.");
+      setLoading(false);
+      return;
+    }
+
+    if (response.ok && body.role === "member") {
+      const trackedResponse = await fetch("/prompts/api/tracked-devices", { cache: "no-store", credentials: "include" });
+      const tracked = (await trackedResponse.json().catch(() => ({}))) as TrackedResponse;
+      if (trackedResponse.ok) {
+        body.tracked_devices = tracked.devices || [];
+        body.tracked_limit = tracked.limit ?? body.member?.max_devices ?? 1;
+        body.tracked_over_limit = Boolean(tracked.over_limit);
+      } else if (trackedResponse.status !== 401 && trackedResponse.status !== 403) {
+        setError(tracked.error || "Could not load tracked devices.");
+      }
+    }
+
     setData(body);
-    if (!response.ok && response.status !== 401 && response.status !== 403) setError(body.error || "Could not load member portal.");
     setLoading(false);
   }
 
@@ -75,7 +107,8 @@ export default function MembersPortal() {
     setBusy(busyKey);
     setNotice("");
     setError("");
-    const response = await fetch("/prompts/api/member-portal", {
+    const trackedAction = action === "remove_tracked_device" || action === "reset_tracked_devices";
+    const response = await fetch(trackedAction ? "/prompts/api/tracked-devices" : "/prompts/api/member-portal", {
       method: "POST",
       credentials: "include",
       headers: { "Content-Type": "application/json" },
@@ -97,10 +130,10 @@ export default function MembersPortal() {
     setBusy("");
   }
 
-  const registeredDevices = data?.registered_devices || [];
+  const trackedDevices = data?.tracked_devices || [];
   const member = data?.member;
-  const registeredLimit = data?.registered_limit ?? member?.max_devices ?? 1;
-  const remaining = useMemo(() => Math.max(0, registeredLimit - registeredDevices.length), [registeredLimit, registeredDevices.length]);
+  const trackedLimit = data?.tracked_limit ?? member?.max_devices ?? 1;
+  const remaining = useMemo(() => Math.max(0, trackedLimit - trackedDevices.length), [trackedLimit, trackedDevices.length]);
 
   if (loading) {
     return <main className={styles.page}><section className={styles.centerCard}><p>Loading your Fluxora membership…</p></section></main>;
@@ -134,7 +167,7 @@ export default function MembersPortal() {
     );
   }
 
-  const atLimit = registeredDevices.length >= registeredLimit;
+  const overLimit = data?.tracked_over_limit ?? trackedDevices.length > trackedLimit;
 
   return (
     <main className={styles.page}>
@@ -156,11 +189,11 @@ export default function MembersPortal() {
       <section className={styles.summaryGrid}>
         <article><span>Tier</span><strong>{member.tier}</strong></article>
         <article><span>Status</span><strong>{member.status}</strong></article>
-        <article><span>Registered devices</span><strong>{registeredDevices.length} / {registeredLimit}</strong></article>
+        <article><span>Tracked devices</span><strong>{trackedDevices.length} / {trackedLimit}{overLimit ? " ⚠" : ""}</strong></article>
         <article><span>Expires</span><strong className={styles.smallStrong}>{formatDate(member.expires_at)}</strong></article>
       </section>
 
-      {atLimit && <div className={styles.warning}>Your registered-device limit is full. Remove a device below before authorizing a different browser or phone.</div>}
+      {overLimit && <div className={styles.warning}>Your account is over its tracked-device limit ({trackedDevices.length} / {trackedLimit}). Fluxora access is not blocked immediately, but this usage is flagged for review. Remove old device history below if needed.</div>}
 
       <section className={styles.panel}>
         <div className={styles.panelHeading}>
@@ -170,7 +203,7 @@ export default function MembersPortal() {
           <button type="button" onClick={() => setRevealed((value) => !value)}>{revealed ? member.access_code : "••••••••"}</button>
           {revealed && <button className={styles.secondaryButton} type="button" onClick={() => navigator.clipboard.writeText(member.access_code).then(() => setNotice("Access code copied."))}>Copy</button>}
         </div>
-        <p className={styles.help}>Changing your code disables the old code immediately. Your registered-device list is kept unless you remove devices below.</p>
+        <p className={styles.help}>Changing your code disables the old code immediately. Tracked-device history is kept unless you clear it below.</p>
         <button className={styles.dangerButton} type="button" disabled={busy === "reset_code"} onClick={() => {
           if (window.confirm("Generate a new access code? The old code will stop working immediately.")) act("reset_code");
         }}>{busy === "reset_code" ? "Changing…" : "Change access code"}</button>
@@ -179,39 +212,39 @@ export default function MembersPortal() {
       <section className={styles.panel}>
         <div className={styles.panelHeading}>
           <div>
-            <p className={styles.kicker}>Device security</p>
-            <h2>Registered Devices</h2>
-            <p>{remaining} slot{remaining === 1 ? "" : "s"} available · Multiple Fluxora Canvases in the same registered browser use one device slot.</p>
+            <p className={styles.kicker}>Background device tracking</p>
+            <h2>Tracked Devices</h2>
+            <p>{remaining} slot{remaining === 1 ? "" : "s"} before the account is flagged · access itself remains instant.</p>
           </div>
-          {registeredDevices.length > 0 && <button className={styles.secondaryButton} type="button" disabled={busy === "reset_registered_devices"} onClick={() => {
-            if (window.confirm("Remove every registered Fluxora device? Each browser or phone will need to pass device verification again.")) act("reset_registered_devices");
-          }}>{busy === "reset_registered_devices" ? "Removing…" : "Remove all"}</button>}
+          {trackedDevices.length > 0 && <button className={styles.secondaryButton} type="button" disabled={busy === "reset_tracked_devices"} onClick={() => {
+            if (window.confirm("Clear all tracked Fluxora devices? Devices will be observed again the next time they use Fluxora.")) act("reset_tracked_devices");
+          }}>{busy === "reset_tracked_devices" ? "Clearing…" : "Clear all"}</button>}
         </div>
 
         <div className={styles.deviceList}>
-          {registeredDevices.map((device) => {
-            const busyKey = `remove-registered-${device.id}`;
+          {trackedDevices.map((device) => {
+            const busyKey = `remove-tracked-${device.id}`;
             const label = [device.browser || "Browser", device.platform || "Unknown platform"].join(" · ");
             return (
               <article className={styles.device} key={device.id}>
                 <div>
-                  <strong>{device.device_name || "Fluxora Device"}</strong>
-                  <span>{label}</span>
-                  <small>First registered {formatDate(device.first_seen_at)} · Last active {formatDate(device.last_seen_at)}</small>
+                  <strong>{device.device_name || "Fluxora Device"}{device.observed_over_limit ? " ⚠" : ""}</strong>
+                  <span>{label}{device.last_tool ? ` · ${device.last_tool}` : ""}</span>
+                  <small>First seen {formatDate(device.first_seen_at)} · Last active {formatDate(device.last_seen_at)}{device.seen_count ? ` · ${device.seen_count} check${device.seen_count === 1 ? "" : "s"}` : ""}</small>
                 </div>
                 <button type="button" className={styles.removeButton} disabled={busy === busyKey} onClick={() => {
-                  if (window.confirm(`Remove ${label}?`)) act("remove_registered_device", { device_id: device.id }, busyKey);
+                  if (window.confirm(`Remove tracked history for ${label}?`)) act("remove_tracked_device", { device_id: device.id }, busyKey);
                 }}>{busy === busyKey ? "Removing…" : "Remove"}</button>
               </article>
             );
           })}
-          {!registeredDevices.length && <div className={styles.empty}>No registered Fluxora devices yet. Your next successful secure device check will register one.</div>}
+          {!trackedDevices.length && <div className={styles.empty}>No Canvas devices have been observed yet. Successful v35 code checks will add them silently in the background.</div>}
         </div>
       </section>
 
       <section className={styles.infoPanel}>
-        <strong>What counts as a registered device?</strong>
-        <p>A browser profile or phone with its own Fluxora secure device key counts once. Opening multiple Fluxora Gemini Canvases in the same registered browser does not consume additional device slots. A different browser profile, another phone, private browsing, or cleared Fluxora site data may count as a different device.</p>
+        <strong>How does device tracking work?</strong>
+        <p>Fluxora no longer pauses access for cryptographic verification. After a successful code check, it hashes a small set of stable browser/device characteristics and records that hash in the background. Multiple Canvases with the same browser/device profile should resolve to the same tracked device. Because this is soft fingerprinting, the count is a sharing signal rather than a hardware-identity guarantee.</p>
       </section>
     </main>
   );
