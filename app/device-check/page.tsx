@@ -113,6 +113,28 @@ async function waitForStarted(flowToken: string) {
   throw new Error('Fluxora approval did not reach this device window in time.');
 }
 
+const primaryButton: React.CSSProperties = {
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  minHeight: 46,
+  padding: '0 18px',
+  borderRadius: 14,
+  border: 0,
+  background: '#8e2948',
+  color: '#fff',
+  fontWeight: 800,
+  textDecoration: 'none',
+  cursor: 'pointer',
+};
+
+const secondaryButton: React.CSSProperties = {
+  ...primaryButton,
+  background: '#fff7f3',
+  color: '#8e2948',
+  border: '1px solid #dfc7cc',
+};
+
 export default function DeviceCheckPage() {
   const [state, setState] = useState<VaultState>('checking');
   const [message, setMessage] = useState('Keep this window open for a moment. Your Fluxora code stays in the main tool.');
@@ -127,8 +149,7 @@ export default function DeviceCheckPage() {
       if (started.status === 'verified') {
         if (!cancelled) {
           setState('success');
-          setMessage('Fluxora access is ready. This window will close automatically.');
-          window.setTimeout(() => { try { window.close(); } catch {} }, 700);
+          setMessage('Fluxora access is ready. Return to the Fluxora tool when you are ready.');
         }
         return;
       }
@@ -148,8 +169,7 @@ export default function DeviceCheckPage() {
 
       if (!cancelled) {
         setState('success');
-        setMessage(`Device verified${key.state === 'restored' ? ' using this browser’s registered key' : ' and registered to this browser'}. This window will close automatically.`);
-        window.setTimeout(() => { try { window.close(); } catch {} }, 700);
+        setMessage(`Device verified${key.state === 'restored' ? ' using this browser’s registered key' : ' and registered to this browser'}. Return to the Fluxora tool when you are ready.`);
       }
     })().catch((error) => {
       if (!cancelled) {
@@ -167,7 +187,24 @@ export default function DeviceCheckPage() {
         {state === 'success' && <div style={{ width: 48, height: 48, margin: '0 auto 18px', borderRadius: '50%', background: '#edf6ef', color: '#2e6f43', fontSize: 30, lineHeight: '48px', fontWeight: 700 }}>✓</div>}
         <h1 style={{ fontFamily: 'Georgia, serif', fontSize: 28, margin: '0 0 10px' }}>{state === 'success' ? 'Device verified' : state === 'error' ? 'Device check failed' : 'Verifying this device'}</h1>
         <p style={{ color: state === 'error' ? '#9b1c34' : '#a96772', lineHeight: 1.5, margin: 0 }}>{message}</p>
-        {state === 'error' && <p style={{ marginTop: 16, fontSize: 13, color: '#9b1c34' }}>Return to the Fluxora tool, close this window, and press Check Code again.</p>}
+
+        {state === 'error' && (
+          <>
+            <p style={{ marginTop: 16, fontSize: 13, color: '#9b1c34', lineHeight: 1.5 }}>Manage your registered devices below. After freeing a slot, return to the Fluxora tool and press Check Code again.</p>
+            <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
+              <a href="/members" style={primaryButton}>Manage Registered Devices</a>
+              <button type="button" onClick={() => { try { window.close(); } catch {} }} style={secondaryButton}>Close Device Check</button>
+            </div>
+          </>
+        )}
+
+        {state === 'success' && (
+          <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
+            <button type="button" onClick={() => { try { window.close(); } catch {} }} style={primaryButton}>Close Device Check</button>
+            <a href="/members" style={secondaryButton}>Manage Registered Devices</a>
+          </div>
+        )}
+
         <div style={{ fontSize: 12, color: '#bd8f97', marginTop: 16 }}>Fluxora secure device check</div>
         <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
       </section>
