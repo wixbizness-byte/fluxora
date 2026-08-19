@@ -168,8 +168,6 @@ export default function CommunityProfilePortal() {
         username: form.get("username"),
         bio: form.get("bio"),
         avatar_url: form.get("avatar_url"),
-        website_url: form.get("website_url"),
-        social_url: form.get("social_url"),
       }),
     });
     const body = await response.json().catch(() => ({})) as ProfileResponse;
@@ -251,8 +249,6 @@ export default function CommunityProfilePortal() {
           <input name="avatar_url" type="hidden" value={avatarUrl} />
         </div>
 
-        <label><span>Website</span><input name="website_url" type="url" maxLength={500} defaultValue={profile.websiteUrl} /></label>
-        <label><span>Social link</span><input name="social_url" type="url" maxLength={500} defaultValue={profile.socialUrl} /></label>
         <button type="submit" disabled={saving || avatarUploading}>{saving ? "Saving…" : "Save Profile"}</button>
       </form>
 
