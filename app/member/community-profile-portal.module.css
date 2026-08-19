@@ -1,7 +1,11 @@
 .shell {
-  width: min(1120px, calc(100% - 32px));
-  margin: 32px auto;
+  width: 100%;
+  margin: 0;
+  padding: 34px max(18px, calc((100vw - 1120px) / 2)) 42px;
   color: #4b1830;
+  background:
+    radial-gradient(circle at 85% 8%, rgba(199, 122, 145, 0.18), transparent 28rem),
+    linear-gradient(180deg, #fbf4ef 0%, #f6e8e5 100%);
 }
 
 .loading,
@@ -269,7 +273,7 @@
 .rejected { background: #ffe0dc; color: #962c22; }
 
 @media (max-width: 720px) {
-  .shell { width: min(100% - 20px, 1120px); margin: 20px auto; }
+  .shell { padding: 20px 10px 30px; }
   .header { align-items: flex-start; flex-direction: column; }
   .headerActions { flex-wrap: wrap; }
   .form { grid-template-columns: 1fr; padding: 20px; }
