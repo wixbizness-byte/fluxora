@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type DragEvent, type FormEvent } from "react";
 import styles from "./community-profile-portal.module.css";
 
 type CommunityProfile = {
@@ -33,6 +33,20 @@ type ProfileResponse = {
   error?: string;
 };
 
+type AuthorizationResponse = {
+  uploadUrl?: string;
+  token?: string;
+  error?: string;
+};
+
+type UploadResponse = {
+  url?: string;
+  error?: string;
+};
+
+const AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
+const AVATAR_LIMIT = 5 * 1024 * 1024;
+
 export default function CommunityProfilePortal() {
   const [profile, setProfile] = useState<CommunityProfile | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
@@ -40,6 +54,11 @@ export default function CommunityProfilePortal() {
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
+  const [avatarUrl, setAvatarUrl] = useState("");
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const [avatarError, setAvatarError] = useState("");
+  const [draggingAvatar, setDraggingAvatar] = useState(false);
+  const avatarInput = useRef<HTMLInputElement | null>(null);
 
   async function load() {
     const params = new URLSearchParams(window.location.search);
@@ -60,6 +79,7 @@ export default function CommunityProfilePortal() {
       throw new Error(body.error || "Could not load your community profile.");
     }
     setProfile(body.profile);
+    setAvatarUrl(body.profile.avatarUrl || "");
     setSubmissions(body.submissions || []);
     setLoading(false);
   }
@@ -71,8 +91,70 @@ export default function CommunityProfilePortal() {
     });
   }, []);
 
+  async function uploadAvatar(file: File) {
+    setAvatarError("");
+    if (!AVATAR_TYPES.has(file.type)) {
+      setAvatarError("Choose a JPEG, PNG, WebP, or AVIF image.");
+      return;
+    }
+    if (file.size <= 0 || file.size > AVATAR_LIMIT) {
+      setAvatarError("Avatar images must be 5 MB or smaller.");
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const authorizationResponse = await fetch("/prompts/api/media-upload/authorize", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: file.name,
+          contentType: file.type,
+          size: file.size,
+          kind: "avatar",
+        }),
+      });
+      const authorization = await authorizationResponse.json().catch(() => ({})) as AuthorizationResponse;
+      if (!authorizationResponse.ok || !authorization.uploadUrl || !authorization.token) {
+        throw new Error(authorization.error || "Could not authorize the avatar upload.");
+      }
+
+      const uploadResponse = await fetch(authorization.uploadUrl, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${authorization.token}`,
+          "Content-Type": file.type,
+        },
+        body: file,
+      });
+      const uploaded = await uploadResponse.json().catch(() => ({})) as UploadResponse;
+      if (!uploadResponse.ok || !uploaded.url) {
+        throw new Error(uploaded.error || "The avatar upload failed.");
+      }
+      setAvatarUrl(uploaded.url);
+      setNotice("Avatar uploaded. Save your profile to apply it.");
+    } catch (reason) {
+      setAvatarError(reason instanceof Error ? reason.message : "The avatar upload failed. Try again.");
+    } finally {
+      setAvatarUploading(false);
+      if (avatarInput.current) avatarInput.current.value = "";
+    }
+  }
+
+  function chooseAvatar(file: File | undefined) {
+    if (file) void uploadAvatar(file);
+  }
+
+  function dropAvatar(event: DragEvent<HTMLDivElement>) {
+    event.preventDefault();
+    setDraggingAvatar(false);
+    if (!avatarUploading) chooseAvatar(event.dataTransfer.files?.[0]);
+  }
+
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (avatarUploading) return;
     setSaving(true);
     setNotice("");
     setError("");
@@ -97,6 +179,7 @@ export default function CommunityProfilePortal() {
       return;
     }
     setProfile(body.profile);
+    setAvatarUrl(body.profile.avatarUrl || "");
     setNotice(body.message || "Profile updated.");
     setSaving(false);
   }
@@ -107,6 +190,8 @@ export default function CommunityProfilePortal() {
   if (!profile) {
     return error ? <section className={styles.shell}><div className={styles.error}>{error}</div></section> : null;
   }
+
+  const avatarInitial = (profile.displayName || profile.username || "F").trim().charAt(0).toUpperCase() || "F";
 
   return (
     <section className={styles.shell} aria-labelledby="creator-profile-heading">
@@ -128,10 +213,47 @@ export default function CommunityProfilePortal() {
         <label><span>Display name *</span><input name="display_name" required maxLength={60} defaultValue={profile.displayName} /></label>
         <label><span>Username *</span><input name="username" required minLength={3} maxLength={31} pattern="[a-z0-9_-]+" defaultValue={profile.username} /></label>
         <label className={styles.full}><span>Bio</span><textarea name="bio" rows={4} maxLength={280} defaultValue={profile.bio} /></label>
-        <label className={styles.full}><span>Avatar URL</span><input name="avatar_url" type="url" maxLength={500} defaultValue={profile.avatarUrl} placeholder="https://..." /></label>
+
+        <div className={`${styles.avatarField} ${styles.full}`}>
+          <span className={styles.avatarLabel}>Avatar</span>
+          <div className={styles.avatarRow}>
+            <div className={styles.avatarPreview} aria-label="Current avatar preview">
+              {avatarUrl ? <img src={avatarUrl} alt="" /> : <span>{avatarInitial}</span>}
+            </div>
+            <div
+              className={`${styles.avatarDropzone} ${draggingAvatar ? styles.dragging : ""}`}
+              onDragEnter={(event) => { event.preventDefault(); if (!avatarUploading) setDraggingAvatar(true); }}
+              onDragOver={(event) => { event.preventDefault(); if (!avatarUploading) setDraggingAvatar(true); }}
+              onDragLeave={() => setDraggingAvatar(false)}
+              onDrop={dropAvatar}
+            >
+              <input
+                ref={avatarInput}
+                className={styles.avatarFileInput}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                disabled={avatarUploading}
+                onChange={(event) => chooseAvatar(event.target.files?.[0])}
+              />
+              <p>{avatarUploading ? "Uploading…" : "Drop an image here or choose one."}</p>
+              <small>JPEG, PNG, WebP, or AVIF · max 5 MB</small>
+              <div className={styles.avatarActions}>
+                <button type="button" disabled={avatarUploading} onClick={() => avatarInput.current?.click()}>
+                  {avatarUrl ? "Replace" : "Choose image"}
+                </button>
+                {avatarUrl && <button className={styles.removeAvatar} type="button" disabled={avatarUploading} onClick={() => { setAvatarUrl(""); setAvatarError(""); }}>
+                  Remove avatar
+                </button>}
+              </div>
+              {avatarError && <p className={styles.avatarError} role="alert">{avatarError}</p>}
+            </div>
+          </div>
+          <input name="avatar_url" type="hidden" value={avatarUrl} />
+        </div>
+
         <label><span>Website</span><input name="website_url" type="url" maxLength={500} defaultValue={profile.websiteUrl} /></label>
         <label><span>Social link</span><input name="social_url" type="url" maxLength={500} defaultValue={profile.socialUrl} /></label>
-        <button type="submit" disabled={saving}>{saving ? "Saving…" : "Save Profile"}</button>
+        <button type="submit" disabled={saving || avatarUploading}>{saving ? "Saving…" : "Save Profile"}</button>
       </form>
 
       <section className={styles.submissions}>
