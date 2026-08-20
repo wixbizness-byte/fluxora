@@ -14,6 +14,18 @@ const renderedHomeHtml = homeHtml
   .replace(
     'h1 em {\n      display: inline-block;',
     'h1 em {\n      display: inline-block;\n      padding: 0 0.04em 0.08em;\n      margin-bottom: -0.08em;\n      font-style: italic;',
+  )
+  .replace(
+    '<a class="card-button" href="https://fluxora-prompt-gallery.vercel.app" target="_blank" rel="noopener noreferrer">View Gallery</a>',
+    '<a class="card-button" href="/prompts" target="_blank" rel="noopener noreferrer">View Gallery</a>',
+  )
+  .replace(
+    '      <article class="destination-card" style="--delay:80ms">\n        <div class="card-number" aria-hidden="true">06</div>\n        <div class="card-content"><span class="card-label">Plans</span><h2>Fluxora Pricing</h2><p>Explore Fluxora access plans and choose the level that best matches your creative goals.</p></div>\n        <a class="card-button" href="/pricing" target="_blank" rel="noopener noreferrer">View Pricing</a>\n      </article>\n\n',
+    '',
+  )
+  .replace(
+    '<div class="card-number" aria-hidden="true">07</div>\n        <div class="card-content"><span class="card-label">Fashion</span><h2>Karousel Clothing</h2>',
+    '<div class="card-number" aria-hidden="true">06</div>\n        <div class="card-content"><span class="card-label">Fashion</span><h2>Karousel Clothing</h2>',
   );
 
 export function GET() {
