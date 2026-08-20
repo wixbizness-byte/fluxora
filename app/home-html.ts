@@ -526,7 +526,7 @@ export const homeHtml = String.raw`<!doctype html>
       <article class="destination-card" style="--delay:80ms">
         <div class="card-number" aria-hidden="true">03</div>
         <div class="card-content"><span class="card-label">Gallery</span><h2>Prompt Gallery</h2><p>Discover, study, copy, and adapt prompts behind standout AI visuals and creator-ready concepts.</p></div>
-        <span class="card-button disabled" aria-disabled="true">In Construction</span>
+        <a class="card-button" href="https://fluxora-prompt-gallery.vercel.app" target="_blank" rel="noopener noreferrer">View Gallery</a>
       </article>
 
       <article class="destination-card" style="--delay:80ms">
