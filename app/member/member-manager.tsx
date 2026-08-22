@@ -53,6 +53,9 @@ const MEMBER_STATUSES = [
   "active", "3 hours", "1 day", "1 week", "2 weeks", "3 weeks", "1 month", "3 months", "6 months", "1 year",
   "inactive", "blocked",
 ];
+const TIMED_MEMBER_STATUSES = new Set([
+  "3 hours", "1 day", "1 week", "2 weeks", "3 weeks", "1 month", "3 months", "6 months", "1 year",
+]);
 
 function formatLocalDate(value: string | null) {
   if (!value) return "";
@@ -96,6 +99,9 @@ function payloadFromForm(form: HTMLFormElement) {
 }
 
 function MemberFields({ member }: { member?: Member }) {
+  const originalStatus = member?.status.trim().toLowerCase() || "";
+  const originalExpiry = formatLocalDate(member?.expires_at || null);
+
   return (
     <div className={styles.formGrid}>
       <label className={styles.field}>
@@ -112,7 +118,20 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Status *</span>
-        <select name="status" defaultValue={member?.status || "active"}>
+        <select
+          name="status"
+          defaultValue={member?.status || "active"}
+          onChange={(event) => {
+            const activatingFromTimed = event.currentTarget.value === "active"
+              && (originalStatus === "google_trial" || TIMED_MEMBER_STATUSES.has(originalStatus));
+            if (!activatingFromTimed) return;
+
+            const expiryInput = event.currentTarget.form?.elements.namedItem("expires_at");
+            if (expiryInput instanceof HTMLInputElement && expiryInput.value === originalExpiry) {
+              expiryInput.value = "";
+            }
+          }}
+        >
           {member?.status === "google_trial" && <option value="google_trial">Google Trial</option>}
           {MEMBER_STATUSES.map((status) => <option value={status} key={status}>{status}</option>)}
         </select>
@@ -128,7 +147,7 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Expires at</span>
-        <input name="expires_at" type="datetime-local" defaultValue={formatLocalDate(member?.expires_at || null)} />
+        <input name="expires_at" type="datetime-local" defaultValue={originalExpiry} />
       </label>
       <label className={`${styles.field} ${styles.full}`}><span>Notes</span><textarea name="notes" rows={3} defaultValue={member?.notes || ""} /></label>
       <label className={`${styles.field} ${styles.full}`}><span>Account link</span><input name="account_link" type="url" defaultValue={member?.account_link || ""} placeholder="https://..." /></label>
