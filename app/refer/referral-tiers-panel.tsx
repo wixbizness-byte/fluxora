@@ -107,7 +107,7 @@ export default function ReferralTiersPanel() {
             <strong>{current.threshold}</strong>
           </article>
           <article>
-            <span>Rank XP earned</span>
+            <span>This rank bonus</span>
             <strong>+{current.xpBonus} XP</strong>
           </article>
         </div>
