@@ -5,15 +5,17 @@ import ActiveAccessPortal from "../members/active-access-portal";
 import TrialAdmin from "./trial-admin";
 import CommunityProfilePortal from "./community-profile-portal";
 import StarterJourneyPanel from "./starter-journey-panel";
+import FirstWinPanel from "./first-win-panel";
 
 export const metadata: Metadata = {
   title: "Member | Fluxora",
-  description: "Manage your Fluxora profile, Starter Journey, submissions, membership, and registered devices.",
+  description: "Manage your Fluxora profile, Starter Journey, First Win, submissions, membership, and registered devices.",
 };
 
 export default function MemberPage() {
   return <>
     <StarterJourneyPanel />
+    <FirstWinPanel />
     <CommunityProfilePortal />
     <MembersPortal />
     <ResourceUsagePortal />
