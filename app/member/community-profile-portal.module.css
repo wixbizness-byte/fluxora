@@ -133,6 +133,43 @@
   grid-column: 1 / -1;
 }
 
+.privacyToggle {
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 12px !important;
+  padding: 16px;
+  border: 1px solid rgba(113, 30, 56, 0.14);
+  border-radius: 16px;
+  background: #fff;
+}
+
+.form .privacyToggle input {
+  width: 18px;
+  height: 18px;
+  margin: 2px 0 0;
+  padding: 0;
+  accent-color: #711e38;
+}
+
+.privacyToggle > span {
+  display: grid;
+  gap: 5px;
+  text-transform: none !important;
+  letter-spacing: normal !important;
+}
+
+.privacyToggle strong {
+  font-size: 0.9rem;
+  color: #4b1830;
+}
+
+.privacyToggle small {
+  color: #8d596b;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.5;
+}
+
 .avatarField {
   display: grid;
   gap: 8px;
