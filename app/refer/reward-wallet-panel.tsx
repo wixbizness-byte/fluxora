@@ -137,7 +137,7 @@ export default function RewardWalletPanel() {
   if (!loaded || !wallet) return null;
 
   return (
-    <section id="reward-wallet" className={styles.wrap} aria-label="Fluxora reward wallet">
+    <section className={styles.wrap} aria-label="Fluxora reward wallet">
       <div className={styles.card}>
         <div className={styles.heading}>
           <div>
