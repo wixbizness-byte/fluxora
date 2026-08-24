@@ -55,12 +55,44 @@ type PublicReferrer = {
   createdAt: string;
 };
 
+type PublicReferralActivity = {
+  id: string;
+  status: "clicked" | "verified" | "qualified" | "rejected";
+  maskedGmail: string | null;
+  clickedAt: string;
+  verifiedAt: string | null;
+  qualifiedAt: string | null;
+  rejectedAt: string | null;
+  rejectionReason: string | null;
+};
+
+type PublicReferralDashboard = {
+  stats: {
+    clicks: number;
+    registrations: number;
+    qualified: number;
+    pending: number;
+    rejected: number;
+    daysEarned: number;
+    rewardBalance: number;
+    conversionRate: number;
+  };
+  member: {
+    tier: string;
+    status: string;
+    expiresAt: string | null;
+    active: boolean;
+  } | null;
+  recent: PublicReferralActivity[];
+};
+
 type PublicReferrerResponse = {
   gmail?: string;
   gmailVerified?: boolean;
   telegramVerified?: boolean;
   botUsername?: string | null;
   referrer?: PublicReferrer | null;
+  dashboard?: PublicReferralDashboard | null;
   message?: string;
   error?: string;
 };
@@ -113,6 +145,34 @@ function TelegramLogin({
   }, [botUsername, onAuth]);
 
   return <div ref={mountRef} className={styles.telegramMount} />;
+}
+
+function activityTitle(activity: PublicReferralActivity) {
+  if (activity.status === "qualified") return "Qualified referral";
+  if (activity.status === "verified") return "Gmail verified";
+  if (activity.status === "rejected") return "Referral not eligible";
+  return "Referral link opened";
+}
+
+function rejectionLabel(reason: string | null) {
+  if (reason === "self_referral") return "Self-referral blocked";
+  if (reason === "already_claimed_referral") return "Referral trial already used";
+  if (reason === "previous_google_trial") return "Free trial already used";
+  if (reason === "existing_active_member") return "Already an active member";
+  if (reason === "referrer_inactive") return "Referral link inactive";
+  return "Not eligible for this trial";
+}
+
+function activityTime(activity: PublicReferralActivity) {
+  const value =
+    activity.qualifiedAt ||
+    activity.rejectedAt ||
+    activity.verifiedAt ||
+    activity.clickedAt;
+  return new Date(value).toLocaleString("en-PH", {
+    dateStyle: "medium",
+    timeStyle: "short",
+  });
 }
 
 export default function ReferClient() {
@@ -265,6 +325,23 @@ export default function ReferClient() {
     setNotice(message);
   }
 
+  async function shareReferral(referrer: PublicReferrer) {
+    const text = `Try Fluxora Premium free for 2 days with my referral link: ${referrer.referralUrl}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: "Fluxora 2-Day Premium Trial",
+          text,
+          url: referrer.referralUrl,
+        });
+        return;
+      } catch (cause) {
+        if (cause instanceof DOMException && cause.name === "AbortError") return;
+      }
+    }
+    await copy(text, "Referral message copied.");
+  }
+
   if (loading) {
     return (
       <main className={styles.page}>
@@ -287,14 +364,14 @@ export default function ReferClient() {
           <div className={styles.miniSteps}>
             <span><strong>1</strong> Verify Gmail</span>
             <span><strong>2</strong> Connect Telegram</span>
-            <span><strong>3</strong> Get your link</span>
+            <span><strong>3</strong> Share & earn</span>
           </div>
           <a className={styles.primaryButton} href="/prompts/referrer-login">
             Start with Google
           </a>
           <p className={styles.finePrint}>
-            One Gmail can be linked to one Telegram account only. Referral trial
-            rewards are enabled in the next phase.
+            One Gmail can be linked to one Telegram account only. Each qualified
+            referral gives the new user 2 days of Premium access and earns you 2 days too.
           </p>
           <a className={styles.textLink} href="/">
             Back to Fluxora
@@ -360,12 +437,24 @@ export default function ReferClient() {
 
   if (mode === "public-ready" && publicState.referrer) {
     const referrer = publicState.referrer;
+    const dashboard = publicState.dashboard;
+    const publicStats = dashboard?.stats || {
+      clicks: 0,
+      registrations: 0,
+      qualified: 0,
+      pending: 0,
+      rejected: 0,
+      daysEarned: 0,
+      rewardBalance: 0,
+      conversionRate: 0,
+    };
+
     return (
       <main className={styles.page}>
         <header className={styles.header}>
           <div>
             <p className={styles.kicker}>Fluxora Refer & Earn</p>
-            <h1>Your referral link</h1>
+            <h1>Referral Dashboard</h1>
             <p>{referrer.gmail}</p>
           </div>
           <div className={styles.headerActions}>
@@ -378,10 +467,10 @@ export default function ReferClient() {
           <div className={error ? styles.error : styles.notice}>{error || notice}</div>
         )}
 
-        <section className={styles.panel}>
+        <section className={`${styles.panel} ${styles.referralHero}`}>
           <div className={styles.sectionTitle}>
             <div>
-              <p className={styles.kicker}>Permanent referral ID</p>
+              <p className={styles.kicker}>Your permanent referral link</p>
               <h2>{referrer.referralCode}</h2>
             </div>
             <span className={styles.activePill}>{referrer.status}</span>
@@ -395,7 +484,15 @@ export default function ReferClient() {
             >
               Copy link
             </button>
+            <button type="button" onClick={() => shareReferral(referrer)}>
+              Share
+            </button>
           </div>
+
+          <p className={styles.rewardCallout}>
+            <strong>Both get 2 days.</strong> A new eligible user who claims through
+            your link gets 2 days of Premium access, and you earn +2 Premium days.
+          </p>
 
           <div className={styles.accountGrid}>
             <div><span>Verified Gmail</span><strong>{referrer.gmail}</strong></div>
@@ -407,11 +504,84 @@ export default function ReferClient() {
                   : `ID ${referrer.telegramUserId}`}
               </strong>
             </div>
+            <div>
+              <span>Current access</span>
+              <strong>
+                {dashboard?.member?.active
+                  ? `${dashboard.member.tier} · ${dashboard.member.status}`
+                  : "No active access"}
+              </strong>
+            </div>
+            <div>
+              <span>Access expiry</span>
+              <strong>
+                {dashboard?.member?.active && dashboard.member.expiresAt
+                  ? new Date(dashboard.member.expiresAt).toLocaleString("en-PH", {
+                      dateStyle: "medium",
+                      timeStyle: "short",
+                    })
+                  : dashboard?.member?.active
+                    ? "No expiry"
+                    : "—"}
+              </strong>
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.dashboardStats}>
+          <article><span>Link clicks</span><strong>{publicStats.clicks}</strong></article>
+          <article><span>Verified signups</span><strong>{publicStats.registrations}</strong></article>
+          <article><span>Qualified</span><strong>{publicStats.qualified}</strong></article>
+          <article><span>Days earned</span><strong>+{publicStats.daysEarned}</strong></article>
+          <article><span>Reward balance</span><strong>{publicStats.rewardBalance}</strong><small>unapplied days</small></article>
+          <article><span>Conversion</span><strong>{publicStats.conversionRate}%</strong></article>
+        </section>
+
+        <section className={styles.panel}>
+          <div className={styles.sectionTitle}>
+            <div>
+              <p className={styles.kicker}>Referral funnel</p>
+              <h2>Recent activity</h2>
+            </div>
+            <div className={styles.activitySummary}>
+              <span>{publicStats.pending} pending</span>
+              <span>{publicStats.rejected} not eligible</span>
+            </div>
+          </div>
+
+          <div className={styles.activityList}>
+            {(dashboard?.recent || []).map((activity) => (
+              <article className={styles.activityRow} key={activity.id}>
+                <div className={styles.activityMain}>
+                  <span className={styles.statusDot} data-status={activity.status} />
+                  <div>
+                    <strong>{activityTitle(activity)}</strong>
+                    <span>
+                      {activity.maskedGmail || "Anonymous visitor"}
+                      {activity.status === "rejected"
+                        ? ` · ${rejectionLabel(activity.rejectionReason)}`
+                        : ""}
+                    </span>
+                  </div>
+                </div>
+                <div className={styles.activityMeta}>
+                  <span className={styles.statusPill} data-status={activity.status}>
+                    {activity.status}
+                  </span>
+                  <time>{activityTime(activity)}</time>
+                </div>
+              </article>
+            ))}
+            {!dashboard?.recent?.length && (
+              <div className={styles.empty}>
+                No referral activity yet. Share your link to start earning access.
+              </div>
+            )}
           </div>
 
           <p className={styles.finePrint}>
-            Your referral ID is permanent. Phase 3 will activate the 2-day trial
-            landing experience and referral rewards on this link.
+            Referred Gmail addresses are masked in your dashboard. Rewards are only
+            issued after a referral passes the eligibility checks and successfully qualifies.
           </p>
         </section>
       </main>
