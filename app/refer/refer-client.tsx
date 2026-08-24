@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useMemo, useState, type FormEvent } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type FormEvent,
+} from "react";
 import styles from "./refer.module.css";
 
 type AffiliateAccessScope = "premium_only" | "premium_creator";
@@ -38,10 +44,82 @@ type ReferralResponse = {
   error?: string;
 };
 
+type PublicReferrer = {
+  id: string;
+  gmail: string;
+  telegramUserId: number;
+  telegramUsername: string | null;
+  referralCode: string;
+  referralUrl: string;
+  status: string;
+  createdAt: string;
+};
+
+type PublicReferrerResponse = {
+  gmail?: string;
+  gmailVerified?: boolean;
+  telegramVerified?: boolean;
+  botUsername?: string | null;
+  referrer?: PublicReferrer | null;
+  message?: string;
+  error?: string;
+};
+
+type TelegramAuthUser = {
+  id: number;
+  first_name?: string;
+  last_name?: string;
+  username?: string;
+  photo_url?: string;
+  auth_date: number;
+  hash: string;
+};
+
+declare global {
+  interface Window {
+    onFluxoraTelegramAuth?: (user: TelegramAuthUser) => void;
+  }
+}
+
+function TelegramLogin({
+  botUsername,
+  onAuth,
+}: {
+  botUsername: string;
+  onAuth: (user: TelegramAuthUser) => void;
+}) {
+  const mountRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!mountRef.current || !botUsername) return;
+
+    window.onFluxoraTelegramAuth = onAuth;
+    mountRef.current.innerHTML = "";
+
+    const script = document.createElement("script");
+    script.async = true;
+    script.src = "https://telegram.org/js/telegram-widget.js?22";
+    script.setAttribute("data-telegram-login", botUsername.replace(/^@/, ""));
+    script.setAttribute("data-size", "large");
+    script.setAttribute("data-userpic", "false");
+    script.setAttribute("data-request-access", "write");
+    script.setAttribute("data-onauth", "onFluxoraTelegramAuth(user)");
+    mountRef.current.appendChild(script);
+
+    return () => {
+      delete window.onFluxoraTelegramAuth;
+      if (mountRef.current) mountRef.current.innerHTML = "";
+    };
+  }, [botUsername, onAuth]);
+
+  return <div ref={mountRef} className={styles.telegramMount} />;
+}
+
 export default function ReferClient() {
   const [loading, setLoading] = useState(true);
-  const [unauthorized, setUnauthorized] = useState(false);
-  const [forbidden, setForbidden] = useState(false);
+  const [mode, setMode] = useState<
+    "legacy" | "public-guest" | "public-register" | "public-ready"
+  >("public-guest");
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
   const [affiliate, setAffiliate] = useState<ReferralResponse["affiliate"]>();
@@ -50,40 +128,57 @@ export default function ReferClient() {
   const [createdMember, setCreatedMember] = useState<ReferralMember | null>(null);
   const [busy, setBusy] = useState(false);
   const [revealed, setRevealed] = useState<Set<string>>(new Set());
+  const [publicState, setPublicState] = useState<PublicReferrerResponse>({});
 
   const sortedReferrals = useMemo(() => referrals, [referrals]);
   const canIssueCreator = affiliate?.access_scope === "premium_creator";
 
-  async function load() {
-    setLoading(true);
-    setError("");
-    const response = await fetch("/prompts/api/referrals", { cache: "no-store" });
-    const body = (await response.json().catch(() => ({}))) as ReferralResponse;
+  async function loadPublic() {
+    const response = await fetch("/prompts/api/public-referrer", {
+      cache: "no-store",
+    });
+    const body = (await response.json().catch(() => ({}))) as PublicReferrerResponse;
 
     if (response.status === 401) {
-      setUnauthorized(true);
-      setForbidden(false);
-      setLoading(false);
-      return;
-    }
-    if (response.status === 403) {
-      setUnauthorized(false);
-      setForbidden(true);
-      setError(body.error || "This Gmail is not an approved affiliate.");
-      setLoading(false);
+      setMode("public-guest");
+      setPublicState({});
       return;
     }
     if (!response.ok) {
-      setError(body.error || "Could not load referral data.");
+      throw new Error(body.error || "Could not load Refer & Earn.");
+    }
+
+    setPublicState(body);
+    setMode(body.referrer ? "public-ready" : "public-register");
+  }
+
+  async function load() {
+    setLoading(true);
+    setError("");
+
+    const response = await fetch("/prompts/api/referrals", { cache: "no-store" });
+    const body = (await response.json().catch(() => ({}))) as ReferralResponse;
+
+    if (response.ok) {
+      setMode("legacy");
+      setAffiliate(body.affiliate);
+      setStats(body.stats || { total: 0, threeHours: 0, oneDay: 0 });
+      setReferrals(body.referrals || []);
       setLoading(false);
       return;
     }
 
-    setUnauthorized(false);
-    setForbidden(false);
-    setAffiliate(body.affiliate);
-    setStats(body.stats || { total: 0, threeHours: 0, oneDay: 0 });
-    setReferrals(body.referrals || []);
+    if (response.status === 401 || response.status === 403) {
+      try {
+        await loadPublic();
+      } catch (cause) {
+        setError(cause instanceof Error ? cause.message : "Could not load Refer & Earn.");
+      }
+      setLoading(false);
+      return;
+    }
+
+    setError(body.error || "Could not load referral data.");
     setLoading(false);
   }
 
@@ -93,6 +188,34 @@ export default function ReferClient() {
       setLoading(false);
     });
   }, []);
+
+  async function registerTelegram(user: TelegramAuthUser) {
+    setBusy(true);
+    setError("");
+    setNotice("");
+
+    try {
+      const response = await fetch("/prompts/api/public-referrer", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(user),
+      });
+      const body = (await response.json().catch(() => ({}))) as PublicReferrerResponse;
+
+      if (!response.ok) {
+        setError(body.error || "Could not connect Telegram.");
+        return;
+      }
+
+      setPublicState((current) => ({ ...current, ...body }));
+      setMode("public-ready");
+      setNotice(body.message || "Referral account created.");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not connect Telegram.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   async function issue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -137,38 +260,159 @@ export default function ReferClient() {
     });
   }
 
-  async function copy(value: string) {
+  async function copy(value: string, message = "Copied.") {
     await navigator.clipboard.writeText(value);
-    setNotice("Access code copied.");
+    setNotice(message);
   }
 
   if (loading) {
-    return <main className={styles.page}><section className={styles.centerCard}>Checking affiliate access…</section></main>;
+    return (
+      <main className={styles.page}>
+        <section className={styles.centerCard}>Loading Fluxora referrals…</section>
+      </main>
+    );
   }
 
-  if (unauthorized) {
+  if (mode === "public-guest") {
     return (
       <main className={styles.page}>
         <section className={styles.centerCard}>
-          <p className={styles.kicker}>Fluxora referrals</p>
-          <h1>Affiliate sign in</h1>
-          <p>Use the Google account that has been approved as a Fluxora affiliate.</p>
-          <a className={styles.primaryButton} href="/prompts/affiliate-login">Sign in with Google</a>
-          <a className={styles.textLink} href="/">Back to Fluxora</a>
+          <p className={styles.kicker}>Fluxora Refer & Earn</p>
+          <h1>Invite friends. Earn access.</h1>
+          <p>
+            Anyone can become a Fluxora referrer. Verify one Gmail, connect one
+            Telegram account, and receive your own permanent referral link.
+          </p>
+          {error && <div className={styles.error}>{error}</div>}
+          <div className={styles.miniSteps}>
+            <span><strong>1</strong> Verify Gmail</span>
+            <span><strong>2</strong> Connect Telegram</span>
+            <span><strong>3</strong> Get your link</span>
+          </div>
+          <a className={styles.primaryButton} href="/prompts/referrer-login">
+            Start with Google
+          </a>
+          <p className={styles.finePrint}>
+            One Gmail can be linked to one Telegram account only. Referral trial
+            rewards are enabled in the next phase.
+          </p>
+          <a className={styles.textLink} href="/">
+            Back to Fluxora
+          </a>
         </section>
       </main>
     );
   }
 
-  if (forbidden) {
+  if (mode === "public-register") {
     return (
       <main className={styles.page}>
-        <section className={styles.centerCard}>
-          <p className={styles.kicker}>Restricted</p>
-          <h1>Affiliate access required</h1>
-          <p>{error}</p>
-          <a className={styles.primaryButton} href="/prompts/affiliate-login">Change Google account</a>
-          <a className={styles.textLink} href="/">Back to Fluxora</a>
+        <header className={styles.header}>
+          <div>
+            <p className={styles.kicker}>Fluxora Refer & Earn</p>
+            <h1>Connect Telegram</h1>
+            <p>Gmail verified: {publicState.gmail}</p>
+          </div>
+          <div className={styles.headerActions}>
+            <a href="/">Fluxora</a>
+            <a href="/prompts/referrer-login">Google account</a>
+          </div>
+        </header>
+
+        {(notice || error) && (
+          <div className={error ? styles.error : styles.notice}>{error || notice}</div>
+        )}
+
+        <section className={styles.panel}>
+          <div className={styles.stepBadge}>Step 2 of 2</div>
+          <div className={styles.sectionTitle}>
+            <div>
+              <p className={styles.kicker}>Identity verification</p>
+              <h2>Connect your Telegram account</h2>
+            </div>
+          </div>
+          <p className={styles.panelCopy}>
+            Fluxora stores your permanent Telegram numeric ID so changing your
+            @username later will not break your referral account.
+          </p>
+
+          {publicState.botUsername ? (
+            <div className={styles.telegramBox}>
+              {busy ? (
+                <strong>Verifying Telegram…</strong>
+              ) : (
+                <TelegramLogin
+                  botUsername={publicState.botUsername}
+                  onAuth={registerTelegram}
+                />
+              )}
+              <small>Signing in verifies the Telegram account. It does not expose your Telegram password to Fluxora.</small>
+            </div>
+          ) : (
+            <div className={styles.error}>
+              Telegram login is not configured on the server yet.
+            </div>
+          )}
+        </section>
+      </main>
+    );
+  }
+
+  if (mode === "public-ready" && publicState.referrer) {
+    const referrer = publicState.referrer;
+    return (
+      <main className={styles.page}>
+        <header className={styles.header}>
+          <div>
+            <p className={styles.kicker}>Fluxora Refer & Earn</p>
+            <h1>Your referral link</h1>
+            <p>{referrer.gmail}</p>
+          </div>
+          <div className={styles.headerActions}>
+            <a href="/">Fluxora</a>
+            <a href="/prompts/referrer-login">Account</a>
+          </div>
+        </header>
+
+        {(notice || error) && (
+          <div className={error ? styles.error : styles.notice}>{error || notice}</div>
+        )}
+
+        <section className={styles.panel}>
+          <div className={styles.sectionTitle}>
+            <div>
+              <p className={styles.kicker}>Permanent referral ID</p>
+              <h2>{referrer.referralCode}</h2>
+            </div>
+            <span className={styles.activePill}>{referrer.status}</span>
+          </div>
+
+          <div className={styles.linkBox}>
+            <code>{referrer.referralUrl}</code>
+            <button
+              type="button"
+              onClick={() => copy(referrer.referralUrl, "Referral link copied.")}
+            >
+              Copy link
+            </button>
+          </div>
+
+          <div className={styles.accountGrid}>
+            <div><span>Verified Gmail</span><strong>{referrer.gmail}</strong></div>
+            <div>
+              <span>Telegram</span>
+              <strong>
+                {referrer.telegramUsername
+                  ? `@${referrer.telegramUsername}`
+                  : `ID ${referrer.telegramUserId}`}
+              </strong>
+            </div>
+          </div>
+
+          <p className={styles.finePrint}>
+            Your referral ID is permanent. Phase 3 will activate the 2-day trial
+            landing experience and referral rewards on this link.
+          </p>
         </section>
       </main>
     );
@@ -217,7 +461,7 @@ export default function ReferClient() {
         {createdMember && (
           <div className={styles.createdBox}>
             <div><span>New 5-character access code</span><strong>{createdMember.access_code}</strong><small>{createdMember.gmail} · {createdMember.status} · {createdMember.tier} · expires {createdMember.expires_at ? new Date(createdMember.expires_at).toLocaleString() : "never"}</small></div>
-            <button type="button" onClick={() => copy(createdMember.access_code)}>Copy code</button>
+            <button type="button" onClick={() => copy(createdMember.access_code, "Access code copied.")}>Copy code</button>
           </div>
         )}
       </section>
@@ -237,7 +481,7 @@ export default function ReferClient() {
                 {member && (
                   <div className={styles.codeActions}>
                     <button type="button" className={styles.codeButton} onClick={() => toggleReveal(member.id)}>{shown ? member.access_code : "•••••"}</button>
-                    {shown && <button type="button" className={styles.copyButton} onClick={() => copy(member.access_code)}>Copy</button>}
+                    {shown && <button type="button" className={styles.copyButton} onClick={() => copy(member.access_code, "Access code copied.")}>Copy</button>}
                   </div>
                 )}
               </article>
