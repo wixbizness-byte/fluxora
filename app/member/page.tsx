@@ -4,14 +4,16 @@ import ResourceUsagePortal from "../members/resource-usage-portal";
 import ActiveAccessPortal from "../members/active-access-portal";
 import TrialAdmin from "./trial-admin";
 import CommunityProfilePortal from "./community-profile-portal";
+import StarterJourneyPanel from "./starter-journey-panel";
 
 export const metadata: Metadata = {
   title: "Member | Fluxora",
-  description: "Manage your Fluxora profile, submissions, membership, and registered devices.",
+  description: "Manage your Fluxora profile, Starter Journey, submissions, membership, and registered devices.",
 };
 
 export default function MemberPage() {
   return <>
+    <StarterJourneyPanel />
     <CommunityProfilePortal />
     <MembersPortal />
     <ResourceUsagePortal />
