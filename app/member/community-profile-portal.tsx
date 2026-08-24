@@ -13,6 +13,7 @@ type CommunityProfile = {
   websiteUrl: string;
   socialUrl: string;
   isVerified: boolean;
+  showProgressionPublic: boolean;
 };
 
 type Submission = {
@@ -168,6 +169,7 @@ export default function CommunityProfilePortal() {
         username: form.get("username"),
         bio: form.get("bio"),
         avatar_url: form.get("avatar_url"),
+        show_progression_public: form.get("show_progression_public") === "on",
       }),
     });
     const body = await response.json().catch(() => ({})) as ProfileResponse;
@@ -211,6 +213,14 @@ export default function CommunityProfilePortal() {
         <label><span>Display name *</span><input name="display_name" required maxLength={60} defaultValue={profile.displayName} /></label>
         <label><span>Username *</span><input name="username" required minLength={3} maxLength={31} pattern="[a-z0-9_-]+" defaultValue={profile.username} /></label>
         <label className={styles.full}><span>Bio</span><textarea name="bio" rows={4} maxLength={280} defaultValue={profile.bio} /></label>
+
+        <label className={`${styles.full} ${styles.privacyToggle}`}>
+          <input name="show_progression_public" type="checkbox" defaultChecked={profile.showProgressionPublic} />
+          <span>
+            <strong>Show Fluxora progression publicly</strong>
+            <small>Displays your level, total XP, unlocked achievement badges, longest streak, and referral rank on your public creator profile. Gmail, access details, wallet, devices, and recent activity stay private.</small>
+          </span>
+        </label>
 
         <div className={`${styles.avatarField} ${styles.full}`}>
           <span className={styles.avatarLabel}>Avatar</span>
