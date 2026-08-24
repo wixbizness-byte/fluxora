@@ -13,7 +13,9 @@ export default function ReferPage() {
     <>
       <ReferClient />
       <MilestonesPanel />
-      <RewardWalletPanel />
+      <div id="reward-wallet">
+        <RewardWalletPanel />
+      </div>
     </>
   );
 }
