@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import styles from "./refer.module.css";
+import styles from "./telegram-bot-verification.module.css";
 
 type ChallengeResponse = {
   gmail?: string;
@@ -111,7 +111,7 @@ export default function TelegramBotVerification({
   }
 
   return (
-    <div className={styles.telegramBox}>
+    <div className={styles.box}>
       <strong>Verify with the Fluxora Telegram bot</strong>
       <small>
         Fluxora will link your Google-verified Gmail to the permanent Telegram numeric ID supplied directly by Telegram.
@@ -144,7 +144,7 @@ export default function TelegramBotVerification({
             </small>
           </div>
 
-          <div className={styles.verificationActions}>
+          <div className={styles.actions}>
             <a
               className={styles.primaryButton}
               href={telegramUrl}
