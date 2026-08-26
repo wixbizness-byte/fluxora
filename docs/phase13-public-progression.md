@@ -17,3 +17,7 @@ The public profile does not expose Gmail, Telegram identity, membership/access s
 ## Implementation
 
 The Prompt Gallery backend exposes a sanitized service-only progression RPC and renders it on `/u/[username]` only for opted-in active profiles. The parent Fluxora `/member` creator-profile form contains the opt-in privacy control.
+
+## Production release verification
+
+Phase 13 should be marked fully released only after the parent Fluxora production deployment is built from the current `main` branch, `/member` serves the public-progression privacy control, and production runtime error/fatal logs are clean. The Prompt Gallery backend/public-profile portion was already production-verified before the parent release.
