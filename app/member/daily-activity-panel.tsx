@@ -106,7 +106,7 @@ export default function DailyActivityPanel() {
 
   if (loading) {
     return (
-      <section className={styles.shell} aria-label="Fluxora daily activity">
+      <section id="daily-activity" className={styles.shell} aria-label="Fluxora daily activity">
         <div className={styles.card}><p className={styles.loading}>Checking your daily streak…</p></div>
       </section>
     );
@@ -114,7 +114,7 @@ export default function DailyActivityPanel() {
 
   if (!activity) {
     return error ? (
-      <section className={styles.shell}><div className={styles.card}><div className={styles.error}>{error}</div></div></section>
+      <section id="daily-activity" className={styles.shell}><div className={styles.card}><div className={styles.error}>{error}</div></div></section>
     ) : null;
   }
 
@@ -124,7 +124,7 @@ export default function DailyActivityPanel() {
     : 100;
 
   return (
-    <section className={styles.shell} aria-labelledby="daily-activity-heading">
+    <section id="daily-activity" className={styles.shell} aria-labelledby="daily-activity-heading">
       <div className={styles.card}>
         <div className={styles.hero}>
           <div>
