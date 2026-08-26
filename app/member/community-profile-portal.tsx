@@ -14,6 +14,7 @@ type CommunityProfile = {
   socialUrl: string;
   isVerified: boolean;
   showProgressionPublic: boolean;
+  showInProgressionLeaderboard: boolean;
 };
 
 type Submission = {
@@ -170,6 +171,7 @@ export default function CommunityProfilePortal() {
         bio: form.get("bio"),
         avatar_url: form.get("avatar_url"),
         show_progression_public: form.get("show_progression_public") === "on",
+        show_in_progression_leaderboard: form.get("show_in_progression_leaderboard") === "on",
       }),
     });
     const body = await response.json().catch(() => ({})) as ProfileResponse;
@@ -203,13 +205,14 @@ export default function CommunityProfilePortal() {
         </div>
         <div className={styles.headerActions}>
           <a href={`/prompts/u/${encodeURIComponent(profile.username)}`}>View public profile</a>
+          <a href="/prompts/leaderboard">Leaderboard</a>
           <a href="/prompts/submit">Submit a prompt</a>
         </div>
       </header>
 
       {(notice || error) && <div className={error ? styles.error : styles.notice} role={error ? "alert" : "status"}>{error || notice}</div>}
 
-      <form className={styles.form} onSubmit={save}>
+      <form key={`${profile.id}:${profile.showProgressionPublic}:${profile.showInProgressionLeaderboard}`} className={styles.form} onSubmit={save}>
         <label><span>Display name *</span><input name="display_name" required maxLength={60} defaultValue={profile.displayName} /></label>
         <label><span>Username *</span><input name="username" required minLength={3} maxLength={31} pattern="[a-z0-9_-]+" defaultValue={profile.username} /></label>
         <label className={styles.full}><span>Bio</span><textarea name="bio" rows={4} maxLength={280} defaultValue={profile.bio} /></label>
@@ -219,6 +222,14 @@ export default function CommunityProfilePortal() {
           <span>
             <strong>Show Fluxora progression publicly</strong>
             <small>Displays your level, total XP, unlocked achievement badges, longest streak, and referral rank on your public creator profile. Gmail, access details, wallet, devices, and recent activity stay private.</small>
+          </span>
+        </label>
+
+        <label className={`${styles.full} ${styles.privacyToggle}`}>
+          <input name="show_in_progression_leaderboard" type="checkbox" defaultChecked={profile.showInProgressionLeaderboard} />
+          <span>
+            <strong>Include me in community leaderboards</strong>
+            <small>Separately opts your public creator identity into XP, achievement, and longest-streak rankings. This requires public progression above; turning public progression off automatically removes you from the leaderboard.</small>
           </span>
         </label>
 
