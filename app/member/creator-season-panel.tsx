@@ -176,7 +176,10 @@ export default function CreatorSeasonPanel() {
 
         <div className={styles.footer}>
           <span>Every verified Fluxora XP grant counts toward the season. Seasonal XP resets next season; lifetime XP and levels stay intact.</span>
-          <button type="button" onClick={() => void load()}>Refresh season</button>
+          <div className={styles.footerActions}>
+            <a className={styles.leaderboardLink} href="/prompts/leaderboard">View season leaderboard</a>
+            <button type="button" onClick={() => void load()}>Refresh season</button>
+          </div>
         </div>
       </div>
     </section>
