@@ -122,7 +122,7 @@ export default function FirstWinPanel() {
 
   if (loading) {
     return (
-      <section className={styles.shell} aria-label="Fluxora First Win">
+      <section id="first-win" className={styles.shell} aria-label="Fluxora First Win">
         <div className={styles.card}><p className={styles.loading}>Loading your First Win…</p></div>
       </section>
     );
@@ -132,7 +132,7 @@ export default function FirstWinPanel() {
 
   if (firstWin.status === "completed") {
     return (
-      <section className={styles.shell} aria-labelledby="first-win-heading">
+      <section id="first-win" className={styles.shell} aria-labelledby="first-win-heading">
         <div className={`${styles.card} ${styles.completedCard}`}>
           <div className={styles.heading}>
             <div>
@@ -162,7 +162,7 @@ export default function FirstWinPanel() {
   }
 
   return (
-    <section className={styles.shell} aria-labelledby="first-win-heading">
+    <section id="first-win" className={styles.shell} aria-labelledby="first-win-heading">
       <div className={styles.card}>
         <div className={styles.heading}>
           <div>
