@@ -8,6 +8,7 @@ import {
   type FormEvent,
 } from "react";
 import styles from "./refer.module.css";
+import TelegramBotVerification from "./telegram-bot-verification";
 
 type AffiliateAccessScope = "premium_only" | "premium_creator";
 
@@ -91,6 +92,8 @@ type PublicReferrerResponse = {
   gmailVerified?: boolean;
   telegramVerified?: boolean;
   botUsername?: string | null;
+  botVerificationEnabled?: boolean;
+  verificationMode?: "telegram_bot" | "telegram_widget";
   referrer?: PublicReferrer | null;
   dashboard?: PublicReferralDashboard | null;
   message?: string;
@@ -277,6 +280,12 @@ export default function ReferClient() {
     }
   }
 
+  async function finishBotVerification() {
+    setNotice("Telegram verified. Your referral account is ready.");
+    setError("");
+    await loadPublic();
+  }
+
   async function issue(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setBusy(true);
@@ -387,7 +396,7 @@ export default function ReferClient() {
         <header className={styles.header}>
           <div>
             <p className={styles.kicker}>Fluxora Refer & Earn</p>
-            <h1>Connect Telegram</h1>
+            <h1>Verify Telegram</h1>
             <p>Gmail verified: {publicState.gmail}</p>
           </div>
           <div className={styles.headerActions}>
@@ -405,7 +414,7 @@ export default function ReferClient() {
           <div className={styles.sectionTitle}>
             <div>
               <p className={styles.kicker}>Identity verification</p>
-              <h2>Connect your Telegram account</h2>
+              <h2>Verify your Telegram account</h2>
             </div>
           </div>
           <p className={styles.panelCopy}>
@@ -413,7 +422,9 @@ export default function ReferClient() {
             @username later will not break your referral account.
           </p>
 
-          {publicState.botUsername ? (
+          {publicState.botVerificationEnabled ? (
+            <TelegramBotVerification onVerified={finishBotVerification} />
+          ) : publicState.botUsername ? (
             <div className={styles.telegramBox}>
               {busy ? (
                 <strong>Verifying Telegram…</strong>
