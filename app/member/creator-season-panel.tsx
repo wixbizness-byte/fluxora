@@ -14,6 +14,19 @@ type SeasonRank = {
   unlockedAt?: string | null;
 };
 
+type SeasonLegacyBadge = {
+  badgeType: "season_rank" | "hall_of_fame" | "season_champion";
+  badgeCode: string;
+  badgeLabel: string;
+  title: string;
+  description: string;
+  placement: number | null;
+  seasonXp: number;
+  unlockedAt: string;
+  season: { code: string; name: string; seasonNumber: number; startsAt: string; endsAt: string };
+  rank: null | { code: string; name: string; rankOrder: number; badgeLabel: string };
+};
+
 type CreatorSeason = {
   active: boolean;
   season?: {
@@ -34,6 +47,7 @@ type CreatorSeason = {
   totalRanks?: number;
   ranks?: SeasonRank[];
   unlockHistory?: Array<{ code: string; name: string; badgeLabel: string; unlockedAt: string }>;
+  legacyBadges?: { count: number; items: SeasonLegacyBadge[] };
   generatedAt?: string;
 };
 
@@ -120,6 +134,7 @@ export default function CreatorSeasonPanel() {
   }
 
   const maxRank = !profile.nextRank;
+  const legacy = profile.legacyBadges?.items || [];
 
   return (
     <section className={styles.shell} aria-labelledby="creator-season-heading">
@@ -173,6 +188,22 @@ export default function CreatorSeasonPanel() {
             </article>
           ))}
         </div>
+
+        {legacy.length ? <div className={styles.legacySection}>
+          <div className={styles.legacyHeading}>
+            <div><p className={styles.kicker}>Permanent collection</p><h3>Season Legacy</h3></div>
+            <span>{profile.legacyBadges?.count || legacy.length} collectible{(profile.legacyBadges?.count || legacy.length) === 1 ? "" : "s"}</span>
+          </div>
+          <div className={styles.legacyGrid}>{legacy.map((item) => <article
+            key={item.badgeCode}
+            className={`${styles.legacyCard} ${item.badgeType === "season_champion" ? styles.legacyChampion : item.badgeType === "hall_of_fame" ? styles.legacyHall : ""}`}
+          >
+            <div className={styles.legacyTop}><b>{item.badgeLabel}</b><small>{item.season.name}</small></div>
+            <strong>{item.title}</strong>
+            <p>{item.description}</p>
+            <div className={styles.legacyMeta}><span>{formatNumber(item.seasonXp)} XP</span>{item.placement ? <span>#{item.placement} finish</span> : item.rank ? <span>{item.rank.name}</span> : null}</div>
+          </article>)}</div>
+        </div> : null}
 
         <div className={styles.footer}>
           <span>Every verified Fluxora XP grant counts toward the season. Seasonal XP resets next season; lifetime XP and levels stay intact.</span>
