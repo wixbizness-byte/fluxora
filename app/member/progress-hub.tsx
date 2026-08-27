@@ -65,7 +65,7 @@ export default function ProgressHub() {
   const availableTabs = useMemo(() => {
     const result: Array<{ id: Tab; label: string; note: string }> = [
       { id: "overview", label: "Overview", note: "Level, XP & streak" },
-      { id: "missions", label: "Missions", note: "Weekly & monthly" },
+      { id: "missions", label: "Missions", note: "Weekly, special & monthly" },
       { id: "season", label: "Season", note: "Season rank & leaderboard" },
       { id: "getting-started", label: "Getting started", note: "Starter Journey & First Win" },
     ];
@@ -121,7 +121,7 @@ export default function ProgressHub() {
         </> : null}
 
         {tab === "missions" ? <>
-          {flags.weeklyMissions ? <WeeklyMissionsPanel /> : <div className={styles.disabled}>Weekly Missions are currently disabled. Existing progress and rewards are preserved.</div>}
+          {flags.weeklyMissions ? <WeeklyMissionsPanel /> : <div className={styles.disabled}>Weekly Missions are currently disabled. Existing progress and rewards are preserved. Active special campaigns remain independently controlled by their publish/pause state.</div>}
           {flags.monthlyChallenge ? <MonthlyChallengePanel /> : <div className={styles.disabled}>Monthly Challenge is currently disabled. Existing progress and rewards are preserved.</div>}
         </> : null}
 
@@ -138,7 +138,7 @@ export default function ProgressHub() {
 
       {canManage ? <details className={styles.admin}>
         <summary>Admin · Progression feature switches</summary>
-        <p>Switches preserve existing data. Weekly/Monthly switches also stop new routed mission progress while disabled.</p>
+        <p>Switches preserve existing data. Weekly/Monthly switches also stop new routed mission progress while disabled. Special campaigns are controlled from the Admin Task Builder.</p>
         <div className={styles.flagGrid}>
           {labels.map((item) => <label key={item.key}>
             <span><strong>{item.label}</strong><small>{item.detail}</small></span>
