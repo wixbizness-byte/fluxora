@@ -56,6 +56,10 @@ type ApiResponse = {
   error?: string;
 };
 
+type RetentionResponse = {
+  retention?: { eligible?: boolean } | null;
+};
+
 const categoryLabels: Record<string, string> = {
   access: "Access",
   onboarding: "Onboarding",
@@ -68,21 +72,44 @@ const categoryLabels: Record<string, string> = {
 
 export default function NextBestActionPanel() {
   const [data, setData] = useState<NextBestAction | null>(null);
+  const [retentionActive, setRetentionActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
     try {
-      const response = await fetch("/prompts/api/next-best-action", {
-        cache: "no-store",
-        credentials: "include",
-      });
+      const [response, retentionResponse] = await Promise.all([
+        fetch("/prompts/api/next-best-action", {
+          cache: "no-store",
+          credentials: "include",
+        }),
+        fetch("/prompts/api/retention", {
+          cache: "no-store",
+          credentials: "include",
+        }).catch(() => null),
+      ]);
+
       if (response.status === 401) {
         setData(null);
+        setRetentionActive(false);
         setError("");
         setLoading(false);
         return;
       }
+
+      if (retentionResponse?.ok) {
+        const retentionBody = (await retentionResponse.json().catch(() => ({}))) as RetentionResponse;
+        const active = Boolean(retentionBody.retention?.eligible);
+        setRetentionActive(active);
+        if (active) {
+          setData(null);
+          setError("");
+          return;
+        }
+      } else {
+        setRetentionActive(false);
+      }
+
       const body = (await response.json().catch(() => ({}))) as ApiResponse;
       if (!response.ok) throw new Error(body.error || "Could not choose your next action.");
       setData(body.nextBestAction || null);
@@ -123,6 +150,8 @@ export default function NextBestActionPanel() {
     }
     return items.slice(0, 3);
   }, [data]);
+
+  if (retentionActive) return null;
 
   if (loading) {
     return (
