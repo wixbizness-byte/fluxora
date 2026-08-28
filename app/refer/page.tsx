@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import ReferClient from "./refer-client";
 import ReferralDeepLinkBuilder from "./referral-deep-link-builder";
+import ShareableRewardsPanel from "./shareable-rewards-panel";
 import ReferralTrustPanel from "./referral-trust-panel";
 import MilestonesPanel from "./milestones-panel";
 import ReferralTiersPanel from "./referral-tiers-panel";
@@ -16,6 +17,7 @@ export default function ReferPage() {
     <>
       <ReferClient />
       <ReferralDeepLinkBuilder />
+      <ShareableRewardsPanel />
       <ReferralTrustPanel />
       <MilestonesPanel />
       <ReferralTiersPanel />
