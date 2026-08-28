@@ -15,6 +15,11 @@ function cleanAttribution(value: unknown) {
     : "";
 }
 
+function cleanTool(value: unknown) {
+  const tool = String(value || "").trim().toLowerCase();
+  return /^[a-z0-9][a-z0-9-]{0,79}$/.test(tool) ? tool : "";
+}
+
 export default async function ReferralInvitePage({
   params,
   searchParams,
@@ -28,12 +33,14 @@ export default async function ReferralInvitePage({
   if (!referralCode) notFound();
 
   const attribution = cleanAttribution(query.attribution);
+  const tool = cleanTool(query.tool);
   const shouldClaim = String(query.claim || "") === "1" && Boolean(attribution);
 
   return (
     <ReferralClaimClient
       code={referralCode}
       attribution={attribution}
+      tool={tool}
       shouldClaim={shouldClaim}
     />
   );
