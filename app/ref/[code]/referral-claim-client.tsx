@@ -3,11 +3,23 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import styles from "./referral-claim.module.css";
 
+type ReferralTarget = {
+  key: string;
+  title: string;
+  description: string;
+  href: string;
+  toolType: string;
+  accessLevel: string;
+  imageUrl?: string | null;
+};
+
 type Invite = {
   attributionToken: string;
   referralCode: string;
   inviter?: { name?: string | null; username?: string | null };
   trialDays?: number;
+  tool?: string | null;
+  target?: ReferralTarget | null;
 };
 
 type ClaimResponse = {
@@ -16,6 +28,8 @@ type ClaimResponse = {
   message?: string;
   error?: string;
   referrerRewardApplied?: boolean;
+  tool?: string | null;
+  target?: ReferralTarget | null;
   member?: {
     id: string;
     accessCode: string;
@@ -29,13 +43,19 @@ function validAttribution(value: string) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value);
 }
 
+function validTool(value: string) {
+  return /^[a-z0-9][a-z0-9-]{0,79}$/.test(value);
+}
+
 export default function ReferralClaimClient({
   code,
   attribution,
+  tool,
   shouldClaim,
 }: {
   code: string;
   attribution: string;
+  tool: string;
   shouldClaim: boolean;
 }) {
   const [loading, setLoading] = useState(true);
@@ -50,18 +70,31 @@ export default function ReferralClaimClient({
     () => (validAttribution(attribution) ? attribution : invite?.attributionToken || ""),
     [attribution, invite]
   );
+  const target = claim?.target || invite?.target || null;
+  const activeTool = claim?.tool || invite?.tool || (validTool(tool) ? tool : "");
 
   async function createAttribution() {
     const response = await fetch("/prompts/api/referral-attribution", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code }),
+      body: JSON.stringify({ code, tool }),
       cache: "no-store",
     });
     const body = (await response.json().catch(() => ({}))) as Invite & { error?: string };
     if (!response.ok) throw new Error(body.error || "This referral invitation could not be opened.");
     setInvite(body);
     return body.attributionToken;
+  }
+
+  async function loadAttribution(token: string) {
+    const params = new URLSearchParams({ attribution: token });
+    const response = await fetch(`/prompts/api/referral-attribution?${params.toString()}`, {
+      cache: "no-store",
+    });
+    const body = (await response.json().catch(() => ({}))) as Invite & { error?: string };
+    if (!response.ok) throw new Error(body.error || "This referral invitation could not be reopened.");
+    setInvite(body);
+    return body;
   }
 
   async function claimTrial(token: string) {
@@ -87,6 +120,8 @@ export default function ReferralClaimClient({
 
   function loginUrl(token: string) {
     const params = new URLSearchParams({ mode: "claim", ref: code, attribution: token });
+    const targetTool = invite?.tool || (validTool(tool) ? tool : "");
+    if (targetTool) params.set("tool", targetTool);
     return `/prompts/referrer-login?${params.toString()}`;
   }
 
@@ -97,6 +132,7 @@ export default function ReferralClaimClient({
     (async () => {
       try {
         if (shouldClaim && validAttribution(attribution)) {
+          await loadAttribution(attribution);
           setLoading(false);
           await claimTrial(attribution);
           return;
@@ -108,7 +144,7 @@ export default function ReferralClaimClient({
         setLoading(false);
       }
     })();
-  }, [attribution, code, shouldClaim]);
+  }, [attribution, code, shouldClaim, tool]);
 
   async function copyCode() {
     const value = claim?.member?.accessCode || "";
@@ -138,6 +174,14 @@ export default function ReferralClaimClient({
           <p className={styles.lead}>
             You received <strong>2 days of Premium access</strong>. Your referrer also earned their referral reward.
           </p>
+          {target && (
+            <div className={styles.targetCard}>
+              <span>Your referral destination</span>
+              <strong>{target.title}</strong>
+              <p>{target.description}</p>
+              <small>{target.toolType} · {target.accessLevel}</small>
+            </div>
+          )}
           <div className={styles.codeBox}>
             <span>Your access code</span>
             <strong>{claim.member.accessCode}</strong>
@@ -148,7 +192,9 @@ export default function ReferralClaimClient({
           </div>
           {notice && <p className={styles.notice}>{notice}</p>}
           <div className={styles.actions}>
-            <a className={styles.primary} href="/tools">Explore Fluxora Tools</a>
+            <a className={styles.primary} href={target?.href || "/tools"}>
+              {target ? `Open ${target.title}` : "Explore Fluxora Tools"}
+            </a>
             <a className={styles.secondary} href="/refer">Get My Referral Link</a>
           </div>
         </section>
@@ -167,7 +213,9 @@ export default function ReferralClaimClient({
             Referral trials are limited to eligible accounts and can’t be stacked with an already-used Fluxora free trial or active membership.
           </p>
           <div className={styles.actions}>
-            <a className={styles.primary} href="/">Explore Fluxora</a>
+            <a className={styles.primary} href={target?.href || "/"}>
+              {target ? `View ${target.title}` : "Explore Fluxora"}
+            </a>
             <a className={styles.secondary} href="/refer">Refer & Earn</a>
           </div>
         </section>
@@ -183,12 +231,21 @@ export default function ReferralClaimClient({
   return (
     <main className={styles.page}>
       <section className={styles.card}>
-        <div className={styles.offerBadge}>REFERRAL EXCLUSIVE</div>
+        <div className={styles.offerBadge}>{target ? "PRODUCT REFERRAL" : "REFERRAL EXCLUSIVE"}</div>
         <p className={styles.kicker}>Invited by {inviter}</p>
-        <h1>Unlock Fluxora Premium for 2 days.</h1>
+        <h1>{target ? `Try ${target.title} with Fluxora.` : "Unlock Fluxora Premium for 2 days."}</h1>
         <p className={styles.lead}>
-          Your referral invite includes a <strong>2-day Premium trial</strong>. No payment is required.
+          {target ? target.description : "Your referral invite includes a 2-day Premium trial."}{" "}
+          <strong>No payment is required.</strong>
         </p>
+        {target && (
+          <div className={styles.targetCard}>
+            <span>Referral destination</span>
+            <strong>{target.title}</strong>
+            <p>Your referral attribution stays attached while you continue through Google verification and trial signup.</p>
+            <small>{target.toolType} · {target.accessLevel}</small>
+          </div>
+        )}
         <div className={styles.perks}>
           <div><strong>2 Days</strong><span>Premium access</span></div>
           <div><strong>Free</strong><span>No payment required</span></div>
@@ -199,8 +256,9 @@ export default function ReferralClaimClient({
           href={token ? loginUrl(token) : "#"}
           aria-disabled={!token}
         >
-          Claim My 2-Day Trial
+          {target ? `Continue to ${target.title}` : "Claim My 2-Day Trial"}
         </a>
+        {activeTool && <p className={styles.deepLinkNote}>Referral target: {activeTool}</p>}
         <p className={styles.finePrint}>
           One referral trial per eligible Gmail. Self-referrals and duplicate free-trial claims are not eligible.
         </p>
