@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import styles from "./start-guide.module.css";
+import lightStyles from "./start-guide-light.module.css";
 
 type Step = {
   id: string;
@@ -56,9 +57,9 @@ const steps: Step[] = [
 ];
 
 const goals = [
-  { tag: "PRODUCT", title: "Create product content", copy: "Product photos, social-ready concepts, captions, hashtags, and short-form video workflows.", href: "/tools" },
-  { tag: "VIDEO", title: "Plan an AI video", copy: "Turn an idea into scenes, storyboards, camera directions, and model-ready video prompts.", href: "/tools" },
-  { tag: "PROMPTS", title: "Find a ready workflow", copy: "Browse Fluxora's prompt library and start from a structured creative workflow instead of a blank page.", href: "/prompts" },
+  { tag: "COMMUNITY", title: "Fluxora Community", copy: "Join the Community, and grow with Fluxora.", href: "https://t.me/PHAICommunity" },
+  { tag: "TOOLS", title: "Fluxora Tools", copy: "Access Fluxora Tools, built to accommodate all ideas possible.", href: "/tools" },
+  { tag: "PROMPTS", title: "Fluxora Prompts", copy: "Need prompts? Browse our prompt gallery, community-driven and constantly growing.", href: "/prompts" },
   { tag: "MEMBER", title: "Manage my access", copy: "Check your membership, profile, progress, devices, and other account-related information.", href: "/member" },
   { tag: "SELL", title: "Build a product storefront", copy: "Use Karousel to organize and share the products or links you want people to see.", href: "https://karousel.shop" },
   { tag: "GROW", title: "Refer and earn", copy: "Open your referral hub, share your link, and follow your referral progression.", href: "/refer" },
@@ -118,14 +119,14 @@ export default function StartGuide() {
   }
 
   return (
-    <main className={styles.page}>
+    <main className={`${styles.page} ${lightStyles.lightTheme}`}>
       <header className={styles.nav}>
         <a className={styles.brand} href="/" aria-label="Fluxora home">
           <MoonMark />
           <span><b>Fluxora</b><small>Create. Ideate. Generate.</small></span>
         </a>
 
-        <nav className={`${styles.navLinks} ${menuOpen ? styles.open : ""}`} aria-label="Start guide navigation">
+        <nav className={`${styles.navLinks} ${lightStyles.mobileNav} ${menuOpen ? styles.open : ""}`} aria-label="Start guide navigation">
           <a href="#guide" onClick={() => setMenuOpen(false)}>Guide</a>
           <a href="/prompts" onClick={() => setMenuOpen(false)}>Prompts</a>
           <a href="/tools" onClick={() => setMenuOpen(false)}>Tools</a>
@@ -139,7 +140,7 @@ export default function StartGuide() {
       </header>
 
       <section className={styles.hero}>
-        <div className={styles.heroGlow} />
+        <div className={`${styles.heroGlow} ${lightStyles.heroGlow}`} />
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}><span />START WITH FLUXORA</p>
           <h1>Your guide to <em>creating</em> with Fluxora.</h1>
@@ -148,12 +149,12 @@ export default function StartGuide() {
             <a className={styles.primaryButton} href="#guide">Start the guide</a>
             <a className={styles.secondaryButton} href="/tools">Explore tools</a>
           </div>
-          <div className={styles.progressCard} aria-label={`Guide progress ${progress}%`}>
+          <div className={`${styles.progressCard} ${lightStyles.progressCard}`} aria-label={`Guide progress ${progress}%`}>
             <div>
               <span>YOUR START GUIDE</span>
               <b>{completed.length} / {steps.length} complete</b>
             </div>
-            <div className={styles.progressTrack}><i style={{ width: `${progress}%` }} /></div>
+            <div className={`${styles.progressTrack} ${lightStyles.progressTrack}`}><i style={{ width: `${progress}%` }} /></div>
           </div>
         </div>
       </section>
@@ -168,7 +169,7 @@ export default function StartGuide() {
           {goals.map((goal) => {
             const external = goal.href.startsWith("http");
             return (
-              <a className={styles.goalCard} href={goal.href} key={goal.title} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}>
+              <a className={`${styles.goalCard} ${lightStyles.goalCard}`} href={goal.href} key={goal.title} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}>
                 <div className={styles.cardTop}><span>{goal.tag}</span><Arrow /></div>
                 <h3>{goal.title}</h3>
                 <p>{goal.copy}</p>
@@ -204,7 +205,7 @@ export default function StartGuide() {
       </section>
 
       <section className={`${styles.section} ${styles.workflowSection}`}>
-        <div className={styles.workflowPanel}>
+        <div className={`${styles.workflowPanel} ${lightStyles.workflowPanel}`}>
           <div className={styles.workflowIntro}>
             <p className={styles.eyebrow}><span />HOW IT WORKS</p>
             <h2>Fluxora is the layer between your <em>idea</em> and the AI model.</h2>
@@ -233,7 +234,7 @@ export default function StartGuide() {
           <h2>Which tool should I <em>use?</em></h2>
           <p>Use this as the fast route when you already know the result you want.</p>
         </div>
-        <div className={styles.router}>
+        <div className={`${styles.router} ${lightStyles.router}`}>
           {toolRoutes.map(([intent, tool, href]) => {
             const external = href.startsWith("http");
             return (
@@ -247,7 +248,7 @@ export default function StartGuide() {
         </div>
       </section>
 
-      <section className={`${styles.section} ${styles.firstCreation}`}>
+      <section className={`${styles.section} ${styles.firstCreation} ${lightStyles.firstCreation}`}>
         <div>
           <p className={styles.eyebrow}><span />FIRST CREATION</p>
           <h2>Keep the first one <em>simple.</em></h2>
