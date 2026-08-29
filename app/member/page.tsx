@@ -7,6 +7,7 @@ import CommunityProfilePortal from "./community-profile-portal";
 import SmartExpiryRetentionPanel from "./smart-expiry-retention-panel";
 import NextBestActionPanel from "./next-best-action-panel";
 import ProgressHub from "./progress-hub";
+import MemberSectionTabs from "./member-section-tabs";
 
 export const metadata: Metadata = {
   title: "Member | Fluxora",
@@ -14,14 +15,28 @@ export const metadata: Metadata = {
 };
 
 export default function MemberPage() {
-  return <>
-    <SmartExpiryRetentionPanel />
-    <NextBestActionPanel />
-    <ProgressHub />
-    <div id="community-profile"><CommunityProfilePortal /></div>
-    <MembersPortal />
-    <ResourceUsagePortal />
-    <ActiveAccessPortal />
-    <TrialAdmin />
-  </>;
+  return (
+    <MemberSectionTabs
+      profile={
+        <div id="community-profile">
+          <CommunityProfilePortal />
+        </div>
+      }
+      progress={
+        <>
+          <NextBestActionPanel />
+          <ProgressHub />
+        </>
+      }
+      membership={
+        <div id="membership">
+          <SmartExpiryRetentionPanel />
+          <MembersPortal />
+          <ResourceUsagePortal />
+          <ActiveAccessPortal />
+          <TrialAdmin />
+        </div>
+      }
+    />
+  );
 }
