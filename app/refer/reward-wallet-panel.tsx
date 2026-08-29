@@ -19,6 +19,9 @@ type Wallet = {
   availablePremiumDays: number;
   totalPremiumDaysGranted: number;
   totalPremiumDaysRedeemed: number;
+  totalCreatorPreviewDaysGranted?: number;
+  creatorPreviewActive?: boolean;
+  creatorPreviewExpiresAt?: string | null;
   maxStackDays: number;
   member: {
     id: string;
@@ -27,6 +30,10 @@ type Wallet = {
     expiresAt: string | null;
     active: boolean;
     timedAccess: boolean;
+    isPaidPremium?: boolean;
+    creatorPreviewActive?: boolean;
+    creatorPreviewExpiresAt?: string | null;
+    effectiveAccess?: string;
   } | null;
   history: WalletHistoryEntry[];
 };
@@ -57,7 +64,8 @@ function formatDate(value: string) {
 function entryAmount(entry: WalletHistoryEntry) {
   const amount = Number(entry.amount || 0);
   const sign = amount > 0 ? "+" : "";
-  return `${sign}${amount} ${Math.abs(amount) === 1 ? "day" : "days"}`;
+  const unit = entry.rewardType === "creator_days" ? "Creator Preview day" : "Premium day";
+  return `${sign}${amount} ${unit}${Math.abs(amount) === 1 ? "" : "s"}`;
 }
 
 export default function RewardWalletPanel() {
@@ -92,6 +100,10 @@ export default function RewardWalletPanel() {
 
   const available = Math.max(0, Math.floor(Number(wallet?.availablePremiumDays || 0)));
   const history = useMemo(() => (wallet?.history || []).slice(0, 12), [wallet]);
+  const isPaidPremium = Boolean(wallet?.member?.isPaidPremium);
+  const previewActive = Boolean(wallet?.member?.creatorPreviewActive || wallet?.creatorPreviewActive);
+  const previewExpiry = wallet?.member?.creatorPreviewExpiresAt || wallet?.creatorPreviewExpiresAt || null;
+  const creatorDaysEarned = Number(wallet?.totalCreatorPreviewDaysGranted || 0);
 
   async function applyDays(amount = days) {
     if (!wallet || available <= 0 || busy) return;
@@ -111,9 +123,7 @@ export default function RewardWalletPanel() {
       });
       const body = (await response.json().catch(() => ({}))) as WalletResponse;
 
-      if (!response.ok) {
-        throw new Error(body.error || body.message || "Could not apply reward days.");
-      }
+      if (!response.ok) throw new Error(body.error || body.message || "Could not apply reward days.");
 
       if (body.wallet) {
         setWallet(body.wallet);
@@ -142,40 +152,53 @@ export default function RewardWalletPanel() {
         <div className={styles.heading}>
           <div>
             <p className={styles.kicker}>Fluxora rewards</p>
-            <h2>Reward Wallet</h2>
-            <p>Keep earned access days until you are ready to use them.</p>
+            <h2>{isPaidPremium ? "Creator Preview Balance" : "Reward Wallet"}</h2>
+            <p>
+              {isPaidPremium
+                ? "Creator Preview rewards apply immediately to your paid Premium account. Any older Premium-day balance stays separate below."
+                : "Keep earned access days until you are ready to use them."}
+            </p>
           </div>
           <div className={styles.balanceBlock}>
-            <span>Available</span>
-            <strong>{available}</strong>
-            <small>Premium {available === 1 ? "day" : "days"}</small>
+            <span>{isPaidPremium ? "Creator Preview earned" : "Available"}</span>
+            <strong>{isPaidPremium ? creatorDaysEarned : available}</strong>
+            <small>{isPaidPremium ? "days total" : `Premium ${available === 1 ? "day" : "days"}`}</small>
           </div>
         </div>
 
         <div className={styles.summaryGrid}>
+          {isPaidPremium ? (
+            <>
+              <article>
+                <span>Creator Preview</span>
+                <strong>{previewActive ? "Active" : "Inactive"}</strong>
+                <small>{previewActive && previewExpiry ? `Until ${formatDate(previewExpiry)}` : "Earn Trial-Day rewards to extend it"}</small>
+              </article>
+              <article>
+                <span>Creator days earned</span>
+                <strong>+{creatorDaysEarned}</strong>
+                <small>applied immediately</small>
+              </article>
+            </>
+          ) : (
+            <>
+              <article><span>Total earned</span><strong>+{Number(wallet.totalPremiumDaysGranted || 0)}</strong><small>Premium days</small></article>
+              <article><span>Already applied</span><strong>{Number(wallet.totalPremiumDaysRedeemed || 0)}</strong><small>Premium days</small></article>
+            </>
+          )}
           <article>
-            <span>Total earned</span>
-            <strong>+{Number(wallet.totalPremiumDaysGranted || 0)}</strong>
-            <small>Premium days</small>
-          </article>
-          <article>
-            <span>Already applied</span>
-            <strong>{Number(wallet.totalPremiumDaysRedeemed || 0)}</strong>
-            <small>Premium days</small>
-          </article>
-          <article>
-            <span>Stack limit</span>
-            <strong>{wallet.maxStackDays}</strong>
-            <small>days ahead</small>
+            <span>Premium wallet</span>
+            <strong>{available}</strong>
+            <small>unapplied days</small>
           </article>
           <article>
             <span>Current access</span>
-            <strong>{wallet.member?.active ? wallet.member.tier : "Inactive"}</strong>
+            <strong>{wallet.member?.active ? wallet.member.effectiveAccess || wallet.member.tier : "Inactive"}</strong>
             <small>
               {wallet.member?.active && wallet.member.expiresAt
-                ? `Until ${formatDate(wallet.member.expiresAt)}`
+                ? `Premium until ${formatDate(wallet.member.expiresAt)}`
                 : wallet.member?.active
-                  ? "No expiry"
+                  ? "Base plan has no expiry"
                   : "Wallet can activate Premium"}
             </small>
           </article>
@@ -183,89 +206,49 @@ export default function RewardWalletPanel() {
 
         <div className={styles.applyCard}>
           <div>
-            <span className={styles.applyLabel}>Apply reward days</span>
-            <strong>{available > 0 ? "Choose how many days to use" : "No unapplied days right now"}</strong>
+            <span className={styles.applyLabel}>Apply Premium reward days</span>
+            <strong>{available > 0 ? "Choose how many Premium days to use" : "No unapplied Premium days right now"}</strong>
             <p>
-              Applying days creates or extends timed Fluxora access. Days that cannot fit under the {wallet.maxStackDays}-day stacking limit remain in your wallet.
+              Creator Preview days are applied automatically. This control is only for existing Premium-day wallet rewards, which remain subject to the {wallet.maxStackDays}-day stacking limit.
             </p>
           </div>
 
           <div className={styles.applyControls}>
-            <input
-              aria-label="Premium days to apply"
-              type="number"
-              min={1}
-              max={Math.max(1, available)}
-              value={days}
-              disabled={available <= 0 || busy}
-              onChange={(event) => {
-                const next = Number(event.target.value);
-                setDays(Number.isFinite(next) ? Math.max(1, Math.min(Math.floor(next), Math.max(1, available))) : 1);
-              }}
-            />
-            <button
-              type="button"
-              disabled={available <= 0 || busy}
-              onClick={() => applyDays()}
-            >
-              {busy ? "Applying…" : "Apply Reward"}
-            </button>
-            {available > 1 && (
-              <button
-                className={styles.secondaryButton}
-                type="button"
-                disabled={busy}
-                onClick={() => applyDays(available)}
-              >
-                Apply all
-              </button>
-            )}
+            <input aria-label="Premium days to apply" type="number" min={1} max={Math.max(1, available)} value={days} disabled={available <= 0 || busy} onChange={(event) => {
+              const next = Number(event.target.value);
+              setDays(Number.isFinite(next) ? Math.max(1, Math.min(Math.floor(next), Math.max(1, available))) : 1);
+            }} />
+            <button type="button" disabled={available <= 0 || busy} onClick={() => applyDays()}>{busy ? "Applying…" : "Apply Reward"}</button>
+            {available > 1 && <button className={styles.secondaryButton} type="button" disabled={busy} onClick={() => applyDays(available)}>Apply all</button>}
           </div>
         </div>
 
-        {(notice || error) && (
-          <div className={error ? styles.error : styles.notice}>{error || notice}</div>
-        )}
+        {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
 
         {accessCode && (
           <div className={styles.accessCodeBox}>
-            <div>
-              <span>Your active Fluxora access code</span>
-              <strong>{accessCode}</strong>
-            </div>
-            <button type="button" onClick={() => navigator.clipboard.writeText(accessCode)}>
-              Copy code
-            </button>
+            <div><span>Your active Fluxora access code</span><strong>{accessCode}</strong></div>
+            <button type="button" onClick={() => navigator.clipboard.writeText(accessCode)}>Copy code</button>
           </div>
         )}
 
         <div className={styles.historyHeading}>
-          <div>
-            <p className={styles.kicker}>Ledger</p>
-            <h3>Recent reward activity</h3>
-          </div>
+          <div><p className={styles.kicker}>Ledger</p><h3>Recent reward activity</h3></div>
           <span>Last {history.length}</span>
         </div>
 
         <div className={styles.historyList}>
           {history.map((entry) => (
             <article className={styles.historyRow} key={entry.id}>
-              <div>
-                <strong>{entry.label}</strong>
-                <span>{formatDate(entry.createdAt)}</span>
-              </div>
-              <strong data-positive={Number(entry.amount) > 0 ? "true" : "false"}>
-                {entryAmount(entry)}
-              </strong>
+              <div><strong>{entry.label}</strong><span>{formatDate(entry.createdAt)}</span></div>
+              <strong data-positive={Number(entry.amount) > 0 ? "true" : "false"}>{entryAmount(entry)}</strong>
             </article>
           ))}
-          {!history.length && (
-            <div className={styles.empty}>Your reward activity will appear here.</div>
-          )}
+          {!history.length && <div className={styles.empty}>Your reward activity will appear here.</div>}
         </div>
 
         <p className={styles.note}>
-          The wallet ledger is append-only. Applied, adjusted, or revoked rewards remain visible in history instead of being silently deleted.
+          The reward ledger is append-only. Creator Preview, Premium-day, applied, adjusted, and revoked rewards stay explicitly typed in history.
         </p>
       </div>
     </section>
