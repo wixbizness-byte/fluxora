@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import styles from "./member-auth-gate.module.css";
 
 type GateState = "loading" | "ready" | "signed-out" | "no-membership" | "error";
@@ -22,13 +22,18 @@ function loginHref() {
 
 export default function MemberAuthGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GateState>("loading");
+  const stateRef = useRef<GateState>("loading");
   const [message, setMessage] = useState("");
   const [email, setEmail] = useState("");
   const [loginUrl, setLoginUrl] = useState("/prompts/member-login?returnTo=%2Fmember&auto=1");
 
+  const moveTo = useCallback((next: GateState) => {
+    stateRef.current = next;
+    setState(next);
+  }, []);
+
   const check = useCallback(async (quiet = false) => {
-    if (!quiet) setState((current) => current === "ready" ? current : "loading");
-    setMessage("");
+    if (!quiet && stateRef.current !== "ready") moveTo("loading");
     setLoginUrl(loginHref());
 
     try {
@@ -40,27 +45,31 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
       setEmail(String(body.email || ""));
 
       if (response.ok && (body.role === "member" || body.role === "admin")) {
-        setState("ready");
+        setMessage("");
+        moveTo("ready");
         return;
       }
 
       if (response.status === 401) {
-        setState("signed-out");
+        setMessage("");
+        moveTo("signed-out");
         return;
       }
 
       if (response.status === 403 || body.role === "none") {
         setMessage(body.error || "This Google account is not connected to a Fluxora membership.");
-        setState("no-membership");
+        moveTo("no-membership");
         return;
       }
 
+      if (quiet && stateRef.current === "ready") return;
       throw new Error(body.error || "Could not verify your Fluxora session.");
     } catch (reason) {
+      if (quiet && stateRef.current === "ready") return;
       setMessage(reason instanceof Error ? reason.message : "Could not verify your Fluxora session.");
-      setState("error");
+      moveTo("error");
     }
-  }, []);
+  }, [moveTo]);
 
   useEffect(() => {
     void check();
