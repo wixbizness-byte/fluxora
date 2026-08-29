@@ -11,6 +11,12 @@ type Member = {
   gmail: string;
   tier: "Tool" | "Premium" | "Creator";
   status: string;
+  access_origin?: string | null;
+  creator_preview_expires_at?: string | null;
+  creator_preview_active?: boolean;
+  effective_access?: string;
+  can_use_creator_content?: boolean;
+  can_use_workflow?: boolean;
   max_devices: number;
   max_uses: number | null;
   use_count: number | null;
@@ -168,6 +174,8 @@ export default function MembersPortal() {
   }
 
   const overLimit = data?.tracked_over_limit ?? trackedDevices.length > trackedLimit;
+  const previewActive = Boolean(member.creator_preview_active);
+  const effectiveAccess = member.effective_access || member.tier;
 
   return (
     <main className={styles.page}>
@@ -187,10 +195,26 @@ export default function MembersPortal() {
       {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
 
       <section className={styles.summaryGrid}>
-        <article><span>Tier</span><strong>{member.tier}</strong></article>
+        <article><span>Access</span><strong>{effectiveAccess}</strong></article>
+        <article><span>Base tier</span><strong>{member.tier}</strong></article>
         <article><span>Status</span><strong>{member.status}</strong></article>
+        <article><span>{previewActive ? "Creator Preview expires" : "Membership expires"}</span><strong className={styles.smallStrong}>{formatDate(previewActive ? member.creator_preview_expires_at : member.expires_at)}</strong></article>
+      </section>
+
+      {previewActive && (
+        <section className={styles.infoPanel}>
+          <strong>Creator Preview is active</strong>
+          <p>
+            Your paid Premium membership is unchanged. Until {formatDate(member.creator_preview_expires_at)}, you can use Creator Tools and GPTs included in the preview. Workflows remain reserved for full Creator members.
+          </p>
+        </section>
+      )}
+
+      <section className={styles.summaryGrid}>
         <article><span>Tracked devices</span><strong>{trackedDevices.length} / {trackedLimit}{overLimit ? " ⚠" : ""}</strong></article>
-        <article><span>Expires</span><strong className={styles.smallStrong}>{formatDate(member.expires_at)}</strong></article>
+        <article><span>Creator content</span><strong>{member.can_use_creator_content ? "Available" : "Locked"}</strong></article>
+        <article><span>Workflows</span><strong>{member.can_use_workflow ? "Available" : "Creator only"}</strong></article>
+        <article><span>Premium expiry</span><strong className={styles.smallStrong}>{formatDate(member.expires_at)}</strong></article>
       </section>
 
       {overLimit && <div className={styles.warning}>Your account is over its tracked-device limit ({trackedDevices.length} / {trackedLimit}). Fluxora access is not blocked immediately, but this usage is flagged for review. Remove old device history below if needed.</div>}
