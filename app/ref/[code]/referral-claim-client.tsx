@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import ReferralProductPreview from "../../refer/referral-product-preview";
 import styles from "./referral-claim.module.css";
 
 type ReferralTarget = {
@@ -71,7 +72,6 @@ export default function ReferralClaimClient({
     [attribution, invite]
   );
   const target = claim?.target || invite?.target || null;
-  const activeTool = claim?.tool || invite?.tool || (validTool(tool) ? tool : "");
 
   async function createAttribution() {
     const response = await fetch("/prompts/api/referral-attribution", {
@@ -239,12 +239,21 @@ export default function ReferralClaimClient({
           <strong>No payment is required.</strong>
         </p>
         {target && (
-          <div className={styles.targetCard}>
-            <span>Referral destination</span>
-            <strong>{target.title}</strong>
-            <p>Your referral attribution stays attached while you continue through Google verification and trial signup.</p>
-            <small>{target.toolType} · {target.accessLevel}</small>
-          </div>
+          <>
+            <div className={styles.targetCard}>
+              <span>Referral destination</span>
+              <strong>{target.title}</strong>
+              <p>Your referral attribution stays attached while you continue through Google verification and trial signup.</p>
+              <small>{target.toolType} · {target.accessLevel}</small>
+            </div>
+            <div className={styles.previewWrap}>
+              <ReferralProductPreview
+                targetKey={target.key}
+                title={target.title}
+                description={target.description}
+              />
+            </div>
+          </>
         )}
         <div className={styles.perks}>
           <div><strong>2 Days</strong><span>Premium access</span></div>
@@ -258,10 +267,6 @@ export default function ReferralClaimClient({
         >
           {target ? `Continue to ${target.title}` : "Claim My 2-Day Trial"}
         </a>
-        {activeTool && <p className={styles.deepLinkNote}>Referral target: {activeTool}</p>}
-        <p className={styles.finePrint}>
-          One referral trial per eligible Gmail. Self-referrals and duplicate free-trial claims are not eligible.
-        </p>
       </section>
     </main>
   );
