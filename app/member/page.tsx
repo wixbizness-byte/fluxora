@@ -7,6 +7,7 @@ import CommunityProfilePortal from "./community-profile-portal";
 import SmartExpiryRetentionPanel from "./smart-expiry-retention-panel";
 import NextBestActionPanel from "./next-best-action-panel";
 import ProgressHub from "./progress-hub";
+import MemberAuthGate from "./member-auth-gate";
 import MemberSectionTabs from "./member-section-tabs";
 
 export const metadata: Metadata = {
@@ -16,27 +17,29 @@ export const metadata: Metadata = {
 
 export default function MemberPage() {
   return (
-    <MemberSectionTabs
-      profile={
-        <div id="community-profile">
-          <CommunityProfilePortal />
-        </div>
-      }
-      progress={
-        <>
-          <NextBestActionPanel />
-          <ProgressHub />
-        </>
-      }
-      membership={
-        <div id="membership">
-          <SmartExpiryRetentionPanel />
-          <MembersPortal />
-          <ResourceUsagePortal />
-          <ActiveAccessPortal />
-          <TrialAdmin />
-        </div>
-      }
-    />
+    <MemberAuthGate>
+      <MemberSectionTabs
+        profile={
+          <div id="community-profile">
+            <CommunityProfilePortal />
+          </div>
+        }
+        progress={
+          <>
+            <NextBestActionPanel />
+            <ProgressHub />
+          </>
+        }
+        membership={
+          <div id="membership">
+            <SmartExpiryRetentionPanel />
+            <MembersPortal />
+            <ResourceUsagePortal />
+            <ActiveAccessPortal />
+            <TrialAdmin />
+          </div>
+        }
+      />
+    </MemberAuthGate>
   );
 }
