@@ -121,19 +121,19 @@ export default function StartGuide() {
   return (
     <main className={`${styles.page} ${lightStyles.lightTheme}`}>
       <header className={styles.nav}>
-        <a className={styles.brand} href="/" aria-label="Fluxora home">
+        <a className={styles.brand} href="/" target="_blank" rel="noopener noreferrer" aria-label="Fluxora home">
           <MoonMark />
           <span><b>Fluxora</b><small>Create. Ideate. Generate.</small></span>
         </a>
 
         <nav className={`${styles.navLinks} ${lightStyles.mobileNav} ${menuOpen ? styles.open : ""}`} aria-label="Start guide navigation">
           <a href="#guide" onClick={() => setMenuOpen(false)}>Guide</a>
-          <a href="/prompts" onClick={() => setMenuOpen(false)}>Prompts</a>
-          <a href="/tools" onClick={() => setMenuOpen(false)}>Tools</a>
-          <a href="/member" onClick={() => setMenuOpen(false)}>Member</a>
+          <a href="/prompts" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Prompts</a>
+          <a href="/tools" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Tools</a>
+          <a href="/member" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Member</a>
         </nav>
 
-        <a className={styles.navCta} href="/tools">Explore tools</a>
+        <a className={styles.navCta} href="/tools" target="_blank" rel="noopener noreferrer">Explore tools</a>
         <button className={styles.menuButton} type="button" onClick={() => setMenuOpen((value) => !value)} aria-label="Toggle navigation" aria-expanded={menuOpen}>
           <i /><i />
         </button>
@@ -147,7 +147,7 @@ export default function StartGuide() {
           <p className={styles.lede}>Choose what you want to make, learn the basic workflow, open the right tool, and get your first Fluxora creation moving without digging through documentation.</p>
           <div className={styles.heroActions}>
             <a className={styles.primaryButton} href="#guide">Start the guide</a>
-            <a className={styles.secondaryButton} href="/tools">Explore tools</a>
+            <a className={styles.secondaryButton} href="/tools" target="_blank" rel="noopener noreferrer">Explore tools</a>
           </div>
           <div className={`${styles.progressCard} ${lightStyles.progressCard}`} aria-label={`Guide progress ${progress}%`}>
             <div>
@@ -166,16 +166,13 @@ export default function StartGuide() {
           <p>You do not need to learn every part of Fluxora first. Start with the outcome you want.</p>
         </div>
         <div className={styles.goalGrid}>
-          {goals.map((goal) => {
-            const external = goal.href.startsWith("http");
-            return (
-              <a className={`${styles.goalCard} ${lightStyles.goalCard}`} href={goal.href} key={goal.title} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}>
-                <div className={styles.cardTop}><span>{goal.tag}</span><Arrow /></div>
-                <h3>{goal.title}</h3>
-                <p>{goal.copy}</p>
-              </a>
-            );
-          })}
+          {goals.map((goal) => (
+            <a className={`${styles.goalCard} ${lightStyles.goalCard}`} href={goal.href} key={goal.title} target="_blank" rel="noopener noreferrer">
+              <div className={styles.cardTop}><span>{goal.tag}</span><Arrow /></div>
+              <h3>{goal.title}</h3>
+              <p>{goal.copy}</p>
+            </a>
+          ))}
         </div>
       </section>
 
@@ -197,7 +194,7 @@ export default function StartGuide() {
                   <h3>{step.title}</h3>
                   <p>{step.description}</p>
                 </div>
-                <a className={styles.stepAction} href={step.href}>{step.action}<Arrow /></a>
+                <a className={styles.stepAction} href={step.href} target="_blank" rel="noopener noreferrer">{step.action}<Arrow /></a>
               </article>
             );
           })}
@@ -235,16 +232,13 @@ export default function StartGuide() {
           <p>Use this as the fast route when you already know the result you want.</p>
         </div>
         <div className={`${styles.router} ${lightStyles.router}`}>
-          {toolRoutes.map(([intent, tool, href]) => {
-            const external = href.startsWith("http");
-            return (
-              <a href={href} key={intent} target={external ? "_blank" : undefined} rel={external ? "noopener noreferrer" : undefined}>
-                <span>{intent}</span>
-                <b>{tool}</b>
-                <Arrow />
-              </a>
-            );
-          })}
+          {toolRoutes.map(([intent, tool, href]) => (
+            <a href={href} key={intent} target="_blank" rel="noopener noreferrer">
+              <span>{intent}</span>
+              <b>{tool}</b>
+              <Arrow />
+            </a>
+          ))}
         </div>
       </section>
 
@@ -256,8 +250,8 @@ export default function StartGuide() {
           <div className={styles.miniFlow}><span>REFERENCE</span><i>→</i><span>CONFIGURE</span><i>→</i><span>GENERATE</span><i>→</i><span>CREATE</span></div>
         </div>
         <div className={styles.creationActions}>
-          <a className={styles.primaryButton} href="/tools">Choose a tool</a>
-          <a className={styles.secondaryButton} href="/prompts">Browse prompts</a>
+          <a className={styles.primaryButton} href="/tools" target="_blank" rel="noopener noreferrer">Choose a tool</a>
+          <a className={styles.secondaryButton} href="/prompts" target="_blank" rel="noopener noreferrer">Browse prompts</a>
         </div>
       </section>
 
@@ -269,13 +263,13 @@ export default function StartGuide() {
             <p>Create a clean, shareable product page and only show the information you choose to add.</p>
             <b>Open Karousel <Arrow /></b>
           </a>
-          <a className={styles.quickCard} href="/refer">
+          <a className={styles.quickCard} href="/refer" target="_blank" rel="noopener noreferrer">
             <span>REFERRALS</span>
             <h3>Ready to share Fluxora with someone else?</h3>
             <p>Use the referral hub for your referral link and related referral progression.</p>
             <b>Open referrals <Arrow /></b>
           </a>
-          <a className={styles.quickCard} href="/member">
+          <a className={styles.quickCard} href="/member" target="_blank" rel="noopener noreferrer">
             <span>MEMBER HUB</span>
             <h3>Need to check your account or access?</h3>
             <p>Your member hub is the home for profile, progress, membership, access, and device information.</p>
@@ -290,14 +284,14 @@ export default function StartGuide() {
           <h2>You can always come back to <em>/start.</em></h2>
           <p>Use this page as your map whenever you are unsure where a Fluxora workflow lives.</p>
           <div className={styles.heroActions}>
-            <a className={styles.primaryButton} href="/tools">Open tools</a>
-            <a className={styles.secondaryButton} href="/member">Member hub</a>
+            <a className={styles.primaryButton} href="/tools" target="_blank" rel="noopener noreferrer">Open tools</a>
+            <a className={styles.secondaryButton} href="/member" target="_blank" rel="noopener noreferrer">Member hub</a>
           </div>
         </div>
       </section>
 
       <footer className={styles.footer}>
-        <a className={styles.brand} href="/">
+        <a className={styles.brand} href="/" target="_blank" rel="noopener noreferrer">
           <MoonMark />
           <span><b>Fluxora</b><small>Create. Ideate. Generate.</small></span>
         </a>
