@@ -10,6 +10,8 @@ type Member = {
   gmail: string;
   tier: "Tool" | "Premium" | "Creator";
   status: string;
+  access_origin?: string | null;
+  creator_preview_expires_at?: string | null;
   max_uses: number | null;
   use_count: number | null;
   max_devices: number;
@@ -65,10 +67,21 @@ function formatLocalDate(value: string | null) {
   return local.toISOString().slice(0, 16);
 }
 
-function displayDate(value: string | null) {
+function displayDate(value: string | null | undefined) {
   if (!value) return "No expiry";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "No expiry" : date.toLocaleString();
+}
+
+function hasCreatorPreview(member: Member) {
+  if (member.tier !== "Premium") return false;
+  const status = member.status.trim().toLowerCase();
+  const origin = String(member.access_origin || "").trim().toLowerCase();
+  if (["google_trial", "inactive", "blocked"].includes(status)) return false;
+  if (["google_trial", "referral_trial"].includes(origin)) return false;
+  if (!member.creator_preview_expires_at) return false;
+  const expiry = new Date(member.creator_preview_expires_at).getTime();
+  return Number.isFinite(expiry) && expiry > Date.now();
 }
 
 function phTime(value: string) {
@@ -226,7 +239,7 @@ export default function MemberManager() {
         Boolean(member.is_affiliate);
       if (!matchesFilter) return false;
       if (!needle) return true;
-      return [member.gmail, member.access_code, member.tier, member.status, member.notes || "", member.account_link || ""].some((value) => value.toLowerCase().includes(needle));
+      return [member.gmail, member.access_code, member.tier, member.status, member.notes || "", member.account_link || "", hasCreatorPreview(member) ? "creator preview" : ""].some((value) => value.toLowerCase().includes(needle));
     });
   }, [filter, members, query]);
 
@@ -321,13 +334,15 @@ export default function MemberManager() {
     return !Number.isFinite(expiry) || expiry > Date.now();
   }).length;
 
+  const activeCreatorPreviews = members.filter(hasCreatorPreview).length;
+
   return <main className={styles.page}>
     <header className={styles.header}><div><p className={styles.kicker}>Fluxora access control</p><h1>Member Manager</h1><p className={styles.adminEmail}>{adminEmail}</p></div>
       <div className={styles.headerActions}><a className={styles.secondaryButton} href="/">Home</a><a className={styles.secondaryButton} href="/prompts/admin?tab=members">Prompt Admin</a></div>
     </header>
 
     {(notice || error) && <div className={error ? styles.errorNotice : styles.successNotice}>{error || notice}</div>}
-    <section className={styles.summaryGrid}><article><span>Total members</span><strong>{members.length}</strong></article><article><span>Active Trials</span><strong>{activeTrials}</strong></article><article><span>Members</span><strong>{filterCounts.members}</strong></article></section>
+    <section className={styles.summaryGrid}><article><span>Total members</span><strong>{members.length}</strong></article><article><span>Active Trials</span><strong>{activeTrials}</strong></article><article><span>Creator Previews</span><strong>{activeCreatorPreviews}</strong></article><article><span>Members</span><strong>{filterCounts.members}</strong></article></section>
 
     <div className={layout.managerLayout}>
       <aside className={layout.filterRail} aria-label="Member filters">
@@ -344,10 +359,11 @@ export default function MemberManager() {
           const isRevealed = revealed.has(member.id);
           const activeLike = member.status === "active" || member.status === "google_trial";
           const isTrial = member.status.toLowerCase() === "google_trial";
+          const previewActive = hasCreatorPreview(member);
           return <article className={styles.item} key={member.id}>
-            <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{member.status}</span></div>
+            <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}{previewActive ? " • Creator Preview" : ""}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{member.status}</span></div>
             <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
-            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {member.max_devices ?? (member.tier === "Tool" ? 2 : 5)}</span><span>{displayDate(member.expires_at)}</span></div>
+            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {member.max_devices ?? (member.tier === "Tool" ? 2 : 5)}</span><span>Premium: {displayDate(member.expires_at)}</span>{previewActive && <span>Creator Preview: {displayDate(member.creator_preview_expires_at)}</span>}</div>
             {member.notes && <p className={styles.notes}>{member.notes}</p>}
             {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
             <div className={styles.quickActions}>
