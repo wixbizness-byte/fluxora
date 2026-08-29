@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import ReferralProductPreview from "./referral-product-preview";
 import styles from "./referral-deep-link-builder.module.css";
 
 type PublicReferrerResponse = {
@@ -14,17 +15,17 @@ const TARGETS = [
   {
     key: "fashion",
     title: "Fashion Studio",
-    description: "Send the invite through a Fashion Studio-focused landing page.",
+    description: "Send your invite through a Fashion Studio-focused Fluxora landing page.",
   },
   {
-    key: "skincare",
-    title: "Skincare Facts",
-    description: "Send the invite through a skincare-focused Fluxora landing page.",
+    key: "affiliate",
+    title: "Affiliate Studio",
+    description: "Send your invite through an Affiliate Studio-focused Fluxora landing page.",
   },
   {
     key: "prompt-gallery",
     title: "Prompt Gallery",
-    description: "Send the invite through the Fluxora Prompt Gallery landing page.",
+    description: "Send your invite through the Fluxora Prompt Gallery with live rotating prompt previews.",
   },
 ] as const;
 
@@ -44,7 +45,9 @@ export default function ReferralDeepLinkBuilder() {
         if (!cancelled && body?.referrer?.referralUrl) setReferralUrl(body.referrer.referralUrl);
       })
       .catch(() => undefined);
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const target = TARGETS.find((item) => item.key === selected) || TARGETS[0];
@@ -87,9 +90,11 @@ export default function ReferralDeepLinkBuilder() {
       <div className={styles.card}>
         <div className={styles.heading}>
           <div>
-            <p>Phase 18 · Product referrals</p>
-            <h2 id="deep-referral-heading">Refer a specific Fluxora product</h2>
-            <span>Choose the product your friend should see first. The same referral attribution stays attached through the 2-day trial signup.</span>
+            <p>Product referrals</p>
+            <h2 id="deep-referral-heading">Choose what your friend sees first</h2>
+            <span>
+              Each option keeps the same referral attribution and 2-day trial, but opens with a product-specific landing experience.
+            </span>
           </div>
           <strong>Both still get 2 days</strong>
         </div>
@@ -100,13 +105,24 @@ export default function ReferralDeepLinkBuilder() {
               type="button"
               key={item.key}
               data-active={selected === item.key}
-              onClick={() => { setSelected(item.key); setNotice(""); }}
+              onClick={() => {
+                setSelected(item.key);
+                setNotice("");
+              }}
             >
               <strong>{item.title}</strong>
               <span>{item.description}</span>
               <code>?tool={item.key}</code>
             </button>
           ))}
+        </div>
+
+        <div className={styles.previewWrap}>
+          <ReferralProductPreview
+            targetKey={target.key}
+            title={target.title}
+            description={target.description}
+          />
         </div>
 
         <div className={styles.linkBox}>
@@ -119,7 +135,6 @@ export default function ReferralDeepLinkBuilder() {
         </div>
 
         {notice && <p className={styles.notice}>{notice}</p>}
-        <p className={styles.finePrint}>The product parameter changes the landing content only. Referral eligibility, anti-abuse checks, attribution, and trial rewards stay on the existing referral system.</p>
       </div>
     </section>
   );
