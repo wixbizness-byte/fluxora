@@ -3,18 +3,21 @@ import { homeHtml } from "./home-html";
 export const dynamic = "force-static";
 
 const homepageStyles = String.raw`
-    /* Fluxora premium directory */
+    /* Fluxora compact launcher */
     body {
       font-family: "Inter", Arial, sans-serif;
+      background:
+        radial-gradient(circle at 82% 8%, rgba(207, 118, 148, 0.10), transparent 28rem),
+        #fbf7f4;
     }
 
     .page-shell {
-      width: min(1180px, calc(100% - 40px));
-      padding: 18px 0 44px;
+      width: min(1120px, calc(100% - 32px));
+      padding: 12px 0 34px;
     }
 
     .hero {
-      padding: 36px 12px 42px;
+      padding: 24px 10px 30px;
       text-align: center;
     }
 
@@ -23,11 +26,11 @@ const homepageStyles = String.raw`
     }
 
     h1 {
-      max-width: 720px;
+      max-width: 620px;
       margin: 0 auto;
       padding: 0;
       font-family: "Inter", Arial, sans-serif;
-      font-size: clamp(44px, 4.4vw, 58px);
+      font-size: clamp(38px, 4vw, 52px);
       font-weight: 650;
       line-height: 1.02;
       letter-spacing: -0.055em;
@@ -36,8 +39,6 @@ const homepageStyles = String.raw`
 
     h1 em {
       display: inline;
-      padding: 0;
-      margin: 0;
       color: var(--wine);
       font-family: inherit;
       font-style: normal;
@@ -50,68 +51,61 @@ const homepageStyles = String.raw`
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: min(100%, 320px);
-      min-height: 52px;
-      margin: 22px auto 0;
-      padding: 13px 22px;
+      width: min(100%, 250px);
+      min-height: 46px;
+      margin: 18px auto 0;
+      padding: 11px 18px;
       border: 1px solid var(--wine);
-      border-radius: 14px;
+      border-radius: 12px;
       background: var(--wine);
       color: #fff;
       font-family: "Inter", Arial, sans-serif;
-      font-size: 14px;
+      font-size: 13px;
       font-weight: 650;
       letter-spacing: -0.015em;
-      box-shadow: 0 8px 22px rgba(124, 29, 61, 0.12);
-      transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
-      animation: reveal-up 650ms 120ms ease both;
+      box-shadow: 0 7px 18px rgba(124, 29, 61, 0.11);
+      transition: transform 150ms ease, background 150ms ease, box-shadow 150ms ease;
+      animation: reveal-up 600ms 100ms ease both;
     }
 
     .start-fluxora-button::after {
       content: "→";
-      margin-left: 9px;
-      font-size: 16px;
-      font-weight: 500;
+      margin-left: 8px;
+      font-size: 14px;
     }
 
     .start-fluxora-button:hover,
     .start-fluxora-button:focus-visible {
       background: var(--wine-dark);
       transform: translateY(-1px);
-      box-shadow: 0 10px 26px rgba(38, 13, 23, 0.16);
+      box-shadow: 0 9px 22px rgba(38, 13, 23, 0.14);
       outline: none;
     }
 
     .destination-list {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+      gap: 10px;
       perspective: none;
     }
 
     .destination-card {
-      display: grid;
-      grid-template-columns: 30px minmax(0, 1fr);
-      grid-template-rows: 1fr auto;
-      column-gap: 12px;
-      row-gap: 14px;
-      align-items: start;
-      min-height: 178px;
-      padding: 22px;
-      border: 1px solid rgba(75, 16, 36, 0.11);
-      border-radius: 17px;
-      background: rgba(255, 252, 249, 0.9);
-      box-shadow: 0 4px 16px rgba(73, 17, 36, 0.045);
-      backdrop-filter: blur(8px);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      min-height: 164px;
+      padding: 17px;
+      border: 1px solid rgba(75, 16, 36, 0.10);
+      border-radius: 15px;
+      background: rgba(255, 253, 251, 0.96);
+      box-shadow: 0 3px 12px rgba(73, 17, 36, 0.035);
+      backdrop-filter: none;
       cursor: pointer;
       overflow: hidden;
-      transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, background 160ms ease;
+      transition: border-color 150ms ease, box-shadow 150ms ease, transform 150ms ease, background 150ms ease;
     }
 
-    .destination-card::before {
-      display: none;
-    }
-
+    .destination-card::before,
     .destination-card::after {
       display: none;
     }
@@ -120,9 +114,9 @@ const homepageStyles = String.raw`
     .destination-card:focus-within,
     .destination-card:focus-visible {
       transform: translateY(-2px);
-      border-color: rgba(124, 29, 61, 0.2);
-      background: #fffdfa;
-      box-shadow: 0 8px 24px rgba(73, 17, 36, 0.07);
+      border-color: rgba(124, 29, 61, 0.20);
+      background: #fff;
+      box-shadow: 0 7px 20px rgba(73, 17, 36, 0.055);
       outline: none;
     }
 
@@ -130,16 +124,17 @@ const homepageStyles = String.raw`
       display: block;
       width: auto;
       height: auto;
-      padding-top: 2px;
+      margin: 0 0 12px;
+      padding: 0;
       border: 0;
       border-radius: 0;
-      color: rgba(124, 29, 61, 0.58);
+      color: rgba(124, 29, 61, 0.48);
       background: transparent;
       box-shadow: none;
       font-family: "Inter", Arial, sans-serif;
-      font-size: 10px;
-      font-weight: 650;
-      line-height: 1.2;
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1;
       letter-spacing: 0.08em;
     }
 
@@ -152,28 +147,29 @@ const homepageStyles = String.raw`
 
     .card-content {
       min-width: 0;
+      flex: 1;
     }
 
     .card-label {
       display: block;
-      margin: 0 0 7px;
-      color: rgba(75, 16, 36, 0.55);
+      margin: 0 0 5px;
+      color: rgba(75, 16, 36, 0.48);
       font-family: "Inter", Arial, sans-serif;
-      font-size: 9px;
-      font-weight: 650;
-      letter-spacing: 0.16em;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
     }
 
     .destination-card:hover .card-label {
-      letter-spacing: 0.16em;
+      letter-spacing: 0.14em;
     }
 
     .card-content h2 {
       margin: 0;
       color: var(--ink);
       font-family: "Inter", Arial, sans-serif;
-      font-size: clamp(19px, 1.7vw, 23px);
+      font-size: clamp(18px, 1.7vw, 22px);
       font-weight: 650;
       line-height: 1.08;
       letter-spacing: -0.04em;
@@ -186,42 +182,40 @@ const homepageStyles = String.raw`
 
     .card-content p {
       display: -webkit-box;
-      max-width: none;
-      margin: 9px 0 0;
+      margin: 7px 0 0;
       overflow: hidden;
-      color: rgba(75, 16, 36, 0.58);
+      color: rgba(75, 16, 36, 0.50);
       font-family: "Inter", Arial, sans-serif;
-      font-size: 12.5px;
-      line-height: 1.48;
+      font-size: 11.5px;
+      line-height: 1.42;
       -webkit-box-orient: vertical;
       -webkit-line-clamp: 2;
     }
 
     .card-button {
-      grid-column: 2;
-      justify-self: start;
+      display: inline-flex;
+      align-items: center;
+      align-self: flex-start;
       width: auto;
       min-width: 0;
       min-height: 0;
-      margin: 0;
+      margin: 13px 0 0;
       padding: 0;
       border-radius: 0;
       background: transparent;
       color: var(--wine);
       box-shadow: none;
       font-family: "Inter", Arial, sans-serif;
-      font-size: 11px;
+      font-size: 10.5px;
       font-weight: 650;
       letter-spacing: -0.01em;
       text-transform: none;
-      transition: color 150ms ease, gap 150ms ease;
     }
 
     .card-button::after {
       content: "→";
-      margin-left: 6px;
-      font-size: 13px;
-      line-height: 1;
+      margin-left: 5px;
+      font-size: 12px;
       transition: transform 150ms ease;
     }
 
@@ -240,83 +234,81 @@ const homepageStyles = String.raw`
     }
 
     .footer {
-      padding: 34px 0 8px;
-      color: rgba(75, 16, 36, 0.42);
-      font-size: 11px;
+      padding: 26px 0 6px;
+      color: rgba(75, 16, 36, 0.36);
+      font-size: 10px;
       letter-spacing: 0.02em;
     }
 
-    @media (max-width: 900px) {
-      .destination-list {
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-      }
-    }
-
-    @media (max-width: 640px) {
+    @media (max-width: 760px) {
       .page-shell {
-        width: calc(100% - 24px);
-        padding: 8px 0 28px;
+        width: calc(100% - 20px);
+        padding: 6px 0 24px;
       }
 
       .hero {
-        padding: 18px 4px 28px;
+        padding: 12px 2px 20px;
       }
 
       h1 {
-        max-width: 430px;
-        font-size: clamp(36px, 10.5vw, 43px);
+        max-width: 360px;
+        font-size: clamp(30px, 8.4vw, 36px);
         line-height: 1.04;
         letter-spacing: -0.05em;
       }
 
       .start-fluxora-button {
-        width: min(100%, 330px);
-        min-height: 52px;
-        margin-top: 18px;
-        border-radius: 14px;
-        font-size: 14px;
+        width: min(100%, 235px);
+        min-height: 44px;
+        margin-top: 14px;
+        border-radius: 11px;
+        font-size: 12.5px;
       }
 
       .destination-list {
-        grid-template-columns: 1fr;
-        gap: 9px;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
       }
 
       .destination-card {
-        grid-template-columns: 28px minmax(0, 1fr);
-        column-gap: 10px;
-        row-gap: 12px;
-        min-height: 132px;
-        padding: 17px 16px;
-        border-radius: 15px;
-        box-shadow: 0 3px 12px rgba(73, 17, 36, 0.04);
+        min-height: 126px;
+        padding: 13px;
+        border-radius: 13px;
       }
 
       .card-number {
-        padding-top: 1px;
-        font-size: 9px;
+        margin-bottom: 9px;
+        font-size: 8px;
       }
 
       .card-label {
-        margin-bottom: 5px;
-        font-size: 8px;
-        letter-spacing: 0.14em;
+        margin-bottom: 4px;
+        font-size: 7px;
+        letter-spacing: 0.12em;
       }
 
       .card-content h2 {
-        font-size: clamp(19px, 5.8vw, 22px);
+        font-size: clamp(15px, 4.5vw, 18px);
         line-height: 1.08;
       }
 
       .card-content p {
-        margin-top: 6px;
-        font-size: 12px;
-        line-height: 1.42;
-        -webkit-line-clamp: 2;
+        display: none;
       }
 
       .card-button {
-        font-size: 10.5px;
+        margin-top: 10px;
+        font-size: 9.5px;
+      }
+    }
+
+    @media (max-width: 340px) {
+      .destination-list {
+        grid-template-columns: 1fr;
+      }
+
+      .destination-card {
+        min-height: 112px;
       }
     }
 `;
@@ -396,7 +388,7 @@ const renderedHomeHtml = homeHtml
   )
   .replace(
     '>Join Community</a>',
-    '>Open community</a>',
+    '>Open</a>',
   )
   .replace(
     '<div class="card-content"><span class="card-label">Tools</span><h2>Automation Tools</h2><p>Explore practical tools and creator-focused systems designed to make your workflow faster and easier.</p></div>',
@@ -404,7 +396,7 @@ const renderedHomeHtml = homeHtml
   )
   .replace(
     '>View Tools</a>',
-    '>Open tools</a>',
+    '>Open</a>',
   )
   .replace(
     '<div class="card-content"><span class="card-label">Gallery</span><h2>Prompt Gallery</h2><p>Discover, study, copy, and adapt prompts behind standout AI visuals and creator-ready concepts.</p></div>',
@@ -412,15 +404,15 @@ const renderedHomeHtml = homeHtml
   )
   .replace(
     '<a class="card-button" href="https://fluxora-prompt-gallery.vercel.app" target="_blank" rel="noopener noreferrer">View Gallery</a>',
-    '<a class="card-button" href="/prompts" target="_blank" rel="noopener noreferrer">Open prompts</a>',
+    '<a class="card-button" href="/prompts" target="_blank" rel="noopener noreferrer">Open</a>',
   )
   .replace(
     '>View Course</a>',
-    '>Open course</a>',
+    '>Open</a>',
   )
   .replace(
     '>Follow Page</a>',
-    '>Open Facebook</a>',
+    '>Open</a>',
   )
   .replace(
     '      <article class="destination-card" style="--delay:80ms">\n        <div class="card-number" aria-hidden="true">06</div>\n        <div class="card-content"><span class="card-label">Plans</span><h2>Fluxora Pricing</h2><p>Explore Fluxora access plans and choose the level that best matches your creative goals.</p></div>\n        <a class="card-button" href="/pricing" target="_blank" rel="noopener noreferrer">View Pricing</a>\n      </article>\n\n',
@@ -432,7 +424,7 @@ const renderedHomeHtml = homeHtml
   )
   .replace(
     '>Explore Clothing</a>',
-    '>Open Karousel</a>',
+    '>Open</a>',
   )
   .replace('  </style>', `${homepageStyles}  </style>`)
   .replace('</body>', `${directoryInteraction}</body>`);
