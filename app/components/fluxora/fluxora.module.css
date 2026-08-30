@@ -45,5 +45,5 @@
   .headerNavOpen { display: flex; }
   .headerLink { padding: var(--fluxora-space-3); }
   .headerCta { margin: var(--fluxora-space-1) 0 0; }
-  .siteFooterInner { gap: var(--fluxora-space-2); }
+  .siteFooter > .siteFooterInner { gap: var(--fluxora-space-2); }
 }
