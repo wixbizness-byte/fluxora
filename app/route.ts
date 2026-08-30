@@ -435,7 +435,7 @@ const renderedHomeHtml = homeHtml
     '>Open Karousel</a>',
   )
   .replace('  </style>', `${homepageStyles}  </style>`)
-  .replace('  </body>', `${directoryInteraction}  </body>`);
+  .replace('</body>', `${directoryInteraction}</body>`);
 
 export function GET() {
   return new Response(renderedHomeHtml, {
