@@ -1,6 +1,14 @@
 import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import type { ReactNode } from "react";
 import "./globals.css";
+import "./styles/fluxora-tokens.css";
+
+const inter = Inter({
+  display: "swap",
+  subsets: ["latin"],
+  variable: "--font-inter",
+});
 
 export const metadata: Metadata = {
   title: "Fluxora — Create. Ideate. Generate.",
@@ -9,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="en" data-theme="dark">
+    <html lang="en" data-theme="dark" className={inter.variable}>
       <body>{children}</body>
     </html>
   );
