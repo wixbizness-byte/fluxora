@@ -30,9 +30,9 @@ const homepageStyles = String.raw`
       max-width: 760px;
       margin: 0 auto 8px;
       color: var(--wine);
-      font-family: "Titan One", "Arial Rounded MT Bold", Arial, sans-serif;
+      font-family: "Lora", Georgia, serif;
       font-size: clamp(40px, 5vw, 62px);
-      font-weight: 400;
+      font-weight: 700;
       line-height: 0.98;
       letter-spacing: -0.025em;
       animation: reveal-up 600ms 70ms ease both;
@@ -42,9 +42,9 @@ const homepageStyles = String.raw`
       max-width: 620px;
       margin: 0 auto;
       padding: 0;
-      font-family: "Inter", Arial, sans-serif;
+      font-family: "Lora", Georgia, serif;
       font-size: clamp(30px, 3.2vw, 42px);
-      font-weight: 650;
+      font-weight: 700;
       line-height: 1.04;
       letter-spacing: -0.05em;
       color: var(--ink);
@@ -400,7 +400,7 @@ const renderedHomeHtml = homeHtml
   )
   .replace(
     "family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&display=swap",
-    "family=Inter:wght@400;500;600;700&family=Titan+One&display=swap",
+    "family=Inter:wght@400;500;600;700&family=Lora:wght@700&display=swap",
   )
   .replace(
     '    <a class="brand" href="#top" aria-label="Meimei Digital and Fluxora home">\n      <span class="moon" aria-hidden="true"></span>\n      <span class="brand-copy"><strong>Meimei Digital &amp; Fluxora</strong><span>Create. Ideate. Generate.</span></span>\n    </a>\n\n',
