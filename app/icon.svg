@@ -1,5 +1,3 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="16" fill="#FBF4EF"/>
-  <rect x="1" y="1" width="62" height="62" rx="15" fill="none" stroke="#E7CCD4" stroke-width="2"/>
-  <text x="32" y="33" text-anchor="middle" dominant-baseline="middle" fill="#711E38" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="800" letter-spacing="-1.2">Fx</text>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1254 1254">
+  <image href="/fluxora-logo.svg" width="1254" height="1254"/>
 </svg>

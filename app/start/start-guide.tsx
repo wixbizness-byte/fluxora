@@ -1,8 +1,9 @@
 "use client";
 
+import { ArrowUpRight, Check, Circle, FileText, Handshake, Lightbulb, Store, UsersRound, UserRound, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Badge, Button, Card, PageContainer, SectionHeading, SiteFooter, SiteHeader } from "../components/fluxora";
 import styles from "./start-guide.module.css";
-import lightStyles from "./start-guide-light.module.css";
 
 type Step = {
   id: string;
@@ -57,12 +58,12 @@ const steps: Step[] = [
 ];
 
 const goals = [
-  { tag: "COMMUNITY", title: "Fluxora Community", copy: "Join the Community, and grow with Fluxora.", href: "https://t.me/PHAICommunity" },
-  { tag: "TOOLS", title: "Fluxora Tools", copy: "Access Fluxora Tools, built to accommodate all ideas possible.", href: "/tools" },
-  { tag: "PROMPTS", title: "Fluxora Prompts", copy: "Need prompts? Browse our prompt gallery, community-driven and constantly growing.", href: "/prompts" },
-  { tag: "MEMBER", title: "Manage my access", copy: "Check your membership, profile, progress, devices, and other account-related information.", href: "/member" },
-  { tag: "SELL", title: "Build a product storefront", copy: "Use Karousel to organize and share the products or links you want people to see.", href: "https://karousel.shop" },
-  { tag: "GROW", title: "Refer and earn", copy: "Open your referral hub, share your link, and follow your referral progression.", href: "/refer" },
+  { tag: "Community", title: "Fluxora Community", copy: "Join the community and grow with Fluxora.", href: "https://t.me/PHAICommunity", icon: UsersRound },
+  { tag: "Tools", title: "Fluxora Tools", copy: "Access Fluxora tools built to accommodate all ideas possible.", href: "/tools", icon: Wrench },
+  { tag: "Prompts", title: "Fluxora Prompts", copy: "Browse a community-driven prompt gallery that keeps growing.", href: "/prompts", icon: FileText },
+  { tag: "Member", title: "Manage my access", copy: "Check your membership, progress, devices, and account details.", href: "/member", icon: UserRound },
+  { tag: "Sell", title: "Build a storefront", copy: "Use Karousel to organize and share the products or links you want people to see.", href: "https://karousel.shop", icon: Store },
+  { tag: "Grow", title: "Refer and earn", copy: "Open your referral hub, share your link, and follow your progression.", href: "/refer", icon: Handshake },
 ];
 
 const toolRoutes = [
@@ -76,21 +77,8 @@ const toolRoutes = [
   ["My account, access, or progress", "Member Hub", "/member"],
 ] as const;
 
-function MoonMark() {
-  return (
-    <svg viewBox="0 0 48 48" aria-hidden="true">
-      <path d="M31.8 6.8A17.8 17.8 0 1 0 41.2 34C29 38 17.2 25.6 22.5 13.7c1.9-4.2 5.4-6.1 9.3-6.9Z" />
-    </svg>
-  );
-}
-
-function Arrow() {
-  return <span aria-hidden="true">↗</span>;
-}
-
 export default function StartGuide() {
   const [completed, setCompleted] = useState<string[]>([]);
-  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -118,185 +106,80 @@ export default function StartGuide() {
     setCompleted((current) => current.includes(id) ? current.filter((item) => item !== id) : [...current, id]);
   }
 
-  return (
-    <main className={`${styles.page} ${lightStyles.lightTheme}`}>
-      <header className={styles.nav}>
-        <a className={styles.brand} href="/" target="_blank" rel="noopener noreferrer" aria-label="Fluxora home">
-          <MoonMark />
-          <span><b>Fluxora</b><small>Create. Ideate. Generate.</small></span>
-        </a>
+  return <main className={`fluxora-theme ${styles.page}`}>
+    <SiteHeader
+      brandTarget="_blank"
+      links={[
+        { href: "#guide", label: "Guide" },
+        { href: "/prompts", label: "Prompts", target: "_blank" },
+        { href: "/tools", label: "Tools", target: "_blank" },
+        { href: "/member", label: "Member", target: "_blank" },
+      ]}
+      cta={{ href: "/tools", label: "Explore tools", target: "_blank" }}
+    />
 
-        <nav className={`${styles.navLinks} ${lightStyles.mobileNav} ${menuOpen ? styles.open : ""}`} aria-label="Start guide navigation">
-          <a href="#guide" onClick={() => setMenuOpen(false)}>Guide</a>
-          <a href="/prompts" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Prompts</a>
-          <a href="/tools" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Tools</a>
-          <a href="/member" target="_blank" rel="noopener noreferrer" onClick={() => setMenuOpen(false)}>Member</a>
-        </nav>
-
-        <a className={styles.navCta} href="/tools" target="_blank" rel="noopener noreferrer">Explore tools</a>
-        <button className={styles.menuButton} type="button" onClick={() => setMenuOpen((value) => !value)} aria-label="Toggle navigation" aria-expanded={menuOpen}>
-          <i /><i />
-        </button>
-      </header>
-
-      <section className={styles.hero}>
-        <div className={`${styles.heroGlow} ${lightStyles.heroGlow}`} />
-        <div className={styles.heroCopy}>
-          <p className={styles.eyebrow}><span />START WITH FLUXORA</p>
-          <h1>Your guide to <em>creating</em> with Fluxora.</h1>
-          <p className={styles.lede}>Choose what you want to make, learn the basic workflow, open the right tool, and get your first Fluxora creation moving without digging through documentation.</p>
-          <div className={styles.heroActions}>
-            <a className={styles.primaryButton} href="#guide">Start the guide</a>
-            <a className={styles.secondaryButton} href="/tools" target="_blank" rel="noopener noreferrer">Explore tools</a>
-          </div>
-          <div className={`${styles.progressCard} ${lightStyles.progressCard}`} aria-label={`Guide progress ${progress}%`}>
-            <div>
-              <span>YOUR START GUIDE</span>
-              <b>{completed.length} / {steps.length} complete</b>
-            </div>
-            <div className={`${styles.progressTrack} ${lightStyles.progressTrack}`}><i style={{ width: `${progress}%` }} /></div>
-          </div>
+    <section className={styles.hero}>
+      <PageContainer className={styles.heroContent}>
+        <Badge variant="brand">Start with Fluxora</Badge>
+        <h1>Your guide to creating with Fluxora.</h1>
+        <p>Choose an outcome, open the right workflow, and make your first creation without digging through documentation.</p>
+        <div className={styles.heroActions}>
+          <a className={styles.primaryLink} href="#guide">Start the guide</a>
+          <a className={styles.secondaryLink} href="/tools" target="_blank" rel="noopener noreferrer">Explore tools <ArrowUpRight size={16} /></a>
         </div>
-      </section>
+        <p className={styles.progress} aria-label={`Guide progress ${progress}%`}><Circle size={16} /> {completed.length} of {steps.length} setup steps complete</p>
+      </PageContainer>
+    </section>
 
+    <PageContainer>
       <section className={styles.section} id="guide">
-        <div className={styles.sectionHeading}>
-          <p className={styles.eyebrow}><span />CHOOSE A DIRECTION</p>
-          <h2>What do you want to <em>do?</em></h2>
-          <p>You do not need to learn every part of Fluxora first. Start with the outcome you want.</p>
-        </div>
+        <SectionHeading eyebrow="Choose a direction" title="What do you want to do?" description="You do not need to learn every part of Fluxora first. Start with the outcome you want." />
         <div className={styles.goalGrid}>
-          {goals.map((goal) => (
-            <a className={`${styles.goalCard} ${lightStyles.goalCard}`} href={goal.href} key={goal.title} target="_blank" rel="noopener noreferrer">
-              <div className={styles.cardTop}><span>{goal.tag}</span><Arrow /></div>
-              <h3>{goal.title}</h3>
-              <p>{goal.copy}</p>
-            </a>
-          ))}
-        </div>
-      </section>
-
-      <section className={`${styles.section} ${styles.journeySection}`}>
-        <div className={styles.sectionHeading}>
-          <p className={styles.eyebrow}><span />5-MINUTE SETUP</p>
-          <h2>Your first <em>Fluxora journey.</em></h2>
-          <p>Complete these in any order. Your checkmarks are saved on this device so you can come back later.</p>
-        </div>
-        <div className={styles.steps}>
-          {steps.map((step) => {
-            const done = completed.includes(step.id);
-            return (
-              <article className={`${styles.step} ${done ? styles.done : ""}`} key={step.id}>
-                <button className={styles.check} type="button" onClick={() => toggleStep(step.id)} aria-label={`${done ? "Mark incomplete" : "Mark complete"}: ${step.title}`}>
-                  {done ? "✓" : step.number}
-                </button>
-                <div className={styles.stepCopy}>
-                  <h3>{step.title}</h3>
-                  <p>{step.description}</p>
-                </div>
-                <a className={styles.stepAction} href={step.href} target="_blank" rel="noopener noreferrer">{step.action}<Arrow /></a>
-              </article>
-            );
+          {goals.map((goal) => {
+            const Icon = goal.icon;
+            return <a className={styles.goalLink} href={goal.href} key={goal.title} target="_blank" rel="noopener noreferrer">
+              <Card className={styles.goalCard}>
+                <div className={styles.goalIcon}><Icon size={20} strokeWidth={1.8} /></div>
+                <span className={styles.goalTag}>{goal.tag}</span>
+                <h3>{goal.title}</h3>
+                <p>{goal.copy}</p>
+                <span className={styles.goalAction}>Open <ArrowUpRight size={16} /></span>
+              </Card>
+            </a>;
           })}
         </div>
       </section>
 
-      <section className={`${styles.section} ${styles.workflowSection}`}>
-        <div className={`${styles.workflowPanel} ${lightStyles.workflowPanel}`}>
-          <div className={styles.workflowIntro}>
-            <p className={styles.eyebrow}><span />HOW IT WORKS</p>
-            <h2>Fluxora is the layer between your <em>idea</em> and the AI model.</h2>
-            <p>Most Fluxora workflows help you structure the creative direction first, then produce a prompt, storyboard, or content package that you can use with the AI generator suited to the job.</p>
-          </div>
-          <div className={styles.flow} aria-label="Fluxora creation workflow">
-            {[
-              ["01", "Your idea", "Start with a product, topic, reference, or creative goal."],
-              ["02", "Fluxora", "Choose a workflow and configure the inputs you need."],
-              ["03", "Structured output", "Get the prompt, storyboard, caption, hashtags, or content plan."],
-              ["04", "AI generator", "Use the output in the image or video model appropriate for the task."],
-              ["05", "Final content", "Review, refine, generate again if needed, then publish or share."],
-            ].map(([number, title, copy]) => (
-              <div className={styles.flowItem} key={number}>
-                <span>{number}</span>
-                <div><b>{title}</b><p>{copy}</p></div>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className={styles.section}>
+        <SectionHeading eyebrow="Five-minute setup" title="Your first Fluxora journey" description="Complete these in any order. Your checkmarks are saved on this device so you can return later." />
+        <ol className={styles.steps}>
+          {steps.map((step) => {
+            const done = completed.includes(step.id);
+            return <li className={styles.step} key={step.id}>
+              <Button className={`${styles.check} ${done ? styles.done : ""}`} type="button" variant={done ? "primary" : "secondary"} onClick={() => toggleStep(step.id)} aria-label={`${done ? "Mark incomplete" : "Mark complete"}: ${step.title}`}>
+                {done ? <Check size={18} strokeWidth={2.5} /> : step.number}
+              </Button>
+              <div className={styles.stepCopy}><h3>{step.title}</h3><p>{step.description}</p></div>
+              <a className={styles.stepAction} href={step.href} target="_blank" rel="noopener noreferrer">{step.action}<ArrowUpRight size={16} /></a>
+            </li>;
+          })}
+        </ol>
       </section>
 
       <section className={styles.section}>
-        <div className={styles.sectionHeading}>
-          <p className={styles.eyebrow}><span />TOOL ROUTER</p>
-          <h2>Which tool should I <em>use?</em></h2>
-          <p>Use this as the fast route when you already know the result you want.</p>
-        </div>
-        <div className={`${styles.router} ${lightStyles.router}`}>
-          {toolRoutes.map(([intent, tool, href]) => (
-            <a href={href} key={intent} target="_blank" rel="noopener noreferrer">
-              <span>{intent}</span>
-              <b>{tool}</b>
-              <Arrow />
-            </a>
-          ))}
-        </div>
+        <SectionHeading eyebrow="Tool router" title="Which tool should I use?" description="Use this quick match when you already know the result you want." />
+        <Card className={styles.router}>
+          {toolRoutes.map(([intent, tool, href]) => <a href={href} key={intent} target="_blank" rel="noopener noreferrer">
+            <span>{intent}</span><strong>{tool}</strong><ArrowUpRight size={18} />
+          </a>)}
+        </Card>
       </section>
 
-      <section className={`${styles.section} ${styles.firstCreation} ${lightStyles.firstCreation}`}>
-        <div>
-          <p className={styles.eyebrow}><span />FIRST CREATION</p>
-          <h2>Keep the first one <em>simple.</em></h2>
-          <p>Start with one clear reference image or one clear idea. Pick the relevant Fluxora tool, provide only the inputs it asks for, generate the structured output, then move that output into your chosen AI generator.</p>
-          <div className={styles.miniFlow}><span>REFERENCE</span><i>→</i><span>CONFIGURE</span><i>→</i><span>GENERATE</span><i>→</i><span>CREATE</span></div>
-        </div>
-        <div className={styles.creationActions}>
-          <a className={styles.primaryButton} href="/tools" target="_blank" rel="noopener noreferrer">Choose a tool</a>
-          <a className={styles.secondaryButton} href="/prompts" target="_blank" rel="noopener noreferrer">Browse prompts</a>
-        </div>
+      <section className={`${styles.section} ${styles.tipSection}`}>
+        <div className={styles.tip}><Lightbulb size={20} strokeWidth={1.8} /><p><strong>Keep the first one simple.</strong> Start with one clear reference image or idea, then give the selected workflow only the inputs it requests.</p></div>
       </section>
+    </PageContainer>
 
-      <section className={styles.section}>
-        <div className={styles.quickGrid}>
-          <a className={styles.quickCard} href="https://karousel.shop" target="_blank" rel="noopener noreferrer">
-            <span>KAROUSEL</span>
-            <h3>Build a storefront for the products you want to share.</h3>
-            <p>Create a clean, shareable product page and only show the information you choose to add.</p>
-            <b>Open Karousel <Arrow /></b>
-          </a>
-          <a className={styles.quickCard} href="/refer" target="_blank" rel="noopener noreferrer">
-            <span>REFERRALS</span>
-            <h3>Ready to share Fluxora with someone else?</h3>
-            <p>Use the referral hub for your referral link and related referral progression.</p>
-            <b>Open referrals <Arrow /></b>
-          </a>
-          <a className={styles.quickCard} href="/member" target="_blank" rel="noopener noreferrer">
-            <span>MEMBER HUB</span>
-            <h3>Need to check your account or access?</h3>
-            <p>Your member hub is the home for profile, progress, membership, access, and device information.</p>
-            <b>Open member hub <Arrow /></b>
-          </a>
-        </div>
-      </section>
-
-      <section className={styles.help}>
-        <div className={styles.section}>
-          <p className={styles.eyebrow}><span />NEED HELP?</p>
-          <h2>You can always come back to <em>/start.</em></h2>
-          <p>Use this page as your map whenever you are unsure where a Fluxora workflow lives.</p>
-          <div className={styles.heroActions}>
-            <a className={styles.primaryButton} href="/tools" target="_blank" rel="noopener noreferrer">Open tools</a>
-            <a className={styles.secondaryButton} href="/member" target="_blank" rel="noopener noreferrer">Member hub</a>
-          </div>
-        </div>
-      </section>
-
-      <footer className={styles.footer}>
-        <a className={styles.brand} href="/" target="_blank" rel="noopener noreferrer">
-          <MoonMark />
-          <span><b>Fluxora</b><small>Create. Ideate. Generate.</small></span>
-        </a>
-        <p>Start simple. Create something. Build from there.</p>
-      </footer>
-    </main>
-  );
+    <SiteFooter brandTarget="_blank" meta="Create. Ideate. Generate." />
+  </main>;
 }
