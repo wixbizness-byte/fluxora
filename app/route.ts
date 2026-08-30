@@ -17,7 +17,7 @@ const homepageStyles = String.raw`
     }
 
     .hero {
-      padding: 24px 10px 30px;
+      padding: 24px 10px 18px;
       text-align: center;
     }
 
@@ -25,15 +25,28 @@ const homepageStyles = String.raw`
       display: none;
     }
 
+    .welcome-title {
+      display: block;
+      max-width: 760px;
+      margin: 0 auto 8px;
+      color: var(--wine);
+      font-family: "Titan One", "Arial Rounded MT Bold", Arial, sans-serif;
+      font-size: clamp(40px, 5vw, 62px);
+      font-weight: 400;
+      line-height: 0.98;
+      letter-spacing: -0.025em;
+      animation: reveal-up 600ms 70ms ease both;
+    }
+
     h1 {
       max-width: 620px;
       margin: 0 auto;
       padding: 0;
       font-family: "Inter", Arial, sans-serif;
-      font-size: clamp(38px, 4vw, 52px);
+      font-size: clamp(30px, 3.2vw, 42px);
       font-weight: 650;
-      line-height: 1.02;
-      letter-spacing: -0.055em;
+      line-height: 1.04;
+      letter-spacing: -0.05em;
       color: var(--ink);
     }
 
@@ -51,10 +64,10 @@ const homepageStyles = String.raw`
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: min(100%, 250px);
-      min-height: 46px;
+      width: min(100%, 370px);
+      min-height: 48px;
       margin: 18px auto 0;
-      padding: 11px 18px;
+      padding: 12px 20px;
       border: 1px solid var(--wine);
       border-radius: 12px;
       background: var(--wine);
@@ -82,6 +95,18 @@ const homepageStyles = String.raw`
       outline: none;
     }
 
+    .section-divider {
+      margin: 0 auto 18px;
+      color: rgba(124, 29, 61, 0.38);
+      font-family: "Inter", Arial, sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 0.32em;
+      line-height: 1;
+      text-align: center;
+      user-select: none;
+    }
+
     .destination-list {
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -95,7 +120,7 @@ const homepageStyles = String.raw`
       flex-direction: column;
       min-height: 164px;
       padding: 17px;
-      border: 1px solid rgba(75, 16, 36, 0.10);
+      border: 1.5px solid rgba(124, 29, 61, 0.22);
       border-radius: 15px;
       background: rgba(255, 253, 251, 0.96);
       box-shadow: 0 3px 12px rgba(73, 17, 36, 0.035);
@@ -114,7 +139,7 @@ const homepageStyles = String.raw`
     .destination-card:focus-within,
     .destination-card:focus-visible {
       transform: translateY(-2px);
-      border-color: rgba(124, 29, 61, 0.20);
+      border-color: rgba(124, 29, 61, 0.40);
       background: #fff;
       box-shadow: 0 7px 20px rgba(73, 17, 36, 0.055);
       outline: none;
@@ -247,22 +272,35 @@ const homepageStyles = String.raw`
       }
 
       .hero {
-        padding: 12px 2px 20px;
+        padding: 12px 2px 14px;
+      }
+
+      .welcome-title {
+        max-width: 390px;
+        margin-bottom: 7px;
+        font-size: clamp(30px, 9vw, 38px);
+        line-height: 1;
       }
 
       h1 {
-        max-width: 360px;
-        font-size: clamp(30px, 8.4vw, 36px);
-        line-height: 1.04;
-        letter-spacing: -0.05em;
+        max-width: 350px;
+        font-size: clamp(24px, 6.8vw, 30px);
+        line-height: 1.06;
+        letter-spacing: -0.045em;
       }
 
       .start-fluxora-button {
-        width: min(100%, 235px);
-        min-height: 44px;
+        width: min(94%, 340px);
+        min-height: 46px;
         margin-top: 14px;
         border-radius: 11px;
         font-size: 12.5px;
+      }
+
+      .section-divider {
+        margin-bottom: 14px;
+        font-size: 10px;
+        letter-spacing: 0.26em;
       }
 
       .destination-list {
@@ -273,6 +311,8 @@ const homepageStyles = String.raw`
       .destination-card {
         min-height: 126px;
         padding: 13px;
+        border-width: 1.5px;
+        border-color: rgba(124, 29, 61, 0.24);
         border-radius: 13px;
       }
 
@@ -360,7 +400,7 @@ const renderedHomeHtml = homeHtml
   )
   .replace(
     "family=DM+Sans:wght@400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;0,9..144,600;1,9..144,600&display=swap",
-    "family=Inter:wght@400;500;600;700&display=swap",
+    "family=Inter:wght@400;500;600;700&family=Titan+One&display=swap",
   )
   .replace(
     '    <a class="brand" href="#top" aria-label="Meimei Digital and Fluxora home">\n      <span class="moon" aria-hidden="true"></span>\n      <span class="brand-copy"><strong>Meimei Digital &amp; Fluxora</strong><span>Create. Ideate. Generate.</span></span>\n    </a>\n\n',
@@ -372,15 +412,15 @@ const renderedHomeHtml = homeHtml
   )
   .replace(
     '      <h1>Welcome, where do you want to <em>go?</em></h1>',
-    '      <h1>Where do you want to <em>go?</em></h1>',
+    '      <span class="welcome-title">Welcome to Fluxora,</span>\n      <h1>Where do you want to <em>go?</em></h1>',
   )
   .replace(
     '      <p>Select a destination below and continue directly to the Fluxora resource that fits what you need.</p>',
-    '      <a class="start-fluxora-button" href="/start">Start with Fluxora</a>',
+    '      <a class="start-fluxora-button" href="/start">New to Fluxora? Start here</a>',
   )
   .replace(
     '    <section class="destination-list" aria-label="Meimei Digital and Fluxora destinations">',
-    '    <section class="destination-list" aria-label="Fluxora destinations">',
+    '    <div class="section-divider" aria-hidden="true">- - - - - - - -</div>\n\n    <section class="destination-list" aria-label="Fluxora destinations">',
   )
   .replace(
     '<div class="card-content"><span class="card-label">Community</span><h2>AI Creator Community</h2><p>Join creators sharing practical experiments, useful feedback, resources, and repeatable workflows.</p></div>',
