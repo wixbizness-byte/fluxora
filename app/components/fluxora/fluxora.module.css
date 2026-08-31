@@ -1,49 +1,59 @@
-.button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: var(--fluxora-space-2); padding: 0 var(--fluxora-space-4); border: 1px solid transparent; border-radius: var(--fluxora-radius-md); cursor: pointer; font: 600 14px/1 var(--font-inter), Inter, Arial, sans-serif; transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease; }
+.button { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: var(--fluxora-space-2); padding: 0 var(--fluxora-space-4); border: 1px solid transparent; border-radius: var(--fluxora-radius-md); cursor: pointer; font: 600 14px/1 var(--font-inter), Inter, Arial, sans-serif; text-decoration: none; transition: transform 180ms ease, box-shadow 180ms ease, background-color 180ms ease, border-color 180ms ease, color 180ms ease; }
 .button:focus-visible, .headerMenuButton:focus-visible, .headerLink:focus-visible, .footerLink:focus-visible { outline: 2px solid var(--fluxora-color-brand); outline-offset: 2px; }
-.button:disabled { cursor: not-allowed; opacity: 0.55; }
-.buttonPrimary { color: var(--fluxora-color-surface); background: var(--fluxora-color-brand); }
-.buttonPrimary:not(:disabled):hover { background: var(--fluxora-color-brand-hover); }
-.buttonSecondary { color: var(--fluxora-color-text); border-color: var(--fluxora-color-border); background: var(--fluxora-color-surface); }
-.buttonSecondary:not(:disabled):hover { background: var(--fluxora-color-surface-muted); }
+.button:disabled { cursor: not-allowed; opacity: .55; }
+.buttonPrimary { color: var(--fluxora-color-surface); background: linear-gradient(135deg, #7568ef 0%, var(--fluxora-color-brand) 52%, #5d4fdb 100%); box-shadow: 0 7px 18px rgba(102, 88, 232, .18), inset 0 1px rgba(255, 255, 255, .18); }
+.buttonPrimary:not(:disabled):hover { transform: translateY(-2px); background: linear-gradient(135deg, #7b6ff1 0%, var(--fluxora-color-brand-hover) 100%); box-shadow: 0 11px 24px rgba(102, 88, 232, .24), inset 0 1px rgba(255, 255, 255, .2); }
+.buttonPrimary:not(:disabled):active { transform: translateY(2px) scale(.985); box-shadow: 0 3px 8px rgba(102, 88, 232, .16); transition-duration: 80ms; }
+.buttonSecondary { color: var(--fluxora-color-text); border-color: var(--fluxora-color-border); background: rgba(255, 255, 255, .9); box-shadow: 0 2px 0 rgba(43, 38, 67, .06), 0 5px 12px rgba(24, 24, 27, .035); }
+.buttonSecondary:not(:disabled):hover { transform: translateY(-2px); border-color: rgba(102, 88, 232, .24); background: var(--fluxora-color-surface); box-shadow: 0 5px 0 rgba(102, 88, 232, .07), 0 12px 22px rgba(24, 24, 27, .06); }
+.buttonSecondary:not(:disabled):active { transform: translateY(2px) scale(.985); box-shadow: 0 1px 0 rgba(43, 38, 67, .08), 0 4px 9px rgba(24, 24, 27, .045); transition-duration: 80ms; }
 .buttonGhost { color: var(--fluxora-color-text-secondary); background: transparent; }
-.buttonGhost:not(:disabled):hover { background: var(--fluxora-color-surface-muted); }
+.buttonGhost:not(:disabled):hover { color: var(--fluxora-color-text); background: rgba(102, 88, 232, .055); }
 .buttonFull { width: 100%; }
-.card { border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-lg); background: var(--fluxora-color-surface); box-shadow: var(--fluxora-shadow-sm); }
-.cardElevated { box-shadow: var(--fluxora-shadow-md); }
-.badge { width: fit-content; display: inline-flex; align-items: center; gap: var(--fluxora-space-1); padding: var(--fluxora-space-1) var(--fluxora-space-2); border-radius: var(--fluxora-radius-pill); color: var(--fluxora-color-text-secondary); background: var(--fluxora-color-surface-muted); font: 600 12px/1.2 var(--font-inter), Inter, Arial, sans-serif; }
-.badgeBrand { color: var(--fluxora-color-brand); background: var(--fluxora-color-brand-soft); }
-.badgeSuccess { color: var(--fluxora-color-success); background: color-mix(in srgb, var(--fluxora-color-success) 10%, transparent); }
-.badgeWarning { color: var(--fluxora-color-warning); background: color-mix(in srgb, var(--fluxora-color-warning) 10%, transparent); }
-.badgeDanger { color: var(--fluxora-color-danger); background: color-mix(in srgb, var(--fluxora-color-danger) 10%, transparent); }
-.badgeInfo { color: var(--fluxora-color-info); background: color-mix(in srgb, var(--fluxora-color-info) 10%, transparent); }
+.card { border: 1px solid rgba(205, 202, 216, .88); border-radius: var(--fluxora-radius-lg); background: rgba(255, 255, 255, .97); box-shadow: 0 5px 0 rgba(43, 38, 67, .1), 0 13px 28px rgba(43, 38, 67, .07); }
+.cardElevated { box-shadow: 0 7px 0 rgba(43, 38, 67, .11), var(--fluxora-shadow-lg); }
+.badge { width: fit-content; display: inline-flex; align-items: center; gap: var(--fluxora-space-1); padding: var(--fluxora-space-1) var(--fluxora-space-2); border: 1px solid rgba(24, 24, 27, .035); border-radius: var(--fluxora-radius-pill); color: var(--fluxora-color-text-secondary); background: rgba(245, 245, 242, .9); font: 600 12px/1.2 var(--font-inter), Inter, Arial, sans-serif; box-shadow: inset 0 1px rgba(255, 255, 255, .7); }
+.badgeBrand { color: var(--fluxora-color-brand); border-color: rgba(102, 88, 232, .08); background: var(--fluxora-color-brand-soft); }
+.badgeSuccess { color: var(--fluxora-color-success); border-color: color-mix(in srgb, var(--fluxora-color-success) 10%, transparent); background: color-mix(in srgb, var(--fluxora-color-success) 9%, #fff); }
+.badgeWarning { color: var(--fluxora-color-warning); border-color: color-mix(in srgb, var(--fluxora-color-warning) 10%, transparent); background: color-mix(in srgb, var(--fluxora-color-warning) 9%, #fff); }
+.badgeDanger { color: var(--fluxora-color-danger); border-color: color-mix(in srgb, var(--fluxora-color-danger) 10%, transparent); background: color-mix(in srgb, var(--fluxora-color-danger) 9%, #fff); }
+.badgeInfo { color: var(--fluxora-color-info); border-color: color-mix(in srgb, var(--fluxora-color-info) 10%, transparent); background: color-mix(in srgb, var(--fluxora-color-info) 9%, #fff); }
 .pageContainer { width: min(100% - 32px, 1180px); margin-inline: auto; }
 .sectionHeading { max-width: 720px; }
 .sectionHeadingCenter { margin-inline: auto; text-align: center; }
-.sectionEyebrow { margin: 0 0 var(--fluxora-space-2); color: var(--fluxora-color-brand); font: 700 12px/1.3 var(--font-inter), Inter, Arial, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }
-.sectionTitle { margin: 0; color: var(--fluxora-color-text); font: 700 clamp(28px, 4vw, 44px)/1.1 var(--font-inter), Inter, Arial, sans-serif; letter-spacing: -0.03em; }
+.sectionEyebrow { margin: 0 0 var(--fluxora-space-2); color: var(--fluxora-color-brand); font: 700 12px/1.3 var(--font-inter), Inter, Arial, sans-serif; letter-spacing: .08em; text-transform: uppercase; }
+.sectionTitle { margin: 0; color: var(--fluxora-color-text); font: 700 clamp(28px, 4vw, 44px)/1.1 var(--font-inter), Inter, Arial, sans-serif; letter-spacing: -.03em; }
 .sectionDescription { max-width: 620px; margin: var(--fluxora-space-3) 0 0; color: var(--fluxora-color-text-secondary); font: 400 16px/1.6 var(--font-inter), Inter, Arial, sans-serif; }
 .sectionHeadingCenter .sectionDescription { margin-inline: auto; }
-.siteHeader { position: relative; z-index: 20; border-bottom: 1px solid var(--fluxora-color-border); background: var(--fluxora-color-surface); font-family: var(--font-inter), Inter, Arial, sans-serif; }
+.siteHeader { position: sticky; z-index: 20; top: 0; border-bottom: 1px solid rgba(228, 228, 231, .82); background: rgba(255, 255, 255, .82); box-shadow: 0 1px 10px rgba(24, 24, 27, .025); backdrop-filter: blur(16px) saturate(135%); -webkit-backdrop-filter: blur(16px) saturate(135%); font-family: var(--font-inter), Inter, Arial, sans-serif; }
 .siteHeaderInner { width: min(100% - 32px, 1180px); min-height: 64px; display: flex; align-items: center; gap: var(--fluxora-space-6); margin-inline: auto; }
 .brand { display: inline-flex; align-items: center; gap: var(--fluxora-space-2); color: var(--fluxora-color-text); font-weight: 700; text-decoration: none; }
-.brandMark { width: 28px; height: 28px; flex: 0 0 auto; object-fit: contain; }
-.brandLabel { font-size: 16px; letter-spacing: -0.02em; }
+.brandMark { width: 28px; height: 28px; flex: 0 0 auto; object-fit: contain; transition: transform 220ms ease, filter 220ms ease; }
+.brand:hover .brandMark { transform: translateY(-1px) rotate(-2deg); filter: drop-shadow(0 5px 7px rgba(102, 88, 232, .16)); }
+.brandLabel { font-size: 16px; letter-spacing: -.02em; }
 .headerNav { display: flex; align-items: center; gap: var(--fluxora-space-6); margin-left: auto; }
-.headerLink { color: var(--fluxora-color-text-secondary); font-size: 15px; font-weight: 600; text-decoration: none; }
+.headerLink { position: relative; color: var(--fluxora-color-text-secondary); font-size: 15px; font-weight: 600; text-decoration: none; transition: color 160ms ease; }
+.headerLink::after { position: absolute; right: 0; bottom: -7px; left: 0; height: 2px; border-radius: 999px; background: var(--fluxora-color-brand); transform: scaleX(0); transform-origin: center; transition: transform 180ms ease; content: ""; }
 .headerLink:hover { color: var(--fluxora-color-brand); }
+.headerLink:hover::after { transform: scaleX(1); }
 .headerCta { min-height: 44px; margin-left: var(--fluxora-space-2); text-decoration: none; }
-.headerMenuButton { width: 44px; height: 44px; display: none; place-items: center; margin-left: auto; padding: 0; border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-md); color: var(--fluxora-color-text); background: var(--fluxora-color-surface); cursor: pointer; }
-.siteFooter { border-top: 1px solid var(--fluxora-color-border); background: var(--fluxora-color-surface); font-family: var(--font-inter), Inter, Arial, sans-serif; }
+.headerMenuButton { width: 44px; height: 44px; display: none; place-items: center; margin-left: auto; padding: 0; border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-md); color: var(--fluxora-color-text); background: rgba(255, 255, 255, .9); cursor: pointer; box-shadow: var(--fluxora-shadow-sm); }
+.siteFooter { border-top: 1px solid var(--fluxora-color-border); background: rgba(255, 255, 255, .86); font-family: var(--font-inter), Inter, Arial, sans-serif; backdrop-filter: blur(10px); }
 .siteFooter > .siteFooterInner { width: min(100% - 32px, 1180px); display: flex; align-items: center; justify-content: flex-start; gap: var(--fluxora-space-3); margin-inline: auto; padding-block: var(--fluxora-space-4); }
 .footerNav { display: flex; flex-wrap: wrap; gap: var(--fluxora-space-4); }
-.footerLink { color: var(--fluxora-color-text-secondary); font-size: 14px; text-decoration: none; }
-.footerLink:hover { color: var(--fluxora-color-text); }
+.footerLink { color: var(--fluxora-color-text-secondary); font-size: 14px; text-decoration: none; transition: color 160ms ease; }
+.footerLink:hover { color: var(--fluxora-color-brand); }
 .footerMeta { color: var(--fluxora-color-text-muted); font-size: 12px; }
 @media (max-width: 720px) {
   .headerMenuButton { display: grid; }
-  .headerNav { position: absolute; top: calc(100% + 1px); right: 16px; left: 16px; display: none; align-items: stretch; flex-direction: column; gap: var(--fluxora-space-1); padding: var(--fluxora-space-2); border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-lg); background: var(--fluxora-color-surface); box-shadow: var(--fluxora-shadow-md); }
+  .headerNav { position: absolute; top: calc(100% + 1px); right: 16px; left: 16px; display: none; align-items: stretch; flex-direction: column; gap: var(--fluxora-space-1); padding: var(--fluxora-space-2); border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-lg); background: rgba(255, 255, 255, .97); box-shadow: var(--fluxora-shadow-lg); backdrop-filter: blur(16px); }
   .headerNavOpen { display: flex; }
   .headerLink { padding: var(--fluxora-space-3); }
+  .headerLink::after { display: none; }
   .headerCta { margin: var(--fluxora-space-1) 0 0; }
   .siteFooter > .siteFooterInner { gap: var(--fluxora-space-2); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .button, .brandMark, .headerLink::after { transition: none; }
+  .buttonPrimary:not(:disabled):hover, .buttonSecondary:not(:disabled):hover, .buttonPrimary:not(:disabled):active, .buttonSecondary:not(:disabled):active, .brand:hover .brandMark { transform: none; }
 }
