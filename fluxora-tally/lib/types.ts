@@ -5,3 +5,4 @@ export type TallyAccount = { id: string; name: string; url: string; statusId: st
 export type TallySettings = { siteTitle: string; subtitle: string; currencySymbol: string; decimalPlaces: 0 | 2; accentColor: string; backgroundColor: string; cardColor: string; textColor: string; logoUrl: string };
 export type SortMode = "manual" | "name-asc" | "name-desc" | `field:${string}:asc` | `field:${string}:desc`;
 export type DashboardState = { settings: TallySettings; fields: TallyField[]; statuses: TallyStatus[]; accounts: TallyAccount[]; sortMode: SortMode };
+export type DailyCommissionPoint = { date: string; commission: number | null };
