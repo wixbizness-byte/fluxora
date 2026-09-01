@@ -307,14 +307,14 @@ export default function MemberManager() {
     window.scrollTo({ top: 180, behavior: "smooth" });
   }
 
-  if (loading) return <main className={styles.page}><section className={styles.centerCard}><p>Loading members…</p></section></main>;
+  if (loading) return <div className={styles.page}><section className={styles.centerCard}><p>Loading members…</p></section></div>;
 
   if (unauthorized) {
-    return <main className={styles.page}><section className={styles.centerCard}>
+    return <div className={styles.page}><section className={styles.centerCard}>
       <p className={styles.kicker}>Fluxora member manager</p><h1>Admin sign-in required</h1>
       <p>This page uses the same protected Google admin session as Prompt Gallery.</p>
       <a className={styles.primaryButton} href="/prompts/member-login">Login with Google</a><a className={styles.textLink} href="/">Return to Fluxora</a>
-    </section></main>;
+    </section></div>;
   }
 
   const filterOptions: Array<{ key: MemberFilter; label: string }> = [
@@ -336,7 +336,7 @@ export default function MemberManager() {
 
   const activeCreatorPreviews = members.filter(hasCreatorPreview).length;
 
-  return <main className={styles.page}>
+  return <div className={styles.page}>
     <header className={styles.header}><div><p className={styles.kicker}>Fluxora access control</p><h1>Member Manager</h1><p className={styles.adminEmail}>{adminEmail}</p></div>
       <div className={styles.headerActions}><a className={styles.secondaryButton} href="/">Home</a><a className={styles.secondaryButton} href="/prompts/admin?tab=members">Prompt Admin</a></div>
     </header>
@@ -391,5 +391,5 @@ export default function MemberManager() {
         </div>
       </aside>
     </div>
-  </main>;
+  </div>;
 }
