@@ -46,6 +46,8 @@ type MemberOverviewData = {
   progression: ProgressionResponse["progression"] | null;
   activity: ActivityResponse["activity"] | null;
   loading: boolean;
+  fixture?: boolean;
+  rewardDays?: number;
 };
 
 const MemberOverviewContext = createContext<MemberOverviewData | null>(null);
@@ -86,6 +88,7 @@ export function MemberOverviewProvider({ children }: { children: ReactNode }) {
     progression: null,
     activity: null,
     loading: true,
+    fixture: false,
   });
 
   const load = useCallback((signal: AbortSignal) => {
@@ -124,6 +127,36 @@ export function MemberOverviewProvider({ children }: { children: ReactNode }) {
   return <MemberOverviewContext.Provider value={data}>{children}</MemberOverviewContext.Provider>;
 }
 
+const QA_FIXTURE_DATA: MemberOverviewData = {
+  memberPortal: {
+    role: "member",
+    email: "mika.reyes@example.com",
+    member: {
+      tier: "Premium",
+      effective_access: "Premium",
+      status: "Active",
+      expires_at: "2026-09-28T16:00:00.000Z",
+    },
+  },
+  profile: {
+    displayName: "Mika Reyes",
+    username: "mika.reyes",
+    avatarUrl: "",
+  },
+  progression: {
+    xp: { total: 2480 },
+    level: { level: 7, name: "Momentum Builder" },
+  },
+  activity: { currentStreak: 12 },
+  loading: false,
+  fixture: true,
+  rewardDays: 3,
+};
+
+export function MemberFixtureOverviewProvider({ children }: { children: ReactNode }) {
+  return <MemberOverviewContext.Provider value={QA_FIXTURE_DATA}>{children}</MemberOverviewContext.Provider>;
+}
+
 function Avatar({ profile, email }: { profile: CommunityProfile | null; email?: string }) {
   const initial = (profile?.displayName || profile?.username || email || "F").trim().charAt(0).toUpperCase() || "F";
   return <div className={styles.avatar} aria-label="Member avatar">
@@ -142,7 +175,7 @@ function AccountHeroLoading() {
 }
 
 export function MemberAccountHero() {
-  const { memberPortal, profile, loading } = useMemberOverviewData();
+  const { memberPortal, profile, loading, fixture, rewardDays } = useMemberOverviewData();
   if (loading) return <AccountHeroLoading />;
 
   const member = memberPortal?.member;
@@ -161,6 +194,7 @@ export function MemberAccountHero() {
         <h2 id="member-account-heading">{displayName}</h2>
         {username ? <p className={styles.username}>@{username}</p> : null}
         {email ? <p className={styles.email}>{email}</p> : null}
+        {fixture && typeof rewardDays === "number" ? <p className={styles.fixtureReward}>{rewardDays} reward days available</p> : null}
       </div>
     </div>
 
@@ -184,8 +218,19 @@ function Metric({ label, value, note }: MetricProps) {
   return <article className={styles.metric}><span>{label}</span><strong>{value}</strong>{note ? <small>{note}</small> : null}</article>;
 }
 
-export function MemberOverview() {
-  const { memberPortal, progression, activity, loading } = useMemberOverviewData();
+function FixtureNextBestAction({ rewardDays }: { rewardDays: number }) {
+  return <section className={styles.fixtureAction} aria-labelledby="fixture-next-action-heading">
+    <div>
+      <p className={styles.kicker}>What should I do next?</p>
+      <h2 id="fixture-next-action-heading">Use your reward days when you need them.</h2>
+      <p>This QA-only placeholder stands in for the live recommendation engine. Your actual {rewardDays} reward days and recommendations stay protected.</p>
+    </div>
+    <span>{rewardDays} reward days ready</span>
+  </section>;
+}
+
+export function MemberOverview({ fixture = false }: { fixture?: boolean }) {
+  const { memberPortal, progression, activity, loading, rewardDays } = useMemberOverviewData();
   const member = memberPortal?.member;
   const level = progression?.level?.level;
   const access = member?.effective_access || member?.tier || (memberPortal?.role === "admin" ? "Admin" : "—");
@@ -208,7 +253,7 @@ export function MemberOverview() {
         : metrics.map((metric) => <Metric key={metric.label} {...metric} />)}
     </section>
 
-    <NextBestActionPanel />
+    {fixture ? <FixtureNextBestAction rewardDays={rewardDays || 0} /> : <NextBestActionPanel />}
 
     <section className={styles.destinations} aria-labelledby="quick-destinations-heading">
       <div className={styles.destinationHeading}><div><p className={styles.kicker}>Quick destinations</p><h2 id="quick-destinations-heading">Keep moving.</h2></div><p>Open the part of Fluxora you need without leaving the member hub to hunt for it.</p></div>
