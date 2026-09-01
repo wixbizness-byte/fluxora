@@ -49,7 +49,27 @@ type UploadResponse = {
 const AVATAR_TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 const AVATAR_LIMIT = 5 * 1024 * 1024;
 
-export default function CommunityProfilePortal() {
+const QA_PROFILE: CommunityProfile = {
+  id: "qa-member",
+  email: "qa-member@example.com",
+  username: "fluxora.qa",
+  displayName: "Fluxora QA Member",
+  avatarUrl: "",
+  bio: "A clearly artificial Preview-only profile used to review the Fluxora Member interface.",
+  websiteUrl: "",
+  socialUrl: "",
+  isVerified: false,
+  showProgressionPublic: true,
+  showInProgressionLeaderboard: true,
+};
+
+const QA_SUBMISSIONS: Submission[] = [
+  { id: 1, slug: "qa-published-prompt", title: "QA Â· Published prompt sample", previewUrl: "", mediaType: "Image", state: "published", rejectionReason: "", submittedAt: "2026-09-01T00:00:00.000Z" },
+  { id: 2, slug: "qa-pending-prompt", title: "QA Â· Pending prompt sample", previewUrl: "", mediaType: "Image", state: "pending", rejectionReason: "", submittedAt: "2026-09-01T00:00:00.000Z" },
+  { id: 3, slug: "qa-rejected-prompt", title: "QA Â· Reviewer note sample", previewUrl: "", mediaType: "Image", state: "rejected", rejectionReason: "Preview-only reviewer note for visual QA.", submittedAt: "2026-09-01T00:00:00.000Z" },
+];
+
+export default function CommunityProfilePortal({ fixture = false }: { fixture?: boolean }) {
   const [profile, setProfile] = useState<CommunityProfile | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,13 +107,24 @@ export default function CommunityProfilePortal() {
   }
 
   useEffect(() => {
+    if (fixture) {
+      setProfile(QA_PROFILE);
+      setAvatarUrl("");
+      setSubmissions(QA_SUBMISSIONS);
+      setLoading(false);
+      return;
+    }
     Promise.resolve().then(load).catch((reason) => {
       setError(reason instanceof Error ? reason.message : "Could not load your community profile.");
       setLoading(false);
     });
-  }, []);
+  }, [fixture]);
 
   async function uploadAvatar(file: File) {
+    if (fixture) {
+      setAvatarError("Avatar uploads are disabled in the QA-only fixture.");
+      return;
+    }
     setAvatarError("");
     if (!AVATAR_TYPES.has(file.type)) {
       setAvatarError("Choose a JPEG, PNG, WebP, or AVIF image.");
@@ -156,6 +187,10 @@ export default function CommunityProfilePortal() {
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (fixture) {
+      setNotice("Profile changes are disabled in the QA-only fixture.");
+      return;
+    }
     if (avatarUploading) return;
     setSaving(true);
     setNotice("");
@@ -187,7 +222,7 @@ export default function CommunityProfilePortal() {
   }
 
   if (loading) {
-    return <section className={styles.shell}><div className={styles.loading}>Loading your creator profile…</div></section>;
+    return <section className={styles.shell}><div className={styles.loading}>Loading your creator profileâ¦</div></section>;
   }
   if (!profile) {
     return error ? <section className={styles.shell}><div className={styles.error}>{error}</div></section> : null;
@@ -213,12 +248,12 @@ export default function CommunityProfilePortal() {
       {(notice || error) && <div className={error ? styles.error : styles.notice} role={error ? "alert" : "status"}>{error || notice}</div>}
 
       <form key={`${profile.id}:${profile.showProgressionPublic}:${profile.showInProgressionLeaderboard}`} className={styles.form} onSubmit={save}>
-        <label><span>Display name *</span><input name="display_name" required maxLength={60} defaultValue={profile.displayName} /></label>
-        <label><span>Username *</span><input name="username" required minLength={3} maxLength={31} pattern="[a-z0-9_-]+" defaultValue={profile.username} /></label>
-        <label className={styles.full}><span>Bio</span><textarea name="bio" rows={4} maxLength={280} defaultValue={profile.bio} /></label>
+        <label><span>Display name *</span><input name="display_name" required maxLength={60} defaultValue={profile.displayName} readOnly={fixture} /></label>
+        <label><span>Username *</span><input name="username" required minLength={3} maxLength={31} pattern="[a-z0-9_-]+" defaultValue={profile.username} readOnly={fixture} /></label>
+        <label className={styles.full}><span>Bio</span><textarea name="bio" rows={4} maxLength={280} defaultValue={profile.bio} readOnly={fixture} /></label>
 
         <label className={`${styles.full} ${styles.privacyToggle}`}>
-          <input name="show_progression_public" type="checkbox" defaultChecked={profile.showProgressionPublic} />
+          <input name="show_progression_public" type="checkbox" defaultChecked={profile.showProgressionPublic} disabled={fixture} />
           <span>
             <strong>Show Fluxora progression publicly</strong>
             <small>Displays your level, total XP, unlocked achievement badges, longest streak, and referral rank on your public creator profile. Gmail, access details, wallet, devices, and recent activity stay private.</small>
@@ -226,7 +261,7 @@ export default function CommunityProfilePortal() {
         </label>
 
         <label className={`${styles.full} ${styles.privacyToggle}`}>
-          <input name="show_in_progression_leaderboard" type="checkbox" defaultChecked={profile.showInProgressionLeaderboard} />
+          <input name="show_in_progression_leaderboard" type="checkbox" defaultChecked={profile.showInProgressionLeaderboard} disabled={fixture} />
           <span>
             <strong>Include me in community leaderboards</strong>
             <small>Separately opts your public creator identity into XP, achievement, and longest-streak rankings. This requires public progression above; turning public progression off automatically removes you from the leaderboard.</small>
@@ -251,16 +286,16 @@ export default function CommunityProfilePortal() {
                 className={styles.avatarFileInput}
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
-                disabled={avatarUploading}
+                disabled={avatarUploading || fixture}
                 onChange={(event) => chooseAvatar(event.target.files?.[0])}
               />
-              <p>{avatarUploading ? "Uploading…" : "Drop an image here or choose one."}</p>
-              <small>JPEG, PNG, WebP, or AVIF · max 5 MB</small>
+              <p>{avatarUploading ? "Uploadingâ¦" : "Drop an image here or choose one."}</p>
+              <small>JPEG, PNG, WebP, or AVIF Â· max 5 MB</small>
               <div className={styles.avatarActions}>
-                <button type="button" disabled={avatarUploading} onClick={() => avatarInput.current?.click()}>
+                <button type="button" disabled={avatarUploading || fixture} onClick={() => avatarInput.current?.click()}>
                   {avatarUrl ? "Replace" : "Choose image"}
                 </button>
-                {avatarUrl && <button className={styles.removeAvatar} type="button" disabled={avatarUploading} onClick={() => { setAvatarUrl(""); setAvatarError(""); }}>
+                {avatarUrl && <button className={styles.removeAvatar} type="button" disabled={avatarUploading || fixture} onClick={() => { setAvatarUrl(""); setAvatarError(""); }}>
                   Remove avatar
                 </button>}
               </div>
@@ -270,7 +305,7 @@ export default function CommunityProfilePortal() {
           <input name="avatar_url" type="hidden" value={avatarUrl} />
         </div>
 
-        <button type="submit" disabled={saving || avatarUploading}>{saving ? "Saving…" : "Save Profile"}</button>
+        <button type="submit" disabled={saving || avatarUploading || fixture}>{fixture ? "QA-only Â· saving disabled" : saving ? "Savingâ¦" : "Save Profile"}</button>
       </form>
 
       <section className={styles.submissions}>

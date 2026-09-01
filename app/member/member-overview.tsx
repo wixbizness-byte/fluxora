@@ -65,14 +65,14 @@ async function responseBody<T>(url: string, signal: AbortSignal): Promise<T | nu
 }
 
 function formatNumber(value: number | undefined) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  if (typeof value !== "number" || !Number.isFinite(value)) return "â";
   return new Intl.NumberFormat("en-PH", { maximumFractionDigits: 0 }).format(value);
 }
 
 function formatExpiry(value: string | null | undefined) {
   if (!value) return "No expiry";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "â";
   return new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
     month: "short",
@@ -130,7 +130,7 @@ export function MemberOverviewProvider({ children }: { children: ReactNode }) {
 const QA_FIXTURE_DATA: MemberOverviewData = {
   memberPortal: {
     role: "member",
-    email: "mika.reyes@example.com",
+    email: "qa-member@example.com",
     member: {
       tier: "Premium",
       effective_access: "Premium",
@@ -139,8 +139,8 @@ const QA_FIXTURE_DATA: MemberOverviewData = {
     },
   },
   profile: {
-    displayName: "Mika Reyes",
-    username: "mika.reyes",
+    displayName: "Fluxora QA Member",
+    username: "fluxora.qa",
     avatarUrl: "",
   },
   progression: {
@@ -184,7 +184,7 @@ export function MemberAccountHero() {
   const displayName = profile?.displayName || profile?.username || email || (isAdmin ? "Fluxora admin" : "Fluxora member");
   const username = profile?.username || "";
   const expiry = member?.creator_preview_active ? member.creator_preview_expires_at : member?.expires_at;
-  const access = member?.effective_access || member?.tier || (isAdmin ? "Admin" : "—");
+  const access = member?.effective_access || member?.tier || (isAdmin ? "Admin" : "â");
 
   return <section className={styles.accountHero} aria-labelledby="member-account-heading">
     <div className={styles.identityBlock}>
@@ -200,7 +200,7 @@ export function MemberAccountHero() {
 
     <dl className={styles.accountSummary}>
       <div><dt>Current access</dt><dd>{access}</dd></div>
-      <div><dt>Status</dt><dd>{member?.status || (isAdmin ? "Active" : "—")}</dd></div>
+      <div><dt>Status</dt><dd>{member?.status || (isAdmin ? "Active" : "â")}</dd></div>
       <div><dt>{member?.creator_preview_active ? "Preview ends" : "Expires"}</dt><dd>{formatExpiry(expiry)}</dd></div>
     </dl>
 
@@ -233,18 +233,18 @@ export function MemberOverview({ fixture = false }: { fixture?: boolean }) {
   const { memberPortal, progression, activity, loading, rewardDays } = useMemberOverviewData();
   const member = memberPortal?.member;
   const level = progression?.level?.level;
-  const access = member?.effective_access || member?.tier || (memberPortal?.role === "admin" ? "Admin" : "—");
+  const access = member?.effective_access || member?.tier || (memberPortal?.role === "admin" ? "Admin" : "â");
   const metrics = useMemo(() => [
     { label: "Current access", value: access, note: member?.status || undefined },
-    { label: "Level", value: typeof level === "number" ? `Level ${level}` : "—", note: progression?.level?.name },
+    { label: "Level", value: typeof level === "number" ? `Level ${level}` : "â", note: progression?.level?.name },
     { label: "Total XP", value: formatNumber(progression?.xp?.total) },
-    { label: "Current streak", value: typeof activity?.currentStreak === "number" ? `${activity.currentStreak} ${activity.currentStreak === 1 ? "day" : "days"}` : "—" },
+    { label: "Current streak", value: typeof activity?.currentStreak === "number" ? `${activity.currentStreak} ${activity.currentStreak === 1 ? "day" : "days"}` : "â" },
   ], [access, activity?.currentStreak, level, member?.status, progression?.level?.name, progression?.xp?.total]);
 
   return <div className={styles.overview}>
     <section className={styles.sectionIntro} aria-labelledby="overview-heading">
       <div><p className={styles.kicker}>Overview</p><h2 id="overview-heading">A clear view of your Fluxora.</h2></div>
-      <p>Your access, progress, and the next worthwhile action—without repeating the full dashboard.</p>
+      <p>Your access, progress, and the next worthwhile actionâwithout repeating the full dashboard.</p>
     </section>
 
     <section className={styles.metrics} aria-label="Member account at a glance">

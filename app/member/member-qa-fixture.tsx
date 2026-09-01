@@ -5,6 +5,8 @@ import { LockKeyhole } from "lucide-react";
 import { PageContainer } from "../components/fluxora";
 import MemberSectionTabs from "./member-section-tabs";
 import { MemberAccountHero, MemberFixtureOverviewProvider, MemberOverview } from "./member-overview";
+import CommunityProfilePortal from "./community-profile-portal";
+import ProgressHub from "./progress-hub";
 import styles from "./member-qa-fixture.module.css";
 
 function FixturePanel({ title, description }: { title: string; description: string }) {
@@ -26,8 +28,8 @@ function MemberQaFixture() {
     </PageContainer>
     <MemberSectionTabs
       overview={<MemberOverview fixture />}
-      profile={<FixturePanel title="Profile stays protected." description="The production profile editor is deliberately not loaded in this visual fixture." />}
-      progress={<FixturePanel title="Progress stays protected." description="The live progression system is not queried by this QA route." />}
+      profile={<CommunityProfilePortal fixture />}
+      progress={<ProgressHub fixture />}
       access={<FixturePanel title="Access stays protected." description="No membership records, codes, devices, or entitlement controls are available here." />}
     />
   </MemberFixtureOverviewProvider>;
@@ -42,6 +44,6 @@ export default function MemberQaFixtureGate({ children, enabled }: { children: R
     setResolved(true);
   }, [enabled]);
 
-  if (!resolved) return <section className={styles.checking} aria-live="polite">Preparing Member Hub…</section>;
+  if (!resolved) return <section className={styles.checking} aria-live="polite">Preparing Member Hubâ¦</section>;
   return showFixture ? <MemberQaFixture /> : <>{children}</>;
 }
