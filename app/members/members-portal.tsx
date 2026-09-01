@@ -1,8 +1,6 @@
 "use client";
 
 import { useMemo, useState, useEffect } from "react";
-import MemberManager from "../member/member-manager";
-import AffiliateAdmin from "../member/affiliate-admin";
 import styles from "./members.module.css";
 
 type Member = {
@@ -86,7 +84,7 @@ export default function MembersPortal() {
       return;
     }
 
-    if (response.ok && body.role === "member") {
+    if (response.ok && (body.role === "member" || body.role === "admin") && body.member) {
       const trackedResponse = await fetch("/prompts/api/tracked-devices", { cache: "no-store", credentials: "include" });
       const tracked = (await trackedResponse.json().catch(() => ({}))) as TrackedResponse;
       if (trackedResponse.ok) {
@@ -142,11 +140,7 @@ export default function MembersPortal() {
   const remaining = useMemo(() => Math.max(0, trackedLimit - trackedDevices.length), [trackedLimit, trackedDevices.length]);
 
   if (loading) {
-    return <main className={styles.page}><section className={styles.centerCard}><p>Loading your Fluxora membershipâ¦</p></section></main>;
-  }
-
-  if (data?.role === "admin") {
-    return <><MemberManager /><AffiliateAdmin /></>;
+    return <main className={styles.page}><section className={styles.centerCard}><p>Loading your Fluxora membership…</p></section></main>;
   }
 
   if (status === 401) {
@@ -225,7 +219,7 @@ export default function MembersPortal() {
           <div><p className={styles.kicker}>Access security</p><h2>Access code</h2></div>
         </div>
         <div className={styles.codeBox}>
-          <code>{revealed ? member.access_code : "â¢â¢â¢â¢â¢â¢â¢â¢"}</code>
+          <code>{revealed ? member.access_code : "••••••••"}</code>
           <div className={styles.codeActions}>
             <button className={styles.secondaryButton} type="button" aria-expanded={revealed} onClick={() => setRevealed((value) => !value)}>{revealed ? "Hide" : "Reveal"}</button>
             <button className={styles.secondaryButton} type="button" disabled={!revealed} onClick={() => navigator.clipboard.writeText(member.access_code).then(() => setNotice("Access code copied."))}>Copy</button>
@@ -234,35 +228,35 @@ export default function MembersPortal() {
         <p className={styles.help}>Changing your code disables the old code immediately. Tracked-device history is kept unless you clear it below.</p>
         <button className={styles.dangerButton} type="button" disabled={busy === "reset_code"} onClick={() => {
           if (window.confirm("Generate a new access code? The old code will stop working immediately.")) act("reset_code");
-        }}>{busy === "reset_code" ? "Changingâ¦" : "Change access code"}</button>
+        }}>{busy === "reset_code" ? "Changing…" : "Change access code"}</button>
       </section>
 
       <section className={styles.panel} aria-labelledby="tracked-devices-heading">
         <div className={styles.panelHeading}>
           <div>
             <p className={styles.kicker}>Background device tracking</p>
-            <h2 id="tracked-devices-heading">Registered devices Â· {trackedDevices.length} / {trackedLimit}</h2>
-            <p>{remaining} slot{remaining === 1 ? "" : "s"} before the account is flagged Â· access itself remains instant.</p>
+            <h2 id="tracked-devices-heading">Registered devices · {trackedDevices.length} / {trackedLimit}</h2>
+            <p>{remaining} slot{remaining === 1 ? "" : "s"} before the account is flagged · access itself remains instant.</p>
           </div>
           {trackedDevices.length > 0 && <button className={styles.secondaryButton} type="button" disabled={busy === "reset_tracked_devices"} onClick={() => {
             if (window.confirm("Clear all tracked Fluxora devices? Devices will be observed again the next time they use Fluxora.")) act("reset_tracked_devices");
-          }}>{busy === "reset_tracked_devices" ? "Clearingâ¦" : "Clear all"}</button>}
+          }}>{busy === "reset_tracked_devices" ? "Clearing…" : "Clear all"}</button>}
         </div>
 
         <div className={styles.deviceList}>
           {trackedDevices.map((device) => {
             const busyKey = `remove-tracked-${device.id}`;
-            const label = [device.browser || "Browser", device.platform || "Unknown platform"].join(" Â· ");
+            const label = [device.browser || "Browser", device.platform || "Unknown platform"].join(" · ");
             return (
               <article className={styles.device} key={device.id}>
                 <div>
-                  <strong>{device.device_name || "Fluxora Device"}{device.observed_over_limit ? " â " : ""}</strong>
-                  <span>{label}{device.last_tool ? ` Â· ${device.last_tool}` : ""}</span>
-                  <small>First seen {formatDate(device.first_seen_at)} Â· Last active {formatDate(device.last_seen_at)}{device.seen_count ? ` Â· ${device.seen_count} check${device.seen_count === 1 ? "" : "s"}` : ""}</small>
+                  <strong>{device.device_name || "Fluxora Device"}{device.observed_over_limit ? " ⚠" : ""}</strong>
+                  <span>{label}{device.last_tool ? ` · ${device.last_tool}` : ""}</span>
+                  <small>First seen {formatDate(device.first_seen_at)} · Last active {formatDate(device.last_seen_at)}{device.seen_count ? ` · ${device.seen_count} check${device.seen_count === 1 ? "" : "s"}` : ""}</small>
                 </div>
                 <button type="button" className={styles.removeButton} aria-label={`Remove ${device.device_name || label}`} disabled={busy === busyKey} onClick={() => {
                   if (window.confirm(`Remove tracked history for ${label}?`)) act("remove_tracked_device", { device_id: device.id }, busyKey);
-                }}>{busy === busyKey ? "Removingâ¦" : "Remove"}</button>
+                }}>{busy === busyKey ? "Removing…" : "Remove"}</button>
               </article>
             );
           })}

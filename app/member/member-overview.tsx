@@ -46,8 +46,6 @@ type MemberOverviewData = {
   progression: ProgressionResponse["progression"] | null;
   activity: ActivityResponse["activity"] | null;
   loading: boolean;
-  fixture?: boolean;
-  rewardDays?: number;
 };
 
 const MemberOverviewContext = createContext<MemberOverviewData | null>(null);
@@ -58,6 +56,10 @@ function useMemberOverviewData() {
   return context;
 }
 
+export function useMemberIsAdmin() {
+  return useMemberOverviewData().memberPortal?.role === "admin";
+}
+
 async function responseBody<T>(url: string, signal: AbortSignal): Promise<T | null> {
   const response = await fetch(url, { cache: "no-store", credentials: "include", signal });
   if (!response.ok) return null;
@@ -65,14 +67,14 @@ async function responseBody<T>(url: string, signal: AbortSignal): Promise<T | nu
 }
 
 function formatNumber(value: number | undefined) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "â";
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
   return new Intl.NumberFormat("en-PH", { maximumFractionDigits: 0 }).format(value);
 }
 
 function formatExpiry(value: string | null | undefined) {
   if (!value) return "No expiry";
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "â";
+  if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
     month: "short",
@@ -88,7 +90,6 @@ export function MemberOverviewProvider({ children }: { children: ReactNode }) {
     progression: null,
     activity: null,
     loading: true,
-    fixture: false,
   });
 
   const load = useCallback((signal: AbortSignal) => {
@@ -127,36 +128,6 @@ export function MemberOverviewProvider({ children }: { children: ReactNode }) {
   return <MemberOverviewContext.Provider value={data}>{children}</MemberOverviewContext.Provider>;
 }
 
-const QA_FIXTURE_DATA: MemberOverviewData = {
-  memberPortal: {
-    role: "member",
-    email: "qa-member@example.com",
-    member: {
-      tier: "Premium",
-      effective_access: "Premium",
-      status: "Active",
-      expires_at: "2026-09-28T16:00:00.000Z",
-    },
-  },
-  profile: {
-    displayName: "Fluxora QA Member",
-    username: "fluxora.qa",
-    avatarUrl: "",
-  },
-  progression: {
-    xp: { total: 2480 },
-    level: { level: 7, name: "Momentum Builder" },
-  },
-  activity: { currentStreak: 12 },
-  loading: false,
-  fixture: true,
-  rewardDays: 3,
-};
-
-export function MemberFixtureOverviewProvider({ children }: { children: ReactNode }) {
-  return <MemberOverviewContext.Provider value={QA_FIXTURE_DATA}>{children}</MemberOverviewContext.Provider>;
-}
-
 function Avatar({ profile, email }: { profile: CommunityProfile | null; email?: string }) {
   const initial = (profile?.displayName || profile?.username || email || "F").trim().charAt(0).toUpperCase() || "F";
   return <div className={styles.avatar} aria-label="Member avatar">
@@ -175,7 +146,7 @@ function AccountHeroLoading() {
 }
 
 export function MemberAccountHero() {
-  const { memberPortal, profile, loading, fixture, rewardDays } = useMemberOverviewData();
+  const { memberPortal, profile, loading } = useMemberOverviewData();
   if (loading) return <AccountHeroLoading />;
 
   const member = memberPortal?.member;
@@ -184,7 +155,7 @@ export function MemberAccountHero() {
   const displayName = profile?.displayName || profile?.username || email || (isAdmin ? "Fluxora admin" : "Fluxora member");
   const username = profile?.username || "";
   const expiry = member?.creator_preview_active ? member.creator_preview_expires_at : member?.expires_at;
-  const access = member?.effective_access || member?.tier || (isAdmin ? "Admin" : "â");
+  const access = member?.effective_access || member?.tier || (isAdmin ? "Admin" : "—");
 
   return <section className={styles.accountHero} aria-labelledby="member-account-heading">
     <div className={styles.identityBlock}>
@@ -194,13 +165,12 @@ export function MemberAccountHero() {
         <h2 id="member-account-heading">{displayName}</h2>
         {username ? <p className={styles.username}>@{username}</p> : null}
         {email ? <p className={styles.email}>{email}</p> : null}
-        {fixture && typeof rewardDays === "number" ? <p className={styles.fixtureReward}>{rewardDays} reward days available</p> : null}
       </div>
     </div>
 
     <dl className={styles.accountSummary}>
       <div><dt>Current access</dt><dd>{access}</dd></div>
-      <div><dt>Status</dt><dd>{member?.status || (isAdmin ? "Active" : "â")}</dd></div>
+      <div><dt>Status</dt><dd>{member?.status || (isAdmin ? "Active" : "—")}</dd></div>
       <div><dt>{member?.creator_preview_active ? "Preview ends" : "Expires"}</dt><dd>{formatExpiry(expiry)}</dd></div>
     </dl>
 
@@ -218,33 +188,22 @@ function Metric({ label, value, note }: MetricProps) {
   return <article className={styles.metric}><span>{label}</span><strong>{value}</strong>{note ? <small>{note}</small> : null}</article>;
 }
 
-function FixtureNextBestAction({ rewardDays }: { rewardDays: number }) {
-  return <section className={styles.fixtureAction} aria-labelledby="fixture-next-action-heading">
-    <div>
-      <p className={styles.kicker}>What should I do next?</p>
-      <h2 id="fixture-next-action-heading">Use your reward days when you need them.</h2>
-      <p>This QA-only placeholder stands in for the live recommendation engine. Your actual {rewardDays} reward days and recommendations stay protected.</p>
-    </div>
-    <span>{rewardDays} reward days ready</span>
-  </section>;
-}
-
-export function MemberOverview({ fixture = false }: { fixture?: boolean }) {
-  const { memberPortal, progression, activity, loading, rewardDays } = useMemberOverviewData();
+export function MemberOverview() {
+  const { memberPortal, progression, activity, loading } = useMemberOverviewData();
   const member = memberPortal?.member;
   const level = progression?.level?.level;
-  const access = member?.effective_access || member?.tier || (memberPortal?.role === "admin" ? "Admin" : "â");
+  const access = member?.effective_access || member?.tier || (memberPortal?.role === "admin" ? "Admin" : "—");
   const metrics = useMemo(() => [
     { label: "Current access", value: access, note: member?.status || undefined },
-    { label: "Level", value: typeof level === "number" ? `Level ${level}` : "â", note: progression?.level?.name },
+    { label: "Level", value: typeof level === "number" ? `Level ${level}` : "—", note: progression?.level?.name },
     { label: "Total XP", value: formatNumber(progression?.xp?.total) },
-    { label: "Current streak", value: typeof activity?.currentStreak === "number" ? `${activity.currentStreak} ${activity.currentStreak === 1 ? "day" : "days"}` : "â" },
+    { label: "Current streak", value: typeof activity?.currentStreak === "number" ? `${activity.currentStreak} ${activity.currentStreak === 1 ? "day" : "days"}` : "—" },
   ], [access, activity?.currentStreak, level, member?.status, progression?.level?.name, progression?.xp?.total]);
 
   return <div className={styles.overview}>
     <section className={styles.sectionIntro} aria-labelledby="overview-heading">
       <div><p className={styles.kicker}>Overview</p><h2 id="overview-heading">A clear view of your Fluxora.</h2></div>
-      <p>Your access, progress, and the next worthwhile actionâwithout repeating the full dashboard.</p>
+      <p>Your access, progress, and the next worthwhile action—without repeating the full dashboard.</p>
     </section>
 
     <section className={styles.metrics} aria-label="Member account at a glance">
@@ -253,7 +212,7 @@ export function MemberOverview({ fixture = false }: { fixture?: boolean }) {
         : metrics.map((metric) => <Metric key={metric.label} {...metric} />)}
     </section>
 
-    {fixture ? <FixtureNextBestAction rewardDays={rewardDays || 0} /> : <NextBestActionPanel />}
+    <NextBestActionPanel />
 
     <section className={styles.destinations} aria-labelledby="quick-destinations-heading">
       <div className={styles.destinationHeading}><div><p className={styles.kicker}>Quick destinations</p><h2 id="quick-destinations-heading">Keep moving.</h2></div><p>Open the part of Fluxora you need without leaving the member hub to hunt for it.</p></div>

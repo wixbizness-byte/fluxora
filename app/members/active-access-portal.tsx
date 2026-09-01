@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import styles from "./active-access-portal.module.css";
 
 type ActivityRow = {
@@ -53,7 +52,6 @@ function focusMember(item: ActivityRow) {
 export default function ActiveAccessPortal() {
   const [activity, setActivity] = useState<ActivityRow[]>([]);
   const [mode, setMode] = useState<WindowMode>("today");
-  const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
   const [denied, setDenied] = useState(false);
   const [error, setError] = useState("");
 
@@ -89,49 +87,6 @@ export default function ActiveAccessPortal() {
     };
   }, []);
 
-  useEffect(() => {
-    if (denied) return;
-    let host: HTMLDivElement | null = null;
-    let legacyRail: HTMLElement | null = null;
-
-    const attach = () => {
-      if (host?.isConnected) return true;
-      const rail = document.querySelector<HTMLElement>('aside[class*="activityRail"]');
-      const parent = rail?.parentElement;
-      if (!rail || !parent) return false;
-
-      legacyRail = rail;
-      legacyRail.hidden = true;
-
-      host = document.createElement("div");
-      host.dataset.activeAccessHost = "true";
-      host.className = styles.portalHost;
-      parent.insertBefore(host, rail);
-      setMountNode(host);
-      return true;
-    };
-
-    if (attach()) {
-      return () => {
-        setMountNode(null);
-        host?.remove();
-        if (legacyRail) legacyRail.hidden = false;
-      };
-    }
-
-    const observer = new MutationObserver(() => {
-      if (attach()) observer.disconnect();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => {
-      observer.disconnect();
-      setMountNode(null);
-      host?.remove();
-      if (legacyRail) legacyRail.hidden = false;
-    };
-  }, [denied]);
-
   const ranked = useMemo(() => {
     const rows = activity.filter((item) => (mode === "today" ? item.uses_today : item.uses_7d) > 0);
     return [...rows].sort((a, b) => {
@@ -141,10 +96,9 @@ export default function ActiveAccessPortal() {
     });
   }, [activity, mode]);
 
-  if (denied || !mountNode) return null;
+  if (denied) return null;
 
-  return createPortal(
-    <section className={styles.panel} aria-label="Active access rankings">
+  return <section className={styles.panel} aria-label="Active access rankings">
       <div className={styles.heading}>
         <p className={styles.kicker}>{mode === "today" ? "Since 4:00 AM PH" : "Rolling 7 days"}</p>
         <div className={styles.headingRow}>
@@ -178,7 +132,5 @@ export default function ActiveAccessPortal() {
           {!ranked.length && <p className={styles.empty}>No successful access activity in this window yet.</p>}
         </div>
       )}
-    </section>,
-    mountNode,
-  );
+    </section>;
 }

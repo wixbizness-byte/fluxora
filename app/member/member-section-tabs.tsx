@@ -2,29 +2,32 @@
 
 import type { ReactNode } from "react";
 import { useEffect, useState, type KeyboardEvent } from "react";
+import { useMemberIsAdmin } from "./member-overview";
 import styles from "./member-section-tabs.module.css";
 
-type Section = "overview" | "progress" | "profile" | "access";
+type Section = "overview" | "progress" | "profile" | "access" | "admin";
 
 type Props = {
   overview: ReactNode;
   profile: ReactNode;
   progress: ReactNode;
   access: ReactNode;
+  admin?: ReactNode;
 };
 
-const sections: Array<{ id: Section; label: string }> = [
+const memberSections: Array<{ id: Exclude<Section, "admin">; label: string }> = [
   { id: "overview", label: "Overview" },
   { id: "progress", label: "Progress" },
   { id: "profile", label: "Profile" },
   { id: "access", label: "Access" },
 ];
 
-function sectionFromLocation(): Section {
+function sectionFromLocation(canManage: boolean): Section {
   if (typeof window === "undefined") return "overview";
 
   const requested = new URLSearchParams(window.location.search).get("section");
   if (requested === "overview" || requested === "profile" || requested === "progress" || requested === "access") return requested;
+  if (requested === "admin") return canManage ? "admin" : "overview";
   if (requested === "membership") return "access";
 
   if (window.location.hash === "#community-profile") return "profile";
@@ -41,12 +44,17 @@ function scrollToHashTarget() {
   });
 }
 
-export default function MemberSectionTabs({ overview, profile, progress, access }: Props) {
+export default function MemberSectionTabs({ overview, profile, progress, access, admin }: Props) {
   const [active, setActive] = useState<Section>("overview");
+  const canManage = useMemberIsAdmin() && Boolean(admin);
+
+  const sections = canManage && admin
+    ? [...memberSections, { id: "admin" as const, label: "Admin" }]
+    : memberSections;
 
   useEffect(() => {
     const sync = () => {
-      const next = sectionFromLocation();
+      const next = sectionFromLocation(canManage);
       setActive(next);
       scrollToHashTarget();
     };
@@ -58,7 +66,7 @@ export default function MemberSectionTabs({ overview, profile, progress, access 
       window.removeEventListener("popstate", sync);
       window.removeEventListener("hashchange", sync);
     };
-  }, []);
+  }, [canManage]);
 
   function select(next: Section) {
     if (next === active) return;
@@ -83,7 +91,7 @@ export default function MemberSectionTabs({ overview, profile, progress, access 
     document.getElementById(`${next.id}-tab`)?.focus();
   }
 
-  const content = active === "overview" ? overview : active === "profile" ? profile : active === "progress" ? progress : access;
+  const content = active === "overview" ? overview : active === "profile" ? profile : active === "progress" ? progress : active === "admin" && canManage ? admin : access;
 
   return (
     <section className={styles.shell}>

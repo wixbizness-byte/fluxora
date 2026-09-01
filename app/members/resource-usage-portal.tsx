@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { createPortal } from "react-dom";
 import styles from "./resource-usage-portal.module.css";
 
 type UsageRow = {
@@ -37,7 +36,6 @@ function phTime(value: string | null) {
 export default function ResourceUsagePortal() {
   const [usage, setUsage] = useState<UsageRow[]>([]);
   const [mode, setMode] = useState<WindowMode>("today");
-  const [mountNode, setMountNode] = useState<HTMLElement | null>(null);
   const [denied, setDenied] = useState(false);
   const [error, setError] = useState("");
 
@@ -73,44 +71,6 @@ export default function ResourceUsagePortal() {
     };
   }, []);
 
-  useEffect(() => {
-    if (denied) return;
-    let host: HTMLDivElement | null = null;
-
-    const attach = () => {
-      if (host?.isConnected) return true;
-      const rail = document.querySelector<HTMLElement>('aside[class*="activityRail"]');
-      const parent = rail?.parentElement;
-      if (!rail || !parent) return false;
-
-      host = document.createElement("div");
-      host.dataset.resourceUsageHost = "true";
-      host.className = styles.portalHost;
-      const activeHost = parent.querySelector<HTMLElement>("[data-active-access-host]");
-      parent.insertBefore(host, activeHost || rail);
-      setMountNode(host);
-      return true;
-    };
-
-    if (attach()) {
-      return () => {
-        setMountNode(null);
-        host?.remove();
-      };
-    }
-
-    const observer = new MutationObserver(() => {
-      if (attach()) observer.disconnect();
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-
-    return () => {
-      observer.disconnect();
-      setMountNode(null);
-      host?.remove();
-    };
-  }, [denied]);
-
   const ranked = useMemo(() => {
     const rows = mode === "today" ? usage.filter((item) => item.opens_today > 0) : [...usage];
     return rows.sort((a, b) => {
@@ -120,10 +80,9 @@ export default function ResourceUsagePortal() {
     });
   }, [mode, usage]);
 
-  if (denied || !mountNode) return null;
+  if (denied) return null;
 
-  return createPortal(
-    <section className={styles.panel} aria-label="Resource open rankings">
+  return <section className={styles.panel} aria-label="Resource open rankings">
       <div className={styles.heading}>
         <p className={styles.kicker}>{mode === "today" ? "Since 4:00 AM PH" : "Rolling 7 days"}</p>
         <div className={styles.headingRow}>
@@ -154,7 +113,5 @@ export default function ResourceUsagePortal() {
           {!ranked.length && <p className={styles.empty}>No tracked resource opens in this window yet.</p>}
         </div>
       )}
-    </section>,
-    mountNode,
-  );
+    </section>;
 }
