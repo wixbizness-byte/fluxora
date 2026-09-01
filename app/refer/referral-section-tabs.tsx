@@ -79,10 +79,10 @@ export default function ReferralSectionTabs() {
       >
         {activeTab === "rewards" && (
           <>
+            <ReferClient showRecentActivity={false} />
             <div id="reward-wallet">
               <RewardWalletPanel />
             </div>
-            <ReferClient showRecentActivity={false} />
             <MilestonesPanel />
           </>
         )}
