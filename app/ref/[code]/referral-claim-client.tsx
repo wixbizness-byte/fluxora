@@ -1,6 +1,17 @@
 "use client";
 
+import {
+  ArrowUpRight,
+  CheckCircle2,
+  Clock3,
+  Copy,
+  Gift,
+  LoaderCircle,
+  ShieldCheck,
+  TriangleAlert,
+} from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Badge, Button, Card } from "../../components/fluxora";
 import ReferralProductPreview from "../../refer/referral-product-preview";
 import styles from "./referral-claim.module.css";
 
@@ -155,71 +166,107 @@ export default function ReferralClaimClient({
 
   if (loading || claiming) {
     return (
-      <main className={styles.page}>
-        <section className={styles.card}>
-          <p className={styles.kicker}>Fluxora referral invite</p>
-          <h1>{claiming ? "Activating your access…" : "Opening your invite…"}</h1>
-          <p className={styles.muted}>Securely verifying the referral before continuing.</p>
-        </section>
-      </main>
+      <section className={styles.workspace} aria-live="polite" aria-busy="true">
+        <Card elevated className={styles.stateCard}>
+          <div className={styles.stateHeader}>
+            <span className={styles.stateIcon} aria-hidden="true">
+              <LoaderCircle className={styles.spinner} size={22} strokeWidth={2} />
+            </span>
+            <Badge variant="brand">Referral Invite</Badge>
+            <h1>{claiming ? "Activating your access…" : "Opening your invite…"}</h1>
+            <p className={styles.muted}>Securely verifying the referral before continuing.</p>
+          </div>
+        </Card>
+      </section>
     );
   }
 
   if (claim?.success && claim.member) {
     return (
-      <main className={styles.page}>
-        <section className={styles.card}>
-          <div className={styles.successBadge}>2-DAY PREMIUM UNLOCKED</div>
-          <h1>Your Fluxora access is active.</h1>
-          <p className={styles.lead}>
-            You received <strong>2 days of Premium access</strong>. Your referrer also earned their referral reward.
-          </p>
+      <section className={styles.workspace} aria-labelledby="referral-success-heading">
+        <Card elevated className={styles.stateCard}>
+          <div className={styles.stateHeader}>
+            <span className={`${styles.stateIcon} ${styles.successIcon}`} aria-hidden="true">
+              <CheckCircle2 size={22} strokeWidth={2} />
+            </span>
+            <Badge variant="success">2-DAY PREMIUM UNLOCKED</Badge>
+            <h1 id="referral-success-heading">Your Fluxora access is active.</h1>
+            <p className={styles.lead}>
+              You received <strong>2 days of Premium access</strong>. Your referrer also earned their referral reward.
+            </p>
+          </div>
+
           {target && (
             <div className={styles.targetCard}>
-              <span>Your referral destination</span>
+              <span className={styles.targetLabel}>Your referral destination</span>
               <strong>{target.title}</strong>
               <p>{target.description}</p>
               <small>{target.toolType} · {target.accessLevel}</small>
             </div>
           )}
+
           <div className={styles.codeBox}>
-            <span>Your access code</span>
-            <strong>{claim.member.accessCode}</strong>
-            <small>
+            <div className={styles.codeHeader}>
+              <span>Your access code</span>
+              <ShieldCheck aria-hidden="true" size={18} strokeWidth={2} />
+            </div>
+            <code className={styles.codeValue}>{claim.member.accessCode}</code>
+            <p className={styles.memberMeta}>
               {claim.member.gmail} · expires {claim.member.expiresAt ? new Date(claim.member.expiresAt).toLocaleString() : "later"}
-            </small>
-            <button type="button" onClick={copyCode}>Copy access code</button>
+            </p>
+            <Button type="button" variant="secondary" onClick={copyCode} className={styles.copyButton}>
+              <Copy aria-hidden="true" size={15} strokeWidth={2} />
+              Copy access code
+            </Button>
           </div>
-          {notice && <p className={styles.notice}>{notice}</p>}
+
+          <p className={styles.notice} role="status" aria-live="polite">
+            {notice}
+          </p>
+
           <div className={styles.actions}>
-            <a className={styles.primary} href={target?.href || "/tools"}>
+            <Button href={target?.href || "/tools"} fullWidth>
               {target ? `Open ${target.title}` : "Explore Fluxora Tools"}
-            </a>
-            <a className={styles.secondary} href="/refer">Get My Referral Link</a>
+              <ArrowUpRight aria-hidden="true" size={16} strokeWidth={2} />
+            </Button>
+            <Button href="/refer" variant="secondary" fullWidth>
+              Get My Referral Link
+            </Button>
           </div>
-        </section>
-      </main>
+        </Card>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <main className={styles.page}>
-        <section className={styles.card}>
-          <p className={styles.kicker}>Fluxora referral invite</p>
-          <h1>This trial can’t be claimed.</h1>
-          <p className={styles.error}>{error}</p>
+      <section className={styles.workspace} aria-labelledby="referral-error-heading">
+        <Card elevated className={styles.stateCard}>
+          <div className={styles.stateHeader}>
+            <span className={`${styles.stateIcon} ${styles.dangerIcon}`} aria-hidden="true">
+              <TriangleAlert size={22} strokeWidth={2} />
+            </span>
+            <Badge variant="danger">Referral Invite</Badge>
+            <h1 id="referral-error-heading">This trial can’t be claimed.</h1>
+          </div>
+
+          <div className={styles.errorPanel} role="alert">
+            {error}
+          </div>
           <p className={styles.muted}>
             Referral trials are limited to eligible accounts and can’t be stacked with an already-used Fluxora free trial or active membership.
           </p>
           <div className={styles.actions}>
-            <a className={styles.primary} href={target?.href || "/"}>
+            <Button href={target?.href || "/"} fullWidth>
               {target ? `View ${target.title}` : "Explore Fluxora"}
-            </a>
-            <a className={styles.secondary} href="/refer">Refer & Earn</a>
+              <ArrowUpRight aria-hidden="true" size={16} strokeWidth={2} />
+            </Button>
+            <Button href="/refer" variant="secondary" fullWidth>
+              Refer & Earn
+            </Button>
           </div>
-        </section>
-      </main>
+        </Card>
+      </section>
     );
   }
 
@@ -227,21 +274,27 @@ export default function ReferralClaimClient({
   const inviter = invite?.inviter?.username
     ? `@${invite.inviter.username}`
     : invite?.inviter?.name || "a Fluxora user";
+  const primaryLabel = target ? `Continue to ${target.title}` : "Claim My 2-Day Trial";
 
   return (
-    <main className={styles.page}>
-      <section className={styles.card}>
-        <div className={styles.offerBadge}>{target ? "PRODUCT REFERRAL" : "REFERRAL EXCLUSIVE"}</div>
-        <p className={styles.kicker}>Invited by {inviter}</p>
-        <h1>{target ? `Try ${target.title} with Fluxora.` : "Unlock Fluxora Premium for 2 days."}</h1>
-        <p className={styles.lead}>
-          {target ? target.description : "Your referral invite includes a 2-day Premium trial."}{" "}
-          <strong>No payment is required.</strong>
-        </p>
+    <section className={styles.workspace} aria-labelledby="referral-offer-heading">
+      <Card elevated className={styles.stateCard}>
+        <div className={styles.stateHeader}>
+          <Badge variant="brand">Referral Invite</Badge>
+          <p className={styles.invitedBy}>Invited by {inviter}</p>
+          <h1 id="referral-offer-heading">
+            {target ? `Try ${target.title} with Fluxora.` : "Unlock Fluxora Premium for 2 days."}
+          </h1>
+          <p className={styles.lead}>
+            {target ? target.description : "Your referral invite includes a 2-day Premium trial."}{" "}
+            <strong>No payment is required.</strong>
+          </p>
+        </div>
+
         {target && (
           <>
             <div className={styles.targetCard}>
-              <span>Referral destination</span>
+              <span className={styles.targetLabel}>Referral destination</span>
               <strong>{target.title}</strong>
               <p>Your referral attribution stays attached while you continue through Google verification and trial signup.</p>
               <small>{target.toolType} · {target.accessLevel}</small>
@@ -255,19 +308,36 @@ export default function ReferralClaimClient({
             </div>
           </>
         )}
-        <div className={styles.perks}>
-          <div><strong>2 Days</strong><span>Premium access</span></div>
-          <div><strong>Free</strong><span>No payment required</span></div>
-          <div><strong>+2 Days</strong><span>Your referrer earns too</span></div>
+
+        <div className={styles.perks} aria-label="Referral trial benefits">
+          <div className={styles.perk}>
+            <Clock3 className={styles.perkIcon} aria-hidden="true" size={18} strokeWidth={2} />
+            <strong>2 Days</strong>
+            <span>Premium access</span>
+          </div>
+          <div className={styles.perk}>
+            <ShieldCheck className={styles.perkIcon} aria-hidden="true" size={18} strokeWidth={2} />
+            <strong>Free</strong>
+            <span>No payment required</span>
+          </div>
+          <div className={styles.perk}>
+            <Gift className={styles.perkIcon} aria-hidden="true" size={18} strokeWidth={2} />
+            <strong>+2 Days</strong>
+            <span>Your referrer earns too</span>
+          </div>
         </div>
-        <a
-          className={`${styles.primary} ${!token ? styles.disabled : ""}`}
-          href={token ? loginUrl(token) : "#"}
-          aria-disabled={!token}
-        >
-          {target ? `Continue to ${target.title}` : "Claim My 2-Day Trial"}
-        </a>
-      </section>
-    </main>
+
+        {token ? (
+          <Button href={loginUrl(token)} fullWidth className={styles.primaryCta}>
+            {primaryLabel}
+            <ArrowUpRight aria-hidden="true" size={16} strokeWidth={2} />
+          </Button>
+        ) : (
+          <Button type="button" disabled aria-disabled="true" fullWidth className={styles.primaryCta}>
+            {primaryLabel}
+          </Button>
+        )}
+      </Card>
+    </section>
   );
 }

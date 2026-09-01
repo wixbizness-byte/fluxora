@@ -1,7 +1,27 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { PageContainer, SiteFooter, SiteHeader } from "../../components/fluxora";
 import ReferralClaimClient from "./referral-claim-client";
+import styles from "./referral-claim.module.css";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: "Referral Invite | Fluxora",
+  description: "Open your Fluxora referral invite and continue to your eligible Premium trial.",
+};
+
+const NAV_LINKS = [
+  { href: "/start", label: "Guide" },
+  { href: "/prompts", label: "Prompts" },
+  { href: "/tools", label: "Tools" },
+  { href: "/member", label: "Member" },
+];
+
+const FOOTER_LINKS = [
+  ...NAV_LINKS,
+  { href: "/pricing", label: "Pricing" },
+];
 
 function cleanCode(value: unknown) {
   const code = String(value || "").trim().toUpperCase();
@@ -37,11 +57,24 @@ export default async function ReferralInvitePage({
   const shouldClaim = String(query.claim || "") === "1" && Boolean(attribution);
 
   return (
-    <ReferralClaimClient
-      code={referralCode}
-      attribution={attribution}
-      tool={tool}
-      shouldClaim={shouldClaim}
-    />
+    <div className={`fluxora-theme ${styles.page}`}>
+      <SiteHeader
+        links={NAV_LINKS}
+        cta={{ href: "/refer", label: "Refer & Earn" }}
+      />
+
+      <main className={styles.main}>
+        <PageContainer>
+          <ReferralClaimClient
+            code={referralCode}
+            attribution={attribution}
+            tool={tool}
+            shouldClaim={shouldClaim}
+          />
+        </PageContainer>
+      </main>
+
+      <SiteFooter links={FOOTER_LINKS} meta="© 2026 Fluxora" />
+    </div>
   );
 }
