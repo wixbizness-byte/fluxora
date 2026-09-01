@@ -3,6 +3,7 @@
 import { ArrowUpRight, Check, Circle, FileText, Handshake, Lightbulb, Store, UsersRound, UserRound, Wrench } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Badge, Button, Card, PageContainer, SectionHeading, SiteFooter, SiteHeader } from "../components/fluxora";
+import { MESSENGER_COMMUNITY_URL, TELEGRAM_COMMUNITY_URL } from "../lib/community-links";
 import styles from "./start-guide.module.css";
 
 type Step = {
@@ -58,13 +59,13 @@ const steps: Step[] = [
 ];
 
 const goals = [
-  { tag: "Community", title: "Fluxora Community", copy: "Join the community and grow with Fluxora.", href: "https://t.me/PHAICommunity", icon: UsersRound },
+  { tag: "Community", title: "Fluxora Community", copy: "Join the community and grow with Fluxora.", href: TELEGRAM_COMMUNITY_URL, icon: UsersRound, community: true },
   { tag: "Tools", title: "Fluxora Tools", copy: "Access Fluxora tools built to accommodate all ideas possible.", href: "/tools", icon: Wrench },
   { tag: "Prompts", title: "Fluxora Prompts", copy: "Browse a community-driven prompt gallery that keeps growing.", href: "/prompts", icon: FileText },
   { tag: "Member", title: "Manage my access", copy: "Check your membership, progress, devices, and account details.", href: "/member", icon: UserRound },
   { tag: "Sell", title: "Build a storefront", copy: "Use Karousel to organize and share the products or links you want people to see.", href: "https://karousel.shop", icon: Store },
   { tag: "Grow", title: "Refer and earn", copy: "Open your referral hub, share your link, and follow your progression.", href: "/refer", icon: Handshake },
-];
+] as const;
 
 const toolRoutes = [
   ["TikTok product or affiliate content", "Affiliate Studio", "/tools"],
@@ -137,6 +138,22 @@ export default function StartGuide() {
         <div className={styles.goalGrid}>
           {goals.map((goal) => {
             const Icon = goal.icon;
+
+            if ("community" in goal) {
+              return <div className={styles.goalLink} key={goal.title}>
+                <Card className={styles.goalCard}>
+                  <div className={styles.goalIcon}><Icon size={20} strokeWidth={1.8} /></div>
+                  <span className={styles.goalTag}>{goal.tag}</span>
+                  <h3>{goal.title}</h3>
+                  <p>{goal.copy}</p>
+                  <div style={{ display: "flex", flexWrap: "wrap", gap: "8px", marginTop: "auto", paddingTop: "16px" }}>
+                    <Button href={MESSENGER_COMMUNITY_URL} target="_blank" rel="noopener noreferrer" variant="secondary">Messenger <ArrowUpRight size={16} /></Button>
+                    <Button href={TELEGRAM_COMMUNITY_URL} target="_blank" rel="noopener noreferrer">Telegram <ArrowUpRight size={16} /></Button>
+                  </div>
+                </Card>
+              </div>;
+            }
+
             return <a className={styles.goalLink} href={goal.href} key={goal.title} target="_blank" rel="noopener noreferrer">
               <Card className={styles.goalCard}>
                 <div className={styles.goalIcon}><Icon size={20} strokeWidth={1.8} /></div>
