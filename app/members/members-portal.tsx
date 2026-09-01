@@ -35,7 +35,7 @@ type Device = {
 };
 
 type PortalResponse = {
-  role?: "admin" | "member" | "none";
+  role?: "admin" | "member" | "free" | "none";
   email?: string;
   member?: Member;
   access_code?: string;
@@ -148,7 +148,7 @@ export default function MembersPortal() {
       <main className={styles.page}><section className={styles.centerCard}>
         <p className={styles.kicker}>Fluxora members</p>
         <h1>Member sign-in</h1>
-        <p>Sign in with the Google account connected to your Fluxora membership.</p>
+        <p>Sign in with your Google account to open your Fluxora member hub.</p>
         <a className={styles.primaryButton} href="/prompts/member-login">Login with Google</a>
         <a className={styles.textLink} href="/">Back to Fluxora</a>
       </section></main>
@@ -166,6 +166,24 @@ export default function MembersPortal() {
           <p>Admin access is managed by the administrator role. Member access-code and device controls do not apply to this admin account.</p>
         </section>
         <a className={styles.primaryButton} href="/member?section=admin">Open Admin</a>
+      </section></main>
+    );
+  }
+
+  if (data?.role === "free" && !member) {
+    return (
+      <main className={styles.page}><section className={styles.centerCard}>
+        <p className={styles.kicker}>Access</p>
+        <h1>Free Fluxora account</h1>
+        <p>You can use your member hub, profile, progression, and referral features without a Tool, Premium, or Creator membership.</p>
+        {data.email ? <p className={styles.email}>{data.email}</p> : null}
+        <section className={styles.infoPanel} aria-label="Free account access status">
+          <p className={styles.kicker}>Current access</p>
+          <strong>Free</strong>
+          <p>Paid Tool, Premium, and Creator features stay locked until access is added to this account.</p>
+        </section>
+        <a className={styles.primaryButton} href="/refer">Refer &amp; Earn</a>
+        <a className={styles.textLink} href="/pricing">View Fluxora access</a>
       </section></main>
     );
   }
