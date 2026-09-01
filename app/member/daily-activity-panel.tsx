@@ -43,14 +43,30 @@ type ResponseBody = {
   error?: string;
 };
 
-function shortDay(value: string) {
-  const date = new Date(`${value}T12:00:00+08:00`);
-  return date.toLocaleDateString("en-PH", { weekday: "short" }).slice(0, 2);
+function normalizeManilaDate(value: string | null | undefined) {
+  if (!value?.trim()) return null;
+  const date = /^\d{4}-\d{2}-\d{2}$/.test(value.trim())
+    ? new Date(`${value.trim()}T12:00:00+08:00`)
+    : new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function shortDate(value: string) {
-  const date = new Date(`${value}T12:00:00+08:00`);
-  return date.toLocaleDateString("en-PH", { month: "short", day: "numeric" });
+function shortDay(date: Date | null) {
+  return date
+    ? new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", weekday: "short" }).format(date).slice(0, 2)
+    : "—";
+}
+
+function shortDate(date: Date | null) {
+  return date
+    ? new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", month: "short", day: "numeric" }).format(date)
+    : "—";
+}
+
+function calendarDay(date: Date | null) {
+  return date
+    ? new Intl.DateTimeFormat("en-PH", { timeZone: "Asia/Manila", day: "numeric" }).format(date)
+    : "—";
 }
 
 function formatUnlock(value: string | null) {
@@ -153,13 +169,14 @@ export default function DailyActivityPanel() {
             <button type="button" onClick={() => void load(false)}>Refresh</button>
           </div>
           <div className={styles.calendar}>
-            {(activity.recentDays || []).map((day) => (
-              <div className={`${styles.day} ${day.active ? styles.dayActive : ""}`} key={day.date} title={`${shortDate(day.date)} · ${day.activityCount} activities`}>
-                <small>{shortDay(day.date)}</small>
-                <strong>{new Date(`${day.date}T12:00:00+08:00`).getDate()}</strong>
+            {(activity.recentDays || []).map((day) => {
+              const displayDate = normalizeManilaDate(day.date);
+              return <div className={`${styles.day} ${day.active ? styles.dayActive : ""}`} key={day.date} title={`${shortDate(displayDate)} · ${day.activityCount} activities`}>
+                <small>{shortDay(displayDate)}</small>
+                <strong>{calendarDay(displayDate)}</strong>
                 <span>{day.active ? "Done" : "—"}</span>
-              </div>
-            ))}
+              </div>;
+            })}
           </div>
         </div>
 
