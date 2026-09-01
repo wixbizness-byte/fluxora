@@ -16,7 +16,7 @@ type Member = {
 };
 
 type MemberPortalResponse = {
-  role?: "admin" | "member" | "none";
+  role?: "admin" | "member" | "free" | "none";
   email?: string;
   member?: Member;
 };
@@ -152,10 +152,12 @@ export function MemberAccountHero() {
   const member = memberPortal?.member;
   const email = memberPortal?.email || "";
   const isAdmin = memberPortal?.role === "admin";
+  const isFree = memberPortal?.role === "free";
   const displayName = profile?.displayName || profile?.username || email || (isAdmin ? "Fluxora admin" : "Fluxora member");
   const username = profile?.username || "";
   const expiry = member?.creator_preview_active ? member.creator_preview_expires_at : member?.expires_at;
-  const access = member?.effective_access || member?.tier || (isAdmin ? "Admin" : "—");
+  const access = member?.effective_access || member?.tier || (isAdmin ? "Admin" : isFree ? "Free" : "—");
+  const status = member?.status || (isAdmin ? "Active" : isFree ? "Free account" : "—");
 
   return <section className={styles.accountHero} aria-labelledby="member-account-heading">
     <div className={styles.identityBlock}>
@@ -170,7 +172,7 @@ export function MemberAccountHero() {
 
     <dl className={styles.accountSummary}>
       <div><dt>Current access</dt><dd>{access}</dd></div>
-      <div><dt>Status</dt><dd>{member?.status || (isAdmin ? "Active" : "—")}</dd></div>
+      <div><dt>Status</dt><dd>{status}</dd></div>
       <div><dt>{member?.creator_preview_active ? "Preview ends" : "Expires"}</dt><dd>{formatExpiry(expiry)}</dd></div>
     </dl>
 
@@ -192,13 +194,15 @@ export function MemberOverview() {
   const { memberPortal, progression, activity, loading } = useMemberOverviewData();
   const member = memberPortal?.member;
   const level = progression?.level?.level;
-  const access = member?.effective_access || member?.tier || (memberPortal?.role === "admin" ? "Admin" : "—");
+  const isFree = memberPortal?.role === "free";
+  const access = member?.effective_access || member?.tier || (memberPortal?.role === "admin" ? "Admin" : isFree ? "Free" : "—");
+  const status = member?.status || (isFree ? "Free account" : undefined);
   const metrics = useMemo(() => [
-    { label: "Current access", value: access, note: member?.status || undefined },
+    { label: "Current access", value: access, note: status },
     { label: "Level", value: typeof level === "number" ? `Level ${level}` : "—", note: progression?.level?.name },
     { label: "Total XP", value: formatNumber(progression?.xp?.total) },
     { label: "Current streak", value: typeof activity?.currentStreak === "number" ? `${activity.currentStreak} ${activity.currentStreak === 1 ? "day" : "days"}` : "—" },
-  ], [access, activity?.currentStreak, level, member?.status, progression?.level?.name, progression?.xp?.total]);
+  ], [access, activity?.currentStreak, level, progression?.level?.name, progression?.xp?.total, status]);
 
   return <div className={styles.overview}>
     <section className={styles.sectionIntro} aria-labelledby="overview-heading">

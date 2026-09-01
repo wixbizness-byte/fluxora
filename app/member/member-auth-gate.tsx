@@ -3,10 +3,10 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import styles from "./member-auth-gate.module.css";
 
-type GateState = "loading" | "ready" | "signed-out" | "no-membership" | "error";
+type GateState = "loading" | "ready" | "signed-out" | "error";
 
 type MemberPortalResponse = {
-  role?: "admin" | "member" | "none";
+  role?: "admin" | "member" | "free" | "none";
   email?: string;
   error?: string;
 };
@@ -24,7 +24,6 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GateState>("loading");
   const stateRef = useRef<GateState>("loading");
   const [message, setMessage] = useState("");
-  const [email, setEmail] = useState("");
   const [loginUrl, setLoginUrl] = useState("/prompts/member-login?returnTo=%2Fmember&auto=1");
 
   const moveTo = useCallback((next: GateState) => {
@@ -42,9 +41,8 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
         credentials: "include",
       });
       const body = (await response.json().catch(() => ({}))) as MemberPortalResponse;
-      setEmail(String(body.email || ""));
 
-      if (response.ok && (body.role === "member" || body.role === "admin")) {
+      if (response.ok && (body.role === "member" || body.role === "admin" || body.role === "free")) {
         setMessage("");
         moveTo("ready");
         return;
@@ -53,12 +51,6 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
       if (response.status === 401) {
         setMessage("");
         moveTo("signed-out");
-        return;
-      }
-
-      if (response.status === 403 || body.role === "none") {
-        setMessage(body.error || "This Google account is not connected to a Fluxora membership.");
-        moveTo("no-membership");
         return;
       }
 
@@ -97,7 +89,7 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
         <section className={styles.card} aria-live="polite">
           <p className={styles.kicker}>Fluxora member</p>
           <h1>Checking your session…</h1>
-          <p>Verifying your Google account and Fluxora membership.</p>
+          <p>Verifying your Google account.</p>
         </section>
       </section>
     );
@@ -112,24 +104,6 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
           <p>Your session is missing or has expired. Sign in again and Fluxora will return you to this member section.</p>
           <div className={styles.actions}>
             <a className={styles.primary} href={loginUrl}>Continue with Google</a>
-            <a className={styles.secondary} href="/">Back to Fluxora</a>
-          </div>
-        </section>
-      </section>
-    );
-  }
-
-  if (state === "no-membership") {
-    return (
-      <section className={styles.shell}>
-        <section className={styles.card}>
-          <p className={styles.kicker}>Access required</p>
-          <h1>No membership found.</h1>
-          <p>{message}</p>
-          {email ? <p className={styles.status}>Signed in as {email}</p> : null}
-          <div className={styles.actions}>
-            <a className={styles.primary} href={loginUrl}>Use another Google account</a>
-            <a className={styles.secondary} href="/pricing">View Fluxora access</a>
             <a className={styles.secondary} href="/">Back to Fluxora</a>
           </div>
         </section>
