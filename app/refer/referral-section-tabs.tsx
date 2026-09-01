@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { type KeyboardEvent, useRef, useState } from "react";
+import { PageContainer } from "../components/fluxora";
 import ReferClient from "./refer-client";
 import ReferralDeepLinkBuilder from "./referral-deep-link-builder";
 import ShareableRewardsPanel from "./shareable-rewards-panel";
@@ -19,26 +20,54 @@ const TABS: Array<{ id: ReferralTab; label: string }> = [
 
 export default function ReferralSectionTabs() {
   const [activeTab, setActiveTab] = useState<ReferralTab>("rewards");
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+  function selectTab(index: number) {
+    const next = TABS[index];
+    if (!next) return;
+    setActiveTab(next.id);
+    tabRefs.current[index]?.focus();
+  }
+
+  function handleTabKeyDown(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (event.key === "ArrowRight") {
+      event.preventDefault();
+      selectTab((index + 1) % TABS.length);
+    } else if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      selectTab((index - 1 + TABS.length) % TABS.length);
+    } else if (event.key === "Home") {
+      event.preventDefault();
+      selectTab(0);
+    } else if (event.key === "End") {
+      event.preventDefault();
+      selectTab(TABS.length - 1);
+    }
+  }
 
   return (
-    <main className={styles.shell}>
+    <section className={styles.shell} aria-label="Referral dashboard">
       <div className={styles.tabsWrap}>
-        <div className={styles.tabs} role="tablist" aria-label="Referral dashboard">
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={activeTab === tab.id}
-              aria-controls={`referral-tab-${tab.id}`}
-              id={`referral-tab-button-${tab.id}`}
-              className={activeTab === tab.id ? styles.activeTab : styles.tab}
-              onClick={() => setActiveTab(tab.id)}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        <PageContainer>
+          <div className={styles.tabs} role="tablist" aria-label="Referral dashboard">
+            {TABS.map((tab, index) => (
+              <button
+                key={tab.id}
+                ref={(element) => { tabRefs.current[index] = element; }}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-controls={`referral-tab-${tab.id}`}
+                id={`referral-tab-button-${tab.id}`}
+                className={activeTab === tab.id ? styles.activeTab : styles.tab}
+                onClick={() => setActiveTab(tab.id)}
+                onKeyDown={(event) => handleTabKeyDown(event, index)}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
+        </PageContainer>
       </div>
 
       <div
@@ -46,14 +75,13 @@ export default function ReferralSectionTabs() {
         role="tabpanel"
         aria-labelledby={`referral-tab-button-${activeTab}`}
         className={styles.panel}
+        tabIndex={0}
       >
         {activeTab === "rewards" && (
           <>
+            <ReferClient showRecentActivity={false} />
             <div id="reward-wallet">
               <RewardWalletPanel />
-            </div>
-            <div className={styles.dashboardHost}>
-              <ReferClient />
             </div>
             <MilestonesPanel />
           </>
@@ -68,6 +96,6 @@ export default function ReferralSectionTabs() {
 
         {activeTab === "ranks" && <ReferralTiersPanel />}
       </div>
-    </main>
+    </section>
   );
 }
