@@ -1,12 +1,12 @@
-.pricingPage { min-height: 100vh; color: var(--fluxora-color-text); background: var(--fluxora-color-canvas); font-family: var(--font-inter), Inter, Arial, sans-serif; }
+.pricingPage { min-height: 100vh; color: var(--fluxora-color-text); background: var(--fluxora-color-canvas); font-family: var(--font-inter), Inter, sans-serif; }
 .main { min-height: calc(100vh - 64px); padding: 72px 0 96px; color: var(--fluxora-color-text); background: linear-gradient(180deg, #fff 0, var(--fluxora-color-canvas) 420px); }
 .intro { max-width: 700px; margin-bottom: 42px; }
 .eyebrow { margin: 0 0 10px; color: var(--fluxora-color-brand); font-size: 12px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
-.intro h1 { max-width: 680px; margin: 0; color: var(--fluxora-color-text); font: 700 clamp(32px, 5vw, 52px)/1.08 var(--font-inter), Inter, Arial, sans-serif; letter-spacing: -.045em; }
+.intro h1 { max-width: 680px; margin: 0; color: var(--fluxora-color-text); font: 700 clamp(32px, 5vw, 52px)/1.08 var(--font-inter), Inter, sans-serif; letter-spacing: -.045em; }
 .intro > p:last-child { max-width: 620px; margin: 16px 0 0; color: var(--fluxora-color-text-secondary); font-size: 16px; line-height: 1.65; }
 .selectorSection { margin-bottom: 20px; }
 .tierTabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 6px; border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-lg); background: rgba(255, 255, 255, .82); box-shadow: var(--fluxora-shadow-sm); }
-.tierTab, .tierTabActive { min-height: 46px; border: 1px solid transparent; border-radius: var(--fluxora-radius-md); color: var(--fluxora-color-text-secondary); background: transparent; font: 700 14px/1 var(--font-inter), Inter, Arial, sans-serif; cursor: pointer; transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease; }
+.tierTab, .tierTabActive { min-height: 46px; border: 1px solid transparent; border-radius: var(--fluxora-radius-md); color: var(--fluxora-color-text-secondary); background: transparent; font: 700 14px/1 var(--font-inter), Inter, sans-serif; cursor: pointer; transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease; }
 .tierTab:hover { border-color: rgba(102, 88, 232, .24); background: #faf9ff; color: var(--fluxora-color-brand); }
 .tierTabActive { border-color: rgba(102, 88, 232, .18); color: var(--fluxora-color-brand); background: var(--fluxora-color-brand-soft); }
 .tierTab:focus-visible, .tierTabActive:focus-visible, .resourceCard:focus-visible, .faqItem button:focus-visible, .modalClose:focus-visible { outline: 2px solid var(--fluxora-color-brand); outline-offset: 2px; }
@@ -14,7 +14,7 @@
 .planTopline { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 18px 24px; border-bottom: 1px solid rgba(102, 88, 232, .14); background: rgba(255, 255, 255, .58); }
 .planTier { color: var(--fluxora-color-text-muted); font-size: 13px; font-weight: 700; }
 .planContent { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .42fr); gap: 36px; padding: 30px 32px 32px; }
-.planContent h2 { margin: 0; color: var(--fluxora-color-text); font: 700 clamp(26px, 3vw, 38px)/1.12 var(--font-inter), Inter, Arial, sans-serif; letter-spacing: -.035em; }
+.planContent h2 { margin: 0; color: var(--fluxora-color-text); font: 700 clamp(26px, 3vw, 38px)/1.12 var(--font-inter), Inter, sans-serif; letter-spacing: -.035em; }
 .planDescription { max-width: 620px; margin: 14px 0 0; color: var(--fluxora-color-text-secondary); white-space: pre-line; font-size: 15px; line-height: 1.65; }
 .featureList { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 20px; margin: 24px 0 0; padding: 0; list-style: none; }
 .featureList li { display: flex; align-items: flex-start; gap: 8px; color: var(--fluxora-color-text-secondary); font-size: 14px; line-height: 1.45; }
@@ -45,7 +45,7 @@
 .faqList { margin-top: 32px; border-top: 1px solid var(--fluxora-color-border); }
 .faqItem { border-bottom: 1px solid var(--fluxora-color-border); }
 .faqItem h3 { margin: 0; font: inherit; }
-.faqItem button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; border: 0; color: var(--fluxora-color-text); background: transparent; text-align: left; font: 700 15px/1.4 var(--font-inter), Inter, Arial, sans-serif; cursor: pointer; }
+.faqItem button { width: 100%; display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 20px 0; border: 0; color: var(--fluxora-color-text); background: transparent; text-align: left; font: 700 15px/1.4 var(--font-inter), Inter, sans-serif; cursor: pointer; }
 .faqItem button svg { flex: 0 0 auto; color: var(--fluxora-color-brand); transition: transform 160ms ease; }
 .faqItem button[aria-expanded="true"] svg { transform: rotate(180deg); }
 .faqAnswer { padding: 0 36px 20px 0; }
