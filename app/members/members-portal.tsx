@@ -142,7 +142,7 @@ export default function MembersPortal() {
   const remaining = useMemo(() => Math.max(0, trackedLimit - trackedDevices.length), [trackedLimit, trackedDevices.length]);
 
   if (loading) {
-    return <main className={styles.page}><section className={styles.centerCard}><p>Loading your Fluxora membership…</p></section></main>;
+    return <main className={styles.page}><section className={styles.centerCard}><p>Loading your Fluxora membershipâ¦</p></section></main>;
   }
 
   if (data?.role === "admin") {
@@ -181,8 +181,8 @@ export default function MembersPortal() {
     <main className={styles.page}>
       <header className={styles.header}>
         <div>
-          <p className={styles.kicker}>Fluxora member portal</p>
-          <h1>Your Membership</h1>
+          <p className={styles.kicker}>Access</p>
+          <h1>Manage your membership and access.</h1>
           <p className={styles.email}>{member.gmail}</p>
         </div>
         <div className={styles.headerActions}>
@@ -194,11 +194,11 @@ export default function MembersPortal() {
 
       {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
 
-      <section className={styles.summaryGrid}>
+      <section className={styles.summaryGrid} aria-label="Access summary">
         <article><span>Access</span><strong>{effectiveAccess}</strong></article>
-        <article><span>Base tier</span><strong>{member.tier}</strong></article>
         <article><span>Status</span><strong>{member.status}</strong></article>
         <article><span>{previewActive ? "Creator Preview expires" : "Membership expires"}</span><strong className={styles.smallStrong}>{formatDate(previewActive ? member.creator_preview_expires_at : member.expires_at)}</strong></article>
+        {previewActive && <article><span>Base membership</span><strong>{member.tier}</strong></article>}
       </section>
 
       {previewActive && (
@@ -210,11 +210,12 @@ export default function MembersPortal() {
         </section>
       )}
 
-      <section className={styles.summaryGrid}>
-        <article><span>Tracked devices</span><strong>{trackedDevices.length} / {trackedLimit}{overLimit ? " ⚠" : ""}</strong></article>
-        <article><span>Creator content</span><strong>{member.can_use_creator_content ? "Available" : "Locked"}</strong></article>
-        <article><span>Workflows</span><strong>{member.can_use_workflow ? "Available" : "Creator only"}</strong></article>
-        <article><span>Premium expiry</span><strong className={styles.smallStrong}>{formatDate(member.expires_at)}</strong></article>
+      <section className={styles.entitlements} aria-labelledby="member-entitlements-heading">
+        <div className={styles.sectionHeading}><div><p className={styles.kicker}>Entitlements</p><h2 id="member-entitlements-heading">What your access includes</h2></div></div>
+        <div className={styles.entitlementList}>
+          <article><span>Creator content</span><strong data-state={member.can_use_creator_content ? "available" : "locked"}>{member.can_use_creator_content ? "Available" : "Locked"}</strong></article>
+          <article><span>Creator workflows</span><strong data-state={member.can_use_workflow ? "available" : "locked"}>{member.can_use_workflow ? "Available" : "Creator only"}</strong></article>
+        </div>
       </section>
 
       {overLimit && <div className={styles.warning}>Your account is over its tracked-device limit ({trackedDevices.length} / {trackedLimit}). Fluxora access is not blocked immediately, but this usage is flagged for review. Remove old device history below if needed.</div>}
@@ -224,41 +225,44 @@ export default function MembersPortal() {
           <div><p className={styles.kicker}>Access security</p><h2>Access code</h2></div>
         </div>
         <div className={styles.codeBox}>
-          <button type="button" onClick={() => setRevealed((value) => !value)}>{revealed ? member.access_code : "••••••••"}</button>
-          {revealed && <button className={styles.secondaryButton} type="button" onClick={() => navigator.clipboard.writeText(member.access_code).then(() => setNotice("Access code copied."))}>Copy</button>}
+          <code>{revealed ? member.access_code : "â¢â¢â¢â¢â¢â¢â¢â¢"}</code>
+          <div className={styles.codeActions}>
+            <button className={styles.secondaryButton} type="button" aria-expanded={revealed} onClick={() => setRevealed((value) => !value)}>{revealed ? "Hide" : "Reveal"}</button>
+            <button className={styles.secondaryButton} type="button" disabled={!revealed} onClick={() => navigator.clipboard.writeText(member.access_code).then(() => setNotice("Access code copied."))}>Copy</button>
+          </div>
         </div>
         <p className={styles.help}>Changing your code disables the old code immediately. Tracked-device history is kept unless you clear it below.</p>
         <button className={styles.dangerButton} type="button" disabled={busy === "reset_code"} onClick={() => {
           if (window.confirm("Generate a new access code? The old code will stop working immediately.")) act("reset_code");
-        }}>{busy === "reset_code" ? "Changing…" : "Change access code"}</button>
+        }}>{busy === "reset_code" ? "Changingâ¦" : "Change access code"}</button>
       </section>
 
-      <section className={styles.panel}>
+      <section className={styles.panel} aria-labelledby="tracked-devices-heading">
         <div className={styles.panelHeading}>
           <div>
             <p className={styles.kicker}>Background device tracking</p>
-            <h2>Tracked Devices</h2>
-            <p>{remaining} slot{remaining === 1 ? "" : "s"} before the account is flagged · access itself remains instant.</p>
+            <h2 id="tracked-devices-heading">Registered devices Â· {trackedDevices.length} / {trackedLimit}</h2>
+            <p>{remaining} slot{remaining === 1 ? "" : "s"} before the account is flagged Â· access itself remains instant.</p>
           </div>
           {trackedDevices.length > 0 && <button className={styles.secondaryButton} type="button" disabled={busy === "reset_tracked_devices"} onClick={() => {
             if (window.confirm("Clear all tracked Fluxora devices? Devices will be observed again the next time they use Fluxora.")) act("reset_tracked_devices");
-          }}>{busy === "reset_tracked_devices" ? "Clearing…" : "Clear all"}</button>}
+          }}>{busy === "reset_tracked_devices" ? "Clearingâ¦" : "Clear all"}</button>}
         </div>
 
         <div className={styles.deviceList}>
           {trackedDevices.map((device) => {
             const busyKey = `remove-tracked-${device.id}`;
-            const label = [device.browser || "Browser", device.platform || "Unknown platform"].join(" · ");
+            const label = [device.browser || "Browser", device.platform || "Unknown platform"].join(" Â· ");
             return (
               <article className={styles.device} key={device.id}>
                 <div>
-                  <strong>{device.device_name || "Fluxora Device"}{device.observed_over_limit ? " ⚠" : ""}</strong>
-                  <span>{label}{device.last_tool ? ` · ${device.last_tool}` : ""}</span>
-                  <small>First seen {formatDate(device.first_seen_at)} · Last active {formatDate(device.last_seen_at)}{device.seen_count ? ` · ${device.seen_count} check${device.seen_count === 1 ? "" : "s"}` : ""}</small>
+                  <strong>{device.device_name || "Fluxora Device"}{device.observed_over_limit ? " â " : ""}</strong>
+                  <span>{label}{device.last_tool ? ` Â· ${device.last_tool}` : ""}</span>
+                  <small>First seen {formatDate(device.first_seen_at)} Â· Last active {formatDate(device.last_seen_at)}{device.seen_count ? ` Â· ${device.seen_count} check${device.seen_count === 1 ? "" : "s"}` : ""}</small>
                 </div>
-                <button type="button" className={styles.removeButton} disabled={busy === busyKey} onClick={() => {
+                <button type="button" className={styles.removeButton} aria-label={`Remove ${device.device_name || label}`} disabled={busy === busyKey} onClick={() => {
                   if (window.confirm(`Remove tracked history for ${label}?`)) act("remove_tracked_device", { device_id: device.id }, busyKey);
-                }}>{busy === busyKey ? "Removing…" : "Remove"}</button>
+                }}>{busy === busyKey ? "Removingâ¦" : "Remove"}</button>
               </article>
             );
           })}
@@ -266,10 +270,10 @@ export default function MembersPortal() {
         </div>
       </section>
 
-      <section className={styles.infoPanel}>
-        <strong>How does device tracking work?</strong>
-        <p>Fluxora no longer pauses access for cryptographic verification. After a successful code check, it hashes a small set of stable browser/device characteristics and records that hash in the background. Multiple Canvases with the same browser/device profile should resolve to the same tracked device. Because this is soft fingerprinting, the count is a sharing signal rather than a hardware-identity guarantee.</p>
-      </section>
+      <details className={styles.infoPanel}>
+        <summary>How device tracking works</summary>
+        <p>Fluxora records a hash of stable browser and device characteristics after a successful code check. Matching browser/device profiles resolve to the same tracked device; the count is a sharing signal, not a hardware-identity guarantee.</p>
+      </details>
     </main>
   );
 }
