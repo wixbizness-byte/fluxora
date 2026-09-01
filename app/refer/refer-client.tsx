@@ -179,7 +179,7 @@ function activityTime(activity: PublicReferralActivity) {
   });
 }
 
-export default function ReferClient() {
+export default function ReferClient({ showRecentActivity = true }: { showRecentActivity?: boolean }) {
   const [loading, setLoading] = useState(true);
   const [mode, setMode] = useState<"legacy" | "public-guest" | "public-register" | "public-ready">("public-guest");
   const [error, setError] = useState("");
@@ -347,12 +347,12 @@ export default function ReferClient() {
   }
 
   if (loading) {
-    return <main className={styles.page}><section className={styles.centerCard}>Loading Fluxora referrals…</section></main>;
+    return <div className={styles.page}><section className={styles.centerCard}>Loading Fluxora referrals…</section></div>;
   }
 
   if (mode === "public-guest") {
     return (
-      <main className={styles.page}>
+      <div className={styles.page}>
         <section className={styles.centerCard}>
           <p className={styles.kicker}>Fluxora Refer & Earn</p>
           <h1>Invite friends. Earn access.</h1>
@@ -367,13 +367,13 @@ export default function ReferClient() {
           <p className={styles.finePrint}>One Gmail can be linked to one Telegram account only. Each qualified referral gives the new user 2 days of Premium access and earns you 2 days too.</p>
           <a className={styles.textLink} href="/">Back to Fluxora</a>
         </section>
-      </main>
+      </div>
     );
   }
 
   if (mode === "public-register") {
     return (
-      <main className={styles.page}>
+      <div className={styles.page}>
         <header className={styles.header}>
           <div><p className={styles.kicker}>Fluxora Refer & Earn</p><h1>Verify Telegram</h1><p>Gmail verified: {publicState.gmail}</p></div>
           <div className={styles.headerActions}><a href="/">Fluxora</a><a href="/prompts/referrer-login">Google account</a></div>
@@ -397,7 +397,7 @@ export default function ReferClient() {
             <div className={styles.error}>Telegram login is not configured on the server yet.</div>
           )}
         </section>
-      </main>
+      </div>
     );
   }
 
@@ -421,7 +421,7 @@ export default function ReferClient() {
     const visibleExpiry = previewActive ? dashboard?.member?.creatorPreviewExpiresAt : dashboard?.member?.expiresAt;
 
     return (
-      <main className={styles.page}>
+      <div className={styles.page}>
         <header className={styles.header}>
           <div><p className={styles.kicker}>Fluxora Refer & Earn</p><h1>Referral Dashboard</h1><p>{referrer.gmail}</p></div>
           <div className={styles.headerActions}><a href="/">Fluxora</a><a href="/prompts/referrer-login">Account</a></div>
@@ -476,7 +476,7 @@ export default function ReferClient() {
           <article><span>Conversion</span><strong>{publicStats.conversionRate}%</strong></article>
         </section>
 
-        <section className={styles.panel}>
+        <section className={styles.panel} hidden={!showRecentActivity}>
           <div className={styles.sectionTitle}>
             <div><p className={styles.kicker}>Referral funnel</p><h2>Recent activity</h2></div>
             <div className={styles.activitySummary}><span>{publicStats.pending} pending</span><span>{publicStats.rejected} not eligible</span></div>
@@ -503,12 +503,12 @@ export default function ReferClient() {
 
           <p className={styles.finePrint}>Referred Gmail addresses are masked in your dashboard. Rewards are only issued after a referral passes the eligibility checks and successfully qualifies.</p>
         </section>
-      </main>
+      </div>
     );
   }
 
   return (
-    <main className={styles.page}>
+    <div className={styles.page}>
       <header className={styles.header}>
         <div>
           <p className={styles.kicker}>Fluxora affiliate</p>
@@ -571,6 +571,6 @@ export default function ReferClient() {
           {!referrals.length && <div className={styles.empty}>No referral accounts have been issued yet.</div>}
         </div>
       </section>
-    </main>
+    </div>
   );
 }
