@@ -155,6 +155,21 @@ export default function MembersPortal() {
     );
   }
 
+  if (data?.role === "admin" && !member) {
+    return (
+      <main className={styles.page}><section className={styles.centerCard}>
+        <p className={styles.kicker}>Access</p>
+        <h1>Admin access</h1>
+        <section className={styles.infoPanel} aria-label="Admin access status">
+          <p className={styles.kicker}>Status</p>
+          <strong>Active</strong>
+          <p>Admin access is managed by the administrator role. Member access-code and device controls do not apply to this admin account.</p>
+        </section>
+        <a className={styles.primaryButton} href="/member?section=admin">Open Admin</a>
+      </section></main>
+    );
+  }
+
   if (status === 403 || data?.role === "none" || !member) {
     return (
       <main className={styles.page}><section className={styles.centerCard}>
