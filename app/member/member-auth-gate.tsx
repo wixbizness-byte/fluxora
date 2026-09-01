@@ -93,19 +93,19 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
 
   if (state === "loading") {
     return (
-      <main className={styles.shell}>
+      <section className={styles.shell}>
         <section className={styles.card} aria-live="polite">
           <p className={styles.kicker}>Fluxora member</p>
           <h1>Checking your session…</h1>
           <p>Verifying your Google account and Fluxora membership.</p>
         </section>
-      </main>
+      </section>
     );
   }
 
   if (state === "signed-out") {
     return (
-      <main className={styles.shell}>
+      <section className={styles.shell}>
         <section className={styles.card}>
           <p className={styles.kicker}>Fluxora member</p>
           <h1>Sign in to continue.</h1>
@@ -115,13 +115,13 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
             <a className={styles.secondary} href="/">Back to Fluxora</a>
           </div>
         </section>
-      </main>
+      </section>
     );
   }
 
   if (state === "no-membership") {
     return (
-      <main className={styles.shell}>
+      <section className={styles.shell}>
         <section className={styles.card}>
           <p className={styles.kicker}>Access required</p>
           <h1>No membership found.</h1>
@@ -133,12 +133,12 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
             <a className={styles.secondary} href="/">Back to Fluxora</a>
           </div>
         </section>
-      </main>
+      </section>
     );
   }
 
   return (
-    <main className={styles.shell}>
+    <section className={styles.shell}>
       <section className={styles.card}>
         <p className={styles.kicker}>Connection problem</p>
         <h1>Couldn’t open the member hub.</h1>
@@ -148,6 +148,6 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
           <a className={styles.secondary} href="/">Back to Fluxora</a>
         </div>
       </section>
-    </main>
+    </section>
   );
 }

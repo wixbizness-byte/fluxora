@@ -1,50 +1,54 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type KeyboardEvent } from "react";
 import styles from "./member-section-tabs.module.css";
 
-type Section = "profile" | "progress" | "membership";
+type Section = "overview" | "progress" | "profile" | "access";
 
 type Props = {
+  overview: ReactNode;
   profile: ReactNode;
   progress: ReactNode;
-  membership: ReactNode;
+  access: ReactNode;
 };
 
 const sections: Array<{ id: Section; label: string }> = [
-  { id: "profile", label: "Profile" },
+  { id: "overview", label: "Overview" },
   { id: "progress", label: "Progress" },
-  { id: "membership", label: "Membership" },
+  { id: "profile", label: "Profile" },
+  { id: "access", label: "Access" },
 ];
 
 function sectionFromLocation(): Section {
-  if (typeof window === "undefined") return "profile";
+  if (typeof window === "undefined") return "overview";
 
   const requested = new URLSearchParams(window.location.search).get("section");
-  if (requested === "profile" || requested === "progress" || requested === "membership") return requested;
+  if (requested === "overview" || requested === "profile" || requested === "progress" || requested === "access") return requested;
+  if (requested === "membership") return "access";
 
   if (window.location.hash === "#community-profile") return "profile";
   if (window.location.hash === "#progress-hub") return "progress";
-  if (window.location.hash === "#membership") return "membership";
-  return "profile";
+  if (window.location.hash === "#membership") return "access";
+  return "overview";
 }
 
-export default function MemberSectionTabs({ profile, progress, membership }: Props) {
-  const [active, setActive] = useState<Section>("profile");
+function scrollToHashTarget() {
+  const id = window.location.hash.slice(1);
+  if (!id) return;
+  window.requestAnimationFrame(() => {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
+  });
+}
+
+export default function MemberSectionTabs({ overview, profile, progress, access }: Props) {
+  const [active, setActive] = useState<Section>("overview");
 
   useEffect(() => {
     const sync = () => {
       const next = sectionFromLocation();
       setActive(next);
-
-      if (window.location.hash === "#community-profile") {
-        window.requestAnimationFrame(() => {
-          window.requestAnimationFrame(() => {
-            document.getElementById("community-profile")?.scrollIntoView({ behavior: "smooth", block: "start" });
-          });
-        });
-      }
+      scrollToHashTarget();
     };
 
     sync();
@@ -70,13 +74,22 @@ export default function MemberSectionTabs({ profile, progress, membership }: Pro
     });
   }
 
-  const content = active === "profile" ? profile : active === "progress" ? progress : membership;
+  function moveWithArrow(event: KeyboardEvent<HTMLButtonElement>, index: number) {
+    if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+    event.preventDefault();
+    const nextIndex = (index + (event.key === "ArrowRight" ? 1 : -1) + sections.length) % sections.length;
+    const next = sections[nextIndex];
+    select(next.id);
+    document.getElementById(`${next.id}-tab`)?.focus();
+  }
+
+  const content = active === "overview" ? overview : active === "profile" ? profile : active === "progress" ? progress : access;
 
   return (
-    <main className={styles.shell}>
+    <section className={styles.shell}>
       <div className={styles.navWrap} id="member-section-tabs">
         <nav className={styles.tabs} role="tablist" aria-label="Member sections">
-          {sections.map((section) => (
+          {sections.map((section, index) => (
             <button
               key={section.id}
               id={`${section.id}-tab`}
@@ -86,6 +99,7 @@ export default function MemberSectionTabs({ profile, progress, membership }: Pro
               aria-controls="member-section-panel"
               className={`${styles.tab} ${active === section.id ? styles.active : ""}`}
               onClick={() => select(section.id)}
+              onKeyDown={(event) => moveWithArrow(event, index)}
             >
               {section.label}
             </button>
@@ -101,6 +115,6 @@ export default function MemberSectionTabs({ profile, progress, membership }: Pro
       >
         {content}
       </section>
-    </main>
+    </section>
   );
 }
