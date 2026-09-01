@@ -1,60 +1,116 @@
 .shell {
-  min-height: 100vh;
-  background:
-    radial-gradient(circle at 84% 4%, rgba(199, 122, 145, 0.12), transparent 28rem),
-    linear-gradient(180deg, #fbf4ef 0%, #f6e8e5 100%);
-  color: #4b1830;
+  min-height: calc(100vh - 128px);
+  padding: 34px 0 64px;
+  color: var(--fluxora-color-text);
+  background: var(--fluxora-color-canvas);
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
+}
+
+.intro,
+.navWrap,
+.panel {
+  width: min(100% - 32px, 1180px);
+  margin-inline: auto;
+}
+
+.intro {
+  padding: 18px 0 24px;
+}
+
+.eyebrow {
+  margin: 0 0 8px;
+  color: var(--fluxora-color-brand);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.intro h1 {
+  max-width: 760px;
+  margin: 0;
+  color: var(--fluxora-color-text);
+  font-size: clamp(32px, 5vw, 50px);
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+}
+
+.intro > p:last-child {
+  max-width: 720px;
+  margin: 13px 0 0;
+  color: var(--fluxora-color-text-secondary);
+  font-size: 16px;
+  line-height: 1.6;
 }
 
 .navWrap {
   position: sticky;
-  z-index: 60;
-  top: 12px;
-  width: min(1100px, calc(100% - 28px));
-  margin: 0 auto;
-  padding: 6px;
-  border: 1px solid rgba(113, 30, 56, 0.14);
-  border-radius: 20px;
-  background: rgba(255, 250, 247, 0.94);
-  box-shadow: 0 14px 34px rgba(75, 24, 48, 0.11);
-  backdrop-filter: blur(12px);
+  z-index: 15;
+  top: 76px;
+  padding: 7px;
+  border: 1px solid var(--fluxora-color-border);
+  border-radius: var(--fluxora-radius-lg);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 4px 0 rgba(43, 38, 67, 0.055), 0 12px 26px rgba(24, 24, 27, 0.05);
+  backdrop-filter: blur(12px) saturate(130%);
+  -webkit-backdrop-filter: blur(12px) saturate(130%);
 }
 
 .tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 6px;
 }
 
 .tab {
   min-width: 0;
-  min-height: 50px;
-  padding: 0 18px;
-  border: 0;
-  border-radius: 15px;
+  min-height: 58px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 14px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  color: var(--fluxora-color-text-secondary);
   background: transparent;
-  color: #805d68;
   font: inherit;
-  font-size: 0.9rem;
-  font-weight: 850;
+  text-align: left;
   cursor: pointer;
-  transition: transform 0.15s ease, background 0.18s ease, color 0.18s ease, box-shadow 0.18s ease;
+  transition: transform 160ms ease, background-color 160ms ease, border-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+}
+
+.tab strong {
+  color: inherit;
+  font-size: 14px;
+  font-weight: 750;
+}
+
+.tab span {
+  overflow: hidden;
+  color: var(--fluxora-color-text-muted);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .tab:hover:not(.active) {
-  background: #f6e8eb;
-  color: #711e38;
+  border-color: rgba(102, 88, 232, 0.12);
+  color: var(--fluxora-color-brand);
+  background: rgba(102, 88, 232, 0.045);
 }
 
 .tab:focus-visible {
-  outline: 3px solid rgba(177, 88, 115, 0.28);
+  outline: 2px solid var(--fluxora-color-brand);
   outline-offset: 2px;
 }
 
 .tab.active {
-  background: linear-gradient(135deg, #5f112d, #711e38);
-  color: #fffaf7;
-  box-shadow: 0 8px 18px rgba(113, 30, 56, 0.2);
+  border-color: rgba(102, 88, 232, 0.15);
+  color: var(--fluxora-color-brand);
+  background: var(--fluxora-color-brand-soft);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.7), 0 3px 0 rgba(102, 88, 232, 0.08);
 }
 
 .tab:active {
@@ -63,33 +119,62 @@
 
 .panel {
   min-width: 0;
-  padding-top: 16px;
+  padding-top: 20px;
 }
 
 .panel > * {
   min-width: 0;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 720px) {
+  .shell {
+    padding-top: 22px;
+  }
+
+  .intro,
+  .navWrap,
+  .panel {
+    width: min(100% - 20px, 1180px);
+  }
+
+  .intro {
+    padding-bottom: 18px;
+  }
+
+  .intro h1 {
+    font-size: clamp(30px, 9vw, 42px);
+  }
+
   .navWrap {
-    top: 8px;
-    width: calc(100% - 20px);
-    border-radius: 17px;
+    top: 72px;
     padding: 5px;
   }
 
   .tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 4px;
   }
 
   .tab {
-    min-height: 44px;
-    padding: 0 10px;
-    border-radius: 13px;
-    font-size: 0.82rem;
+    min-height: 52px;
+    padding: 8px 10px;
+  }
+
+  .tab span {
+    font-size: 10px;
   }
 
   .panel {
-    padding-top: 10px;
+    padding-top: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tab {
+    transition: none;
+  }
+
+  .tab:active {
+    transform: none;
   }
 }
