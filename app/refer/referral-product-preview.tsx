@@ -1,5 +1,6 @@
 "use client";
 
+import { ArrowUpRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import styles from "./referral-product-preview.module.css";
 
@@ -106,7 +107,7 @@ export default function ReferralProductPreview({
       <div className={styles.body}>
         <h3>{cardTitle}</h3>
         <p>{cardDescription}</p>
-        <span className={styles.cta}>{cta} <b aria-hidden="true">↗</b></span>
+        <span className={styles.cta}>{cta} <ArrowUpRight aria-hidden="true" size={14} strokeWidth={2} /></span>
       </div>
     </article>
   );
