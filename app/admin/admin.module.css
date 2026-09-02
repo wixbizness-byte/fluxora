@@ -1,137 +1,251 @@
-.adminPage {
+.shellPage {
   min-height: 100vh;
-  padding: 42px clamp(18px, 4vw, 64px) 80px;
-  background:
-    radial-gradient(circle at 85% 8%, rgba(122, 29, 60, 0.24), transparent 32rem),
-    #12090d;
-  color: #fff7f3;
+  display: flex;
+  flex-direction: column;
+  color: var(--fluxora-color-text);
+  background: var(--fluxora-color-canvas);
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
 }
 
-.adminPage * {
+.shellPage * {
   box-sizing: border-box;
 }
 
-.adminPage input,
-.adminPage textarea,
-.adminPage select,
-.adminPage button {
-  font: inherit;
+.shellMain {
+  flex: 1;
+  width: 100%;
+  padding: clamp(28px, 4vw, 52px) 0 64px;
 }
 
-.adminHeader {
-  width: min(1240px, 100%);
-  margin: 0 auto 28px;
+.adminWorkspace {
+  display: grid;
+  gap: 22px;
+}
+
+.adminIntro {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
   gap: 24px;
+  padding-bottom: 4px;
 }
 
-.adminHeader h1,
+.adminIntro h1,
 .loginCard h1,
 .emptyState h1 {
-  margin: 7px 0 6px;
-  font-family: Georgia, serif;
-  font-size: clamp(2.4rem, 5vw, 4.5rem);
-  line-height: 1;
+  margin: 8px 0 8px;
+  color: var(--fluxora-color-text);
+  font: 700 clamp(30px, 5vw, 44px)/1.08 var(--font-inter), Inter, Arial, sans-serif;
+  letter-spacing: -0.035em;
 }
 
-.adminHeader p,
+.adminIntro p,
 .editorHeader p,
 .settingsCard p,
 .loginCard p,
 .emptyState p {
+  max-width: 720px;
   margin: 0;
-  color: #cdb7c0;
-  line-height: 1.6;
+  color: var(--fluxora-color-text-secondary);
+  font-size: 15px;
+  line-height: 1.65;
 }
 
 .kicker {
-  color: #d889a7;
-  font-size: 0.64rem;
-  font-weight: 900;
-  letter-spacing: 0.16em;
+  color: var(--fluxora-color-brand);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
-.headerActions {
+.accountLine {
+  display: block;
+  margin-top: 10px;
+  color: var(--fluxora-color-text-muted);
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.headerActions,
+.rowActions {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
-.headerActions a,
-.headerActions button,
-.editorHeader > button,
-.settingsFields button,
-.rowActions button,
-.loginCard button,
-.emptyState button,
-.emptyState a {
-  min-height: 44px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  border-radius: 999px;
-  padding: 0 20px;
+.primaryAction,
+.secondaryAction,
+.dangerButton {
+  min-height: 42px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: #7a1d3c;
-  color: #fff7f3;
-  font-size: 0.72rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
+  gap: 8px;
+  padding: 0 16px;
+  border-radius: var(--fluxora-radius-md);
+  font: 600 14px/1 var(--font-inter), Inter, Arial, sans-serif;
   text-decoration: none;
-  text-transform: uppercase;
+  cursor: pointer;
+  transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.primaryAction {
+  border: 1px solid var(--fluxora-color-brand);
+  color: #fff;
+  background: var(--fluxora-color-brand);
+  box-shadow: 0 4px 12px rgba(102, 88, 232, 0.14);
+}
+
+.primaryAction:not(:disabled):hover {
+  border-color: var(--fluxora-color-brand-hover);
+  background: var(--fluxora-color-brand-hover);
+  transform: translateY(-1px);
+}
+
+.secondaryAction {
+  border: 1px solid var(--fluxora-color-border-strong);
+  color: var(--fluxora-color-text-secondary);
+  background: var(--fluxora-color-surface);
+  box-shadow: var(--fluxora-shadow-sm);
+}
+
+.secondaryAction:not(:disabled):hover {
+  color: var(--fluxora-color-brand);
+  border-color: color-mix(in srgb, var(--fluxora-color-brand) 30%, var(--fluxora-color-border));
+  background: var(--fluxora-color-brand-soft);
+}
+
+.dangerButton {
+  border: 1px solid color-mix(in srgb, var(--fluxora-color-danger) 32%, var(--fluxora-color-border));
+  color: var(--fluxora-color-danger);
+  background: color-mix(in srgb, var(--fluxora-color-danger) 5%, white);
+}
+
+.dangerButton:not(:disabled):hover {
+  border-color: var(--fluxora-color-danger);
+  background: color-mix(in srgb, var(--fluxora-color-danger) 9%, white);
+}
+
+.primaryAction:focus-visible,
+.secondaryAction:focus-visible,
+.dangerButton:focus-visible,
+.tabs button:focus-visible,
+.settingsFields input:focus-visible,
+.formGrid input:focus-visible,
+.formGrid textarea:focus-visible,
+.formGrid select:focus-visible,
+.loginCard input:focus-visible,
+.checkboxLabel input:focus-visible {
+  outline: 2px solid var(--fluxora-color-brand);
+  outline-offset: 2px;
+}
+
+.primaryAction:disabled,
+.secondaryAction:disabled,
+.dangerButton:disabled,
+.settingsFields button:disabled,
+.rowActions button:disabled,
+.editorHeader > button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px;
+  border: 1px solid var(--fluxora-color-border);
+  border-radius: var(--fluxora-radius-lg);
+  background: var(--fluxora-color-surface-muted);
+  scrollbar-width: thin;
+}
+
+.tabs button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: var(--fluxora-radius-md);
+  color: var(--fluxora-color-text-secondary);
+  background: transparent;
+  font: 600 13px/1 var(--font-inter), Inter, Arial, sans-serif;
   cursor: pointer;
 }
 
-.headerActions a,
-.headerActions button:last-child {
-  background: transparent;
+.tabs button:hover {
+  color: var(--fluxora-color-text);
+  background: rgba(255, 255, 255, 0.7);
+}
+
+.tabs button.activeTab {
+  color: var(--fluxora-color-brand);
+  border-color: color-mix(in srgb, var(--fluxora-color-brand) 16%, var(--fluxora-color-border));
+  background: var(--fluxora-color-surface);
+  box-shadow: var(--fluxora-shadow-sm);
 }
 
 .settingsCard,
 .editorHeader,
 .rowCard,
+.accountCard,
 .loginCard,
 .emptyState {
-  border: 1px solid rgba(255, 255, 255, 0.13);
-  background: rgba(31, 13, 21, 0.9);
-  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.28);
+  border: 1px solid var(--fluxora-color-border);
+  border-radius: var(--fluxora-radius-lg);
+  background: var(--fluxora-color-surface);
+  box-shadow: 0 3px 14px rgba(24, 24, 27, 0.045);
+}
+
+.settingsCard,
+.editorHeader {
+  padding: 22px;
 }
 
 .settingsCard {
-  width: min(1240px, 100%);
-  margin: 0 auto 24px;
-  padding: 24px;
-  border-radius: 24px;
   display: grid;
-  grid-template-columns: 0.8fr 1.2fr;
-  gap: 30px;
+  grid-template-columns: minmax(0, 0.85fr) minmax(340px, 1.15fr);
+  gap: 28px;
   align-items: end;
 }
 
 .settingsCard h2,
 .editorHeader h2 {
-  margin: 7px 0 8px;
-  font-family: Georgia, serif;
-  font-size: 2rem;
+  margin: 6px 0 8px;
+  color: var(--fluxora-color-text);
+  font: 700 clamp(22px, 3vw, 28px)/1.2 var(--font-inter), Inter, Arial, sans-serif;
+  letter-spacing: -0.025em;
 }
 
 .settingsFields {
   display: grid;
-  grid-template-columns: 0.75fr 1.25fr auto;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 12px;
   align-items: end;
+}
+
+.editorHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.editorHeader > div {
+  max-width: 780px;
 }
 
 .settingsFields label,
 .formGrid label,
 .loginCard label {
+  min-width: 0;
   display: grid;
   gap: 8px;
-  color: #dccad1;
-  font-size: 0.72rem;
-  font-weight: 700;
+  color: var(--fluxora-color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .settingsFields input,
@@ -140,13 +254,21 @@
 .formGrid select,
 .loginCard input {
   width: 100%;
-  min-height: 45px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  border-radius: 12px;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--fluxora-color-border-strong);
+  border-radius: var(--fluxora-radius-md);
   padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.04);
-  color: #fff8f5;
-  outline: none;
+  color: var(--fluxora-color-text);
+  background: var(--fluxora-color-surface);
+  font: 400 14px/1.4 var(--font-inter), Inter, Arial, sans-serif;
+}
+
+.settingsFields input::placeholder,
+.formGrid input::placeholder,
+.formGrid textarea::placeholder,
+.loginCard input::placeholder {
+  color: var(--fluxora-color-text-muted);
 }
 
 .formGrid textarea {
@@ -155,7 +277,8 @@
 }
 
 .formGrid select option {
-  color: #1d0c13;
+  color: var(--fluxora-color-text);
+  background: var(--fluxora-color-surface);
 }
 
 .settingsFields input:focus,
@@ -163,119 +286,82 @@
 .formGrid textarea:focus,
 .formGrid select:focus,
 .loginCard input:focus {
-  border-color: #d889a7;
-  box-shadow: 0 0 0 3px rgba(216, 137, 167, 0.12);
-}
-
-.tabs {
-  width: min(1240px, 100%);
-  margin: 0 auto 24px;
-  display: flex;
-  gap: 8px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-}
-
-.tabs button {
-  flex: 0 0 auto;
-  min-height: 42px;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 999px;
-  padding: 0 16px;
-  background: transparent;
-  color: #cdb7c0;
-  cursor: pointer;
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.tabs button.activeTab {
-  background: #fff5f0;
-  color: #521029;
-}
-
-.editorHeader {
-  width: min(1240px, 100%);
-  margin: 0 auto;
-  padding: 24px;
-  border-radius: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-}
-
-.editorHeader > div {
-  max-width: 760px;
-}
-
-.editorHeader > button:disabled,
-.rowActions button:disabled,
-.settingsFields button:disabled {
-  opacity: 0.48;
-  cursor: not-allowed;
+  border-color: var(--fluxora-color-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--fluxora-color-brand) 12%, transparent);
 }
 
 .notice {
-  width: min(1240px, 100%);
   min-height: 22px;
-  margin: 12px auto;
-  color: #d889a7;
-  font-size: 0.75rem;
+  margin: -4px 0 0;
+  color: var(--fluxora-color-text-muted);
+  font-size: 13px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
 }
 
-.rowGrid {
-  width: min(1240px, 100%);
-  margin: 0 auto;
+.noticeError {
+  color: var(--fluxora-color-danger);
+}
+
+.noticeSuccess {
+  color: var(--fluxora-color-success);
+}
+
+.rowGrid,
+.accountGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 18px;
+  gap: 16px;
 }
 
-.rowCard {
-  padding: 22px;
-  border-radius: 22px;
+.rowCard,
+.accountCard {
+  min-width: 0;
+  padding: 20px;
 }
 
 .rowTop {
-  min-height: 90px;
+  min-height: 74px;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 
-.rowTop > div:first-child {
+.rowTop > div:first-child,
+.accountCardHeader > div {
+  min-width: 0;
   display: grid;
   gap: 5px;
 }
 
-.rowTop span {
-  color: #d889a7;
-  font-size: 0.62rem;
-  font-weight: 900;
-  letter-spacing: 0.14em;
+.rowTop span,
+.accountRole {
+  color: var(--fluxora-color-brand);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
   text-transform: uppercase;
 }
 
-.rowTop strong {
-  font-family: Georgia, serif;
-  font-size: 1.35rem;
+.rowTop strong,
+.accountCardHeader strong {
+  color: var(--fluxora-color-text);
+  font-size: 18px;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
 }
 
 .rowTop img,
 .previewPlaceholder {
-  width: 68px;
-  height: 82px;
+  width: 64px;
+  height: 76px;
   flex: 0 0 auto;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  border-radius: 12px;
+  border: 1px solid var(--fluxora-color-border);
+  border-radius: var(--fluxora-radius-md);
   object-fit: cover;
-}
-
-.previewPlaceholder {
-  background: linear-gradient(145deg, #4f1028, #9a3158);
+  background: var(--fluxora-color-surface-muted);
 }
 
 .formGrid {
@@ -289,83 +375,106 @@
 }
 
 .checkboxLabel {
-  min-height: 45px;
+  min-height: 44px;
   display: flex !important;
   align-items: center;
   gap: 10px !important;
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 12px;
-  padding: 0 12px;
+  border: 1px solid var(--fluxora-color-border);
+  border-radius: var(--fluxora-radius-md);
+  padding: 10px 12px;
+  background: var(--fluxora-color-surface-muted);
 }
 
 .checkboxLabel input {
   width: 17px;
+  height: 17px;
   min-height: 17px;
-  accent-color: #d889a7;
+  flex: 0 0 auto;
+  accent-color: var(--fluxora-color-brand);
 }
 
 .rowActions {
-  display: flex;
-  gap: 10px;
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
-.rowActions button {
-  flex: 1;
+.rowActions .primaryAction {
+  flex: 1 1 180px;
 }
 
 .rowActions .dangerButton {
   flex: 0 0 auto;
-  background: transparent;
-  color: #f1a5b8;
-  border-color: rgba(241, 165, 184, 0.35);
+}
+
+.groupHeading {
+  grid-column: 1 / -1;
+  margin: 8px 0 0;
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--fluxora-color-brand) 16%, var(--fluxora-color-border));
+  border-radius: var(--fluxora-radius-md);
+  color: var(--fluxora-color-brand);
+  background: var(--fluxora-color-brand-soft);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.accountCardHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.accountMeta {
+  margin: 12px 0 0;
+  color: var(--fluxora-color-text-muted);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.authState {
+  min-height: clamp(420px, 62vh, 620px);
+  display: grid;
+  place-items: center;
 }
 
 .loginCard,
 .emptyState {
-  width: min(480px, 100%);
-  margin: 9vh auto 0;
-  padding: 34px;
-  border-radius: 28px;
+  width: min(100%, 520px);
+  padding: clamp(24px, 4vw, 32px);
 }
 
 .loginCard {
   display: grid;
-  gap: 18px;
-}
-
-.loginCard h1 {
-  margin-bottom: 0;
-}
-
-.loginCard button {
-  width: 100%;
-  margin-top: 4px;
-}
-
-.backLink {
-  color: #d889a7;
-  font-size: 0.75rem;
-  text-decoration: none;
-}
-
-.error {
-  color: #ff9cb4 !important;
-  font-size: 0.8rem;
+  gap: 16px;
 }
 
 .emptyState {
   text-align: center;
 }
 
-.emptyState code,
-.loginCard code {
-  color: #ffd3df;
+.emptyState .primaryAction,
+.emptyState .secondaryAction {
+  margin-top: 20px;
 }
 
-.emptyState button,
-.emptyState a {
-  margin-top: 22px;
+.emptyState code,
+.loginCard code {
+  color: var(--fluxora-color-brand);
+  background: var(--fluxora-color-brand-soft);
+  border-radius: var(--fluxora-radius-sm);
+  padding: 1px 5px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.error {
+  margin: 0;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--fluxora-color-danger) 24%, var(--fluxora-color-border));
+  border-radius: var(--fluxora-radius-md);
+  color: var(--fluxora-color-danger) !important;
+  background: color-mix(in srgb, var(--fluxora-color-danger) 6%, white);
+  font-size: 13px !important;
+  line-height: 1.5 !important;
 }
 
 @media (max-width: 960px) {
@@ -373,35 +482,32 @@
     grid-template-columns: 1fr;
   }
 
-  .settingsFields {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .settingsFields button {
-    grid-column: 1 / -1;
-  }
-
-  .rowGrid {
+  .rowGrid,
+  .accountGrid {
     grid-template-columns: 1fr;
   }
 }
 
-@media (max-width: 640px) {
-  .adminPage {
-    padding-inline: 14px;
+@media (max-width: 720px) {
+  .shellMain {
+    padding-top: 24px;
   }
 
-  .adminHeader,
+  .adminIntro,
   .editorHeader {
     align-items: stretch;
     flex-direction: column;
   }
 
   .headerActions,
-  .headerActions a,
   .headerActions button,
+  .headerActions a,
   .editorHeader > button {
     width: 100%;
+  }
+
+  .tabs {
+    margin-inline: -2px;
   }
 
   .settingsFields,
@@ -413,49 +519,64 @@
     grid-column: auto;
   }
 
-  .rowCard,
-  .settingsCard,
-  .editorHeader {
-    padding: 18px;
+  .settingsFields .primaryAction {
+    width: 100%;
   }
-}
 
-.groupHeading {
-  grid-column: 1 / -1;
-  margin: 18px 0 0;
-  padding: 16px 18px;
-  border: 1px solid rgba(216, 137, 167, 0.2);
-  border-radius: 16px;
-  color: #f0b5ca;
-  background: rgba(122, 29, 60, 0.14);
-  font-family: Georgia, serif;
-  font-size: 1.25rem;
-  font-weight: 500;
-}
-
-@media (max-width: 820px) {
-  .adminHeader,
-  .editorHeader {
-    align-items: flex-start;
+  .rowActions {
     flex-direction: column;
   }
 
-  .rowGrid,
-  .settingsCard {
-    grid-template-columns: 1fr;
+  .rowActions .primaryAction,
+  .rowActions .dangerButton {
+    width: 100%;
+    flex: none;
+  }
+
+  .rowCard,
+  .accountCard,
+  .settingsCard,
+  .editorHeader {
+    padding: 17px;
+  }
+
+  .rowTop {
+    min-height: 0;
+    align-items: flex-start;
+  }
+
+  .rowTop img,
+  .previewPlaceholder {
+    width: 56px;
+    height: 68px;
   }
 }
 
-@media (max-width: 560px) {
-  .adminPage {
-    padding-inline: 14px;
+@media (max-width: 480px) {
+  .adminIntro h1,
+  .loginCard h1,
+  .emptyState h1 {
+    font-size: clamp(28px, 9vw, 36px);
   }
 
-  .formGrid {
-    grid-template-columns: 1fr;
+  .tabs button {
+    min-height: 44px;
   }
 
-  .fullField {
-    grid-column: auto;
+  .loginCard,
+  .emptyState {
+    padding: 22px 18px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryAction,
+  .secondaryAction,
+  .dangerButton {
+    transition: none;
+  }
+
+  .primaryAction:not(:disabled):hover {
+    transform: none;
   }
 }
