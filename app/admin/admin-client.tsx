@@ -332,79 +332,106 @@ export default function AdminClient() {
 
   if (!isSupabaseConfigured()) {
     return (
-      <main className={styles.adminPage}>
-        <section className={styles.emptyState}>
-          <h1>Supabase is not configured</h1>
+      <section className={styles.authState} aria-labelledby="supabase-not-configured-heading">
+        <div className={styles.emptyState}>
+          <span className={styles.kicker}>Admin unavailable</span>
+          <h1 id="supabase-not-configured-heading">Supabase is not configured</h1>
           <p>Copy <code>.env.example</code> to <code>.env.local</code>, then add your project URL and publishable key.</p>
-          <a href="/">Return to website</a>
-        </section>
-      </main>
+          <a className={styles.secondaryAction} href="/">Return to website</a>
+        </div>
+      </section>
     );
   }
 
   if (checking) {
-    return <main className={styles.adminPage}><section className={styles.emptyState}><p>Checking access…</p></section></main>;
+    return (
+      <section className={styles.authState} aria-live="polite" aria-busy="true">
+        <div className={styles.emptyState}>
+          <span className={styles.kicker}>Protected workspace</span>
+          <h1>Checking access</h1>
+          <p>Verifying your Supabase session and Fluxora Admin authorization…</p>
+        </div>
+      </section>
+    );
   }
 
   if (!session) {
     return (
-      <main className={styles.adminPage}>
+      <section className={styles.authState} aria-labelledby="admin-password-login-heading">
         <form className={styles.loginCard} onSubmit={signIn}>
-          <a className={styles.backLink} href="/">Back to Fluxora</a>
-          <span className={styles.kicker}>Protected workspace</span>
-          <h1>Fluxora Admin</h1>
+          <span className={styles.kicker}>Supabase sign in</span>
+          <h1 id="admin-password-login-heading">Fluxora Admin</h1>
           <p>Sign in with the Supabase Auth user registered in the <code>site_admins</code> table.</p>
           <label>Email<input type="email" value={email} onChange={(event: ChangeEvent<HTMLInputElement>) => setEmail(event.target.value)} required /></label>
           <label>Password<input type="password" value={password} onChange={(event: ChangeEvent<HTMLInputElement>) => setPassword(event.target.value)} required /></label>
-          {authError && <p className={styles.error}>{authError}</p>}
-          <button type="submit">Sign in</button>
+          {authError && <p className={styles.error} role="alert">{authError}</p>}
+          <button className={styles.primaryAction} type="submit">Sign in</button>
         </form>
-      </main>
+      </section>
     );
   }
 
   if (!isAdmin) {
     return (
-      <main className={styles.adminPage}>
-        <section className={styles.emptyState}>
-          <h1>Not authorized</h1>
+      <section className={styles.authState} aria-labelledby="admin-not-authorized-heading">
+        <div className={styles.emptyState}>
+          <span className={styles.kicker}>Restricted</span>
+          <h1 id="admin-not-authorized-heading">Not authorized</h1>
           <p>This Supabase user is signed in but is not listed in <code>public.site_admins</code>.</p>
-          <button type="button" onClick={signOut}>Sign out</button>
-        </section>
-      </main>
+          <button className={styles.secondaryAction} type="button" onClick={signOut}>Sign out</button>
+        </div>
+      </section>
     );
   }
 
   const activeEditor = editors.find((editor) => editor.table === activeTable) || editors[0];
   const activeRows = rows[activeEditor.table] || [];
+  const noticeIsError = Boolean(notice) && !["Loading content…", "Content loaded.", "Saving…", "Saved.", "Deleted."].includes(notice);
 
   return (
-    <main className={styles.adminPage}>
-      <header className={styles.adminHeader}>
-        <div><span className={styles.kicker}>Fluxora content manager</span><h1>Admin Panel</h1><p>{session.user.email}</p></div>
-        <div className={styles.headerActions}><a href="/" target="_blank">View site</a><button type="button" onClick={signOut}>Sign out</button></div>
-      </header>
+    <div className={styles.adminWorkspace}>
+      <section className={styles.adminIntro} aria-labelledby="content-admin-heading">
+        <div>
+          <span className={styles.kicker}>Admin</span>
+          <h1 id="content-admin-heading">Content Admin</h1>
+          <p>Manage Fluxora&apos;s public content, pricing, and payment presentation.</p>
+          <span className={styles.accountLine}>{session.user.email}</span>
+        </div>
+        <div className={styles.headerActions}>
+          <button className={styles.secondaryAction} type="button" onClick={signOut}>Sign out</button>
+        </div>
+      </section>
 
-      <nav className={styles.tabs} aria-label="Admin sections">
+      <nav className={styles.tabs} aria-label="Content editor sections">
         {editors.map((editor) => (
-          <button className={activeTable === editor.table ? styles.activeTab : ""} type="button" key={editor.table} onClick={() => setActiveTable(editor.table)}>
+          <button
+            className={activeTable === editor.table ? styles.activeTab : ""}
+            type="button"
+            key={editor.table}
+            onClick={() => setActiveTable(editor.table)}
+            aria-pressed={activeTable === editor.table}
+          >
             {editor.title}
           </button>
         ))}
       </nav>
 
-      <section className={styles.editorHeader}>
-        <div><span className={styles.kicker}>Editable section</span><h2>{activeEditor.title}</h2><p>{activeEditor.description}</p></div>
+      <section className={styles.editorHeader} aria-labelledby="active-editor-heading">
+        <div>
+          <span className={styles.kicker}>Editable section</span>
+          <h2 id="active-editor-heading">{activeEditor.title}</h2>
+          <p>{activeEditor.description}</p>
+        </div>
         {activeEditor.allowAdd !== false && (
-          <button type="button" onClick={() => addRow(activeEditor)} disabled={Boolean(activeEditor.maxRows && activeRows.length >= activeEditor.maxRows)}>
+          <button className={styles.primaryAction} type="button" onClick={() => addRow(activeEditor)} disabled={Boolean(activeEditor.maxRows && activeRows.length >= activeEditor.maxRows)}>
             Add item{activeEditor.maxRows ? ` (${activeRows.length}/${activeEditor.maxRows})` : ""}
           </button>
         )}
       </section>
 
-      <p className={styles.notice} role="status">{notice}</p>
+      <p className={`${styles.notice} ${noticeIsError ? styles.noticeError : ""}`} role="status" aria-live="polite">{notice}</p>
 
-      <section className={styles.rowGrid}>
+      <section className={styles.rowGrid} aria-label={`${activeEditor.title} items`}>
         {activeRows.map((row, rowIndex) => {
           const previousRow = activeRows[rowIndex - 1];
           const showGalleryGroup = activeEditor.table === "gallery_images" && (!previousRow || previousRow.row_position !== row.row_position);
@@ -415,8 +442,11 @@ export default function AdminClient() {
               {showGalleryGroup && <h3 className={styles.groupHeading}>{galleryGroupLabel(row)}</h3>}
               <article className={styles.rowCard}>
                 <div className={styles.rowTop}>
-                  <div><span>{activeEditor.table === "gallery_images" ? "Fixed archive slot" : `Item ${rowIndex + 1}`}</span><strong>{rowHeading(activeEditor, row, rowIndex)}</strong></div>
-                  {typeof previewUrl === "string" && previewUrl ? <img src={previewUrl} alt="Current preview" /> : <div className={styles.previewPlaceholder} />}
+                  <div>
+                    <span>{activeEditor.table === "gallery_images" ? "Fixed archive slot" : `Item ${rowIndex + 1}`}</span>
+                    <strong>{rowHeading(activeEditor, row, rowIndex)}</strong>
+                  </div>
+                  {typeof previewUrl === "string" && previewUrl ? <img src={previewUrl} alt="Current preview" /> : <div className={styles.previewPlaceholder} aria-hidden="true" />}
                 </div>
 
                 <div className={styles.formGrid}>
@@ -463,7 +493,7 @@ export default function AdminClient() {
                 </div>
 
                 <div className={styles.rowActions}>
-                  <button type="button" onClick={() => saveRow(activeEditor.table, row)} disabled={busyId === row.id}>{busyId === row.id ? "Saving…" : "Save item"}</button>
+                  <button className={styles.primaryAction} type="button" onClick={() => saveRow(activeEditor.table, row)} disabled={busyId === row.id}>{busyId === row.id ? "Saving…" : "Save item"}</button>
                   {activeEditor.allowDelete !== false && (
                     <button className={styles.dangerButton} type="button" onClick={() => deleteRow(activeEditor.table, row)} disabled={busyId === row.id}>Delete</button>
                   )}
@@ -473,6 +503,6 @@ export default function AdminClient() {
           );
         })}
       </section>
-    </main>
+    </div>
   );
 }
