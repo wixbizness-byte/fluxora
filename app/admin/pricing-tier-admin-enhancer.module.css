@@ -2,10 +2,10 @@
   grid-column: 1 / -1;
   display: grid;
   gap: 16px;
-  padding: 18px;
-  border: 1px solid rgba(75, 16, 36, 0.16);
-  border-radius: 18px;
-  background: rgba(255, 250, 247, 0.72);
+  padding: 16px;
+  border: 1px solid var(--fluxora-color-border);
+  border-radius: var(--fluxora-radius-md);
+  background: var(--fluxora-color-surface-muted);
 }
 
 .heading {
@@ -21,47 +21,56 @@
 }
 
 .heading strong {
-  color: #4b1024;
+  color: var(--fluxora-color-text);
   font-size: 14px;
 }
 
 .heading span {
   margin-top: 4px;
-  color: #76545f;
-  font-size: 11px;
+  color: var(--fluxora-color-text-muted);
+  font-size: 12px;
   line-height: 1.45;
 }
 
 .fullField {
   display: grid;
   gap: 7px;
-  color: #4b1024;
-  font-size: 12px;
-  font-weight: 800;
+  color: var(--fluxora-color-text-secondary);
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .fullField textarea,
 .fullField input,
 .benefitRow input {
   width: 100%;
-  border: 1px solid rgba(75, 16, 36, 0.16);
-  border-radius: 12px;
-  background: #fffaf7;
-  color: #4b1024;
-  font: inherit;
-  font-weight: 500;
+  min-width: 0;
+  border: 1px solid var(--fluxora-color-border-strong);
+  border-radius: var(--fluxora-radius-md);
+  background: var(--fluxora-color-surface);
+  color: var(--fluxora-color-text);
+  font: 400 14px/1.4 var(--font-inter), Inter, Arial, sans-serif;
 }
 
 .fullField textarea {
-  min-height: 72px;
+  min-height: 76px;
   resize: vertical;
-  padding: 11px 12px;
+  padding: 10px 12px;
 }
 
 .fullField input,
 .benefitRow input {
   min-height: 42px;
   padding: 0 12px;
+}
+
+.fullField textarea:focus-visible,
+.fullField input:focus-visible,
+.benefitRow input:focus-visible,
+.addButton:focus-visible,
+.removeButton:focus-visible {
+  outline: 2px solid var(--fluxora-color-brand);
+  outline-offset: 2px;
 }
 
 .benefitsHeader {
@@ -72,25 +81,28 @@
 }
 
 .benefitsHeader strong {
-  color: #4b1024;
-  font-size: 12px;
+  color: var(--fluxora-color-text);
+  font-size: 13px;
 }
 
 .addButton,
 .removeButton {
-  border: 0;
-  border-radius: 999px;
-  font: inherit;
-  font-size: 11px;
-  font-weight: 800;
+  min-height: 36px;
+  border-radius: var(--fluxora-radius-md);
+  padding: 0 12px;
+  font: 600 12px/1 var(--font-inter), Inter, Arial, sans-serif;
   cursor: pointer;
 }
 
 .addButton {
-  min-height: 34px;
-  padding: 0 13px;
-  background: #711e38;
-  color: #fffaf7;
+  border: 1px solid var(--fluxora-color-brand);
+  background: var(--fluxora-color-brand);
+  color: #fff;
+}
+
+.addButton:hover {
+  border-color: var(--fluxora-color-brand-hover);
+  background: var(--fluxora-color-brand-hover);
 }
 
 .benefitsList {
@@ -110,33 +122,41 @@
   height: 28px;
   display: grid;
   place-items: center;
-  border-radius: 999px;
-  background: #f8ece9;
-  color: #711e38;
+  border: 1px solid color-mix(in srgb, var(--fluxora-color-brand) 14%, var(--fluxora-color-border));
+  border-radius: var(--fluxora-radius-md);
+  background: var(--fluxora-color-brand-soft);
+  color: var(--fluxora-color-brand);
   font-size: 11px;
-  font-weight: 900;
+  font-weight: 700;
 }
 
 .removeButton {
-  min-height: 34px;
-  padding: 0 11px;
-  border: 1px solid rgba(141, 31, 56, 0.18);
-  background: #fffaf7;
-  color: #8d1f38;
+  border: 1px solid color-mix(in srgb, var(--fluxora-color-danger) 28%, var(--fluxora-color-border));
+  background: color-mix(in srgb, var(--fluxora-color-danger) 5%, white);
+  color: var(--fluxora-color-danger);
+}
+
+.removeButton:hover:not(:disabled) {
+  border-color: var(--fluxora-color-danger);
+  background: color-mix(in srgb, var(--fluxora-color-danger) 9%, white);
 }
 
 .removeButton:disabled {
-  opacity: 0.4;
-  cursor: default;
+  opacity: 0.45;
+  cursor: not-allowed;
 }
 
 @media (max-width: 640px) {
+  .editor {
+    padding: 14px;
+  }
+
   .benefitRow {
     grid-template-columns: 28px minmax(0, 1fr);
   }
 
   .removeButton {
     grid-column: 2;
-    justify-self: start;
+    width: 100%;
   }
 }
