@@ -118,53 +118,30 @@ export default function GoogleAdminGate() {
   }
 
   if (!ready) {
-    return <main className={styles.adminPage}><section className={styles.emptyState}><p>Checking access…</p></section></main>;
-  }
-
-  if (hasSession) {
     return (
-      <>
-        <a
-          href="/admin/accounts"
-          style={{
-            position: "fixed",
-            right: 18,
-            bottom: 18,
-            zIndex: 1000,
-            display: "inline-flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: 42,
-            padding: "0 18px",
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,.18)",
-            background: "#7a1d3c",
-            color: "#fff7f3",
-            boxShadow: "0 14px 35px rgba(0,0,0,.3)",
-            fontSize: ".72rem",
-            fontWeight: 800,
-            letterSpacing: ".06em",
-            textDecoration: "none",
-            textTransform: "uppercase",
-          }}
-        >
-          Admin Accounts
-        </a>
-        <AdminClient />
-      </>
+      <section className={styles.authState} aria-live="polite" aria-busy="true">
+        <div className={styles.emptyState}>
+          <span className={styles.kicker}>Protected workspace</span>
+          <h1>Checking access</h1>
+          <p>Checking your existing Fluxora Admin session…</p>
+        </div>
+      </section>
     );
   }
 
+  if (hasSession) {
+    return <AdminClient />;
+  }
+
   return (
-    <main className={styles.adminPage}>
-      <section className={styles.loginCard}>
-        <a className={styles.backLink} href="/">Back to Fluxora</a>
+    <section className={styles.authState} aria-labelledby="admin-login-heading">
+      <div className={styles.loginCard}>
         <span className={styles.kicker}>Protected workspace</span>
-        <h1>Fluxora Admin</h1>
+        <h1 id="admin-login-heading">Fluxora Admin</h1>
         <p>Sign in with the authorized Google account. Access is still restricted by the existing <code>site_admins</code> table.</p>
-        {error && <p className={styles.error}>{error}</p>}
-        <button type="button" onClick={loginWithGoogle}>Sign in with Google</button>
-      </section>
-    </main>
+        {error && <p className={styles.error} role="alert">{error}</p>}
+        <button className={styles.primaryAction} type="button" onClick={loginWithGoogle}>Sign in with Google</button>
+      </div>
+    </section>
   );
 }
