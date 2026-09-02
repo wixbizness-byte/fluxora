@@ -45,6 +45,8 @@ type EmailSettings = {
   updated_at: string;
 };
 
+const FILTERS = ["pending_review", "approved", "rejected", "all"] as const;
+
 function config() {
   return {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "") || "",
@@ -73,6 +75,13 @@ function formatDate(value: string | null) {
   if (!value) return "—";
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
+}
+
+function orderStatusClass(status: string) {
+  if (status === "pending_review") return styles.statusWarning;
+  if (status === "approved") return styles.statusSuccess;
+  if (status === "rejected") return styles.statusDanger;
+  return styles.statusNeutral;
 }
 
 export default function OrdersAdmin() {
@@ -129,6 +138,7 @@ export default function OrdersAdmin() {
   const visible = useMemo(() => filter === "all" ? orders : orders.filter((order) => order.status === filter), [orders, filter]);
   const pendingCount = orders.filter((order) => order.status === "pending_review").length;
   const emailBadge = emailConfigured ? (emailEnabled ? "Live" : "Ready · disabled") : "Needs app password";
+  const emailBadgeClass = emailConfigured ? (emailEnabled ? styles.badgeSuccess : styles.badgeNeutral) : styles.badgeWarning;
 
   async function saveEmailSettings() {
     if (!session) return;
@@ -224,59 +234,155 @@ export default function OrdersAdmin() {
     finally { setBusy(""); }
   }
 
-  if (checking) return <main className={styles.page}><section className={styles.center}>Checking admin access…</section></main>;
-  if (!session) return <main className={styles.page}><section className={styles.center}><h1>Admin sign-in required</h1><p>Sign in through the Fluxora Admin panel first.</p><a href="/admin">Open Admin</a></section></main>;
-  if (!authorized) return <main className={styles.page}><section className={styles.center}><h1>Not authorized</h1><a href="/admin">Back to Admin</a></section></main>;
-
-  return <main className={styles.page}>
-    <header className={styles.header}>
-      <div><p className={styles.kicker}>Fluxora checkout</p><h1>Orders</h1><p>{pendingCount} awaiting confirmation</p></div>
-      <div className={styles.actions}><button onClick={() => load()} type="button">Refresh</button><a href="/admin">Content Admin</a><a href="/members">Member Manager</a></div>
-    </header>
-
-    {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
-
-    <section className={styles.emailCard}>
-      <div className={styles.emailHead}>
-        <div><p className={styles.kicker}>Notifications</p><h2>Gmail order alerts</h2><p>Get an email as soon as a buyer submits GCash payment details. The alert is not proof of payment — verify the actual GCash transaction before approving access.</p></div>
-        <span className={styles.emailBadge}>{emailBadge}</span>
-      </div>
-      <div className={styles.emailGrid}>
-        <label>Sender Gmail<input type="email" value={emailSender} onChange={(event) => setEmailSender(event.target.value)} placeholder="yourbusiness@gmail.com" /></label>
-        <label>Gmail App Password<input type="password" value={emailPassword} onChange={(event) => setEmailPassword(event.target.value)} placeholder={emailConfigured ? "Leave blank to keep current password" : "16-character Google app password"} autoComplete="new-password" /></label>
-        <label>Alert recipients <span>comma-separated</span><input value={emailRecipients} onChange={(event) => setEmailRecipients(event.target.value)} placeholder="owner@gmail.com, assistant@gmail.com" /></label>
-      </div>
-      <label className={styles.emailToggle}><input type="checkbox" checked={emailEnabled} onChange={(event) => setEmailEnabled(event.target.checked)} /><span>Enable new-order email alerts</span></label>
-      <div className={styles.emailActions}>
-        <button type="button" disabled={emailSaving} onClick={saveEmailSettings}>{emailSaving ? "Saving…" : "Save settings"}</button>
-        <button type="button" disabled={!emailConfigured || emailTesting} onClick={testEmail}>{emailTesting ? "Sending…" : "Send test email"}</button>
-      </div>
-      <p className={styles.emailSecurity}>The Gmail app password is encrypted in Supabase Vault and is never displayed again after saving.</p>
-    </section>
-
-    <nav className={styles.filters}>
-      {["pending_review", "approved", "rejected", "all"].map((value) => <button className={filter === value ? styles.active : ""} key={value} type="button" onClick={() => setFilter(value)}>{value.replaceAll("_", " ")}</button>)}
-    </nav>
-
-    <section className={styles.list}>
-      {visible.map((order) => <article className={styles.order} key={order.id}>
-        <div className={styles.top}><div><span>{order.order_number}</span><strong>{order.buyer_name}</strong><small>{order.buyer_email}</small></div><div className={styles.price}><strong>₱{order.amount_php.toLocaleString()}</strong><span>{order.tier}</span></div></div>
-        <div className={styles.meta}>
-          <span><b>Status</b>{order.status.replaceAll("_", " ")}</span>
-          <span><b>GCash payer</b>{order.payer_name}</span>
-          <span><b>Reference</b>{order.payment_reference}</span>
-          <span><b>Submitted</b>{formatDate(order.created_at)}</span>
-          <span><b>Email alert</b>{(order.notification_status || "pending").replaceAll("_", " ")}{order.notification_sent_at && <small>{formatDate(order.notification_sent_at)}</small>}</span>
-          {order.buyer_phone && <span><b>Phone</b>{order.buyer_phone}</span>}
-          {order.approved_at && <span><b>Approved</b>{formatDate(order.approved_at)}</span>}
+  if (checking) {
+    return (
+      <section className={styles.authState} aria-live="polite" aria-busy="true">
+        <div className={styles.stateCard}>
+          <span className={styles.kicker}>Admin / Orders</span>
+          <h1>Checking admin access…</h1>
+          <p>Verifying your current Fluxora Admin session.</p>
         </div>
-        {order.notification_last_error && <p className={styles.emailError}>Email: {order.notification_last_error}</p>}
-        {(order.notification_status === "failed" || order.notification_status === "disabled") && <button className={styles.emailRetry} disabled={busy === `email-${order.id}` || !emailConfigured || !emailEnabled} type="button" onClick={() => retryEmail(order)}>{busy === `email-${order.id}` ? "Retrying…" : "Retry email alert"}</button>}
-        {order.payment_proof_url && <a className={styles.proof} href={order.payment_proof_url} target="_blank" rel="noopener noreferrer">Open payment proof ↗</a>}
-        {order.rejection_reason && <p className={styles.reason}>{order.rejection_reason}</p>}
-        {order.status === "pending_review" && <div className={styles.orderActions}><button className={styles.approve} disabled={busy === order.id} type="button" onClick={() => approve(order)}>{busy === order.id ? "Working…" : "Confirm & Provision"}</button><button className={styles.reject} disabled={busy === order.id} type="button" onClick={() => reject(order)}>Reject</button></div>}
-      </article>)}
-      {!visible.length && <div className={styles.empty}>No orders in this view.</div>}
+      </section>
+    );
+  }
+
+  if (!session) {
+    return (
+      <section className={styles.authState} aria-labelledby="orders-login-heading">
+        <div className={styles.stateCard}>
+          <span className={styles.kicker}>Protected workspace</span>
+          <h1 id="orders-login-heading">Admin sign-in required</h1>
+          <p>Sign in through the Fluxora Admin panel first.</p>
+          <a className={styles.primaryAction} href="/admin">Open Admin</a>
+        </div>
+      </section>
+    );
+  }
+
+  if (!authorized) {
+    return (
+      <section className={styles.authState} aria-labelledby="orders-unauthorized-heading">
+        <div className={styles.stateCard}>
+          <span className={styles.kicker}>Restricted</span>
+          <h1 id="orders-unauthorized-heading">Not authorized</h1>
+          <p>Your current account is not authorized to review Fluxora orders.</p>
+          <a className={styles.secondaryAction} href="/admin">Back to Admin</a>
+        </div>
+      </section>
+    );
+  }
+
+  return (
+    <section className={styles.workspace} aria-labelledby="orders-heading">
+      <div className={styles.pageHeader}>
+        <div>
+          <span className={styles.kicker}>Admin / Orders</span>
+          <h1 id="orders-heading">Orders</h1>
+          <p>{pendingCount} awaiting confirmation</p>
+        </div>
+        <button className={styles.secondaryAction} onClick={() => load()} type="button">Refresh</button>
+      </div>
+
+      {notice && <div className={styles.notice} role="status" aria-live="polite">{notice}</div>}
+      {error && <div className={styles.error} role="alert">{error}</div>}
+
+      <section className={styles.emailCard} aria-labelledby="gmail-alerts-heading">
+        <div className={styles.emailHead}>
+          <div>
+            <span className={styles.kicker}>Notifications</span>
+            <h2 id="gmail-alerts-heading">Gmail order alerts</h2>
+            <p>Get an email as soon as a buyer submits GCash payment details. The alert is not proof of payment — verify the actual GCash transaction before approving access.</p>
+          </div>
+          <span className={`${styles.emailBadge} ${emailBadgeClass}`}>{emailBadge}</span>
+        </div>
+
+        <div className={styles.emailGrid}>
+          <label>
+            Sender Gmail
+            <input type="email" value={emailSender} onChange={(event) => setEmailSender(event.target.value)} placeholder="yourbusiness@gmail.com" />
+          </label>
+          <label>
+            Gmail App Password
+            <input type="password" value={emailPassword} onChange={(event) => setEmailPassword(event.target.value)} placeholder={emailConfigured ? "Leave blank to keep current password" : "16-character Google app password"} autoComplete="new-password" />
+          </label>
+          <label className={styles.recipientsField}>
+            Alert recipients <span>comma-separated</span>
+            <input value={emailRecipients} onChange={(event) => setEmailRecipients(event.target.value)} placeholder="owner@gmail.com, assistant@gmail.com" />
+          </label>
+        </div>
+
+        <label className={styles.emailToggle}>
+          <input type="checkbox" checked={emailEnabled} onChange={(event) => setEmailEnabled(event.target.checked)} />
+          <span>Enable new-order email alerts</span>
+        </label>
+
+        <div className={styles.emailActions}>
+          <button className={styles.primaryAction} type="button" disabled={emailSaving} onClick={saveEmailSettings}>{emailSaving ? "Saving…" : "Save settings"}</button>
+          <button className={styles.secondaryAction} type="button" disabled={!emailConfigured || emailTesting} onClick={testEmail}>{emailTesting ? "Sending…" : "Send test email"}</button>
+        </div>
+        <p className={styles.emailSecurity}>The Gmail app password is encrypted in Supabase Vault and is never displayed again after saving.</p>
+      </section>
+
+      <nav className={styles.filters} aria-label="Order status filters">
+        {FILTERS.map((value) => (
+          <button
+            className={filter === value ? styles.activeFilter : ""}
+            key={value}
+            type="button"
+            aria-pressed={filter === value}
+            onClick={() => setFilter(value)}
+          >
+            {value.replaceAll("_", " ")}
+          </button>
+        ))}
+      </nav>
+
+      <section className={styles.list} aria-label="Manual orders">
+        {visible.map((order) => (
+          <article className={styles.orderCard} key={order.id}>
+            <div className={styles.orderTop}>
+              <div className={styles.identityBlock}>
+                <span className={styles.orderNumber}>{order.order_number}</span>
+                <strong>{order.buyer_name}</strong>
+                <small>{order.buyer_email}</small>
+              </div>
+              <div className={styles.amountBlock}>
+                <strong>₱{order.amount_php.toLocaleString()}</strong>
+                <span>{order.tier}</span>
+              </div>
+              <span className={`${styles.statusBadge} ${orderStatusClass(order.status)}`}>{order.status.replaceAll("_", " ")}</span>
+            </div>
+
+            <div className={styles.metaGrid}>
+              <span><b>GCash payer</b>{order.payer_name}</span>
+              <span className={styles.referenceCell}><b>Payment reference</b><code>{order.payment_reference}</code></span>
+              <span><b>Submitted</b>{formatDate(order.created_at)}</span>
+              <span><b>Email alert</b>{(order.notification_status || "pending").replaceAll("_", " ")}{order.notification_sent_at && <small>{formatDate(order.notification_sent_at)}</small>}</span>
+              {order.buyer_phone && <span><b>Phone</b>{order.buyer_phone}</span>}
+              {order.approved_at && <span><b>Approved</b>{formatDate(order.approved_at)}</span>}
+            </div>
+
+            {order.notification_last_error && <p className={styles.emailError}>Email: {order.notification_last_error}</p>}
+
+            <div className={styles.secondaryRow}>
+              {(order.notification_status === "failed" || order.notification_status === "disabled") && (
+                <button className={styles.emailRetry} disabled={busy === `email-${order.id}` || !emailConfigured || !emailEnabled} type="button" onClick={() => retryEmail(order)}>{busy === `email-${order.id}` ? "Retrying…" : "Retry email alert"}</button>
+              )}
+              {order.payment_proof_url && <a className={styles.proofLink} href={order.payment_proof_url} target="_blank" rel="noopener noreferrer">Open payment proof ↗</a>}
+            </div>
+
+            {order.rejection_reason && <p className={styles.rejectionReason}><strong>Rejection reason</strong>{order.rejection_reason}</p>}
+
+            {order.status === "pending_review" && (
+              <div className={styles.orderActions}>
+                <button className={styles.approveAction} disabled={busy === order.id} type="button" onClick={() => approve(order)}>{busy === order.id ? "Working…" : "Confirm & Provision"}</button>
+                <button className={styles.rejectAction} disabled={busy === order.id} type="button" onClick={() => reject(order)}>Reject</button>
+              </div>
+            )}
+          </article>
+        ))}
+        {!visible.length && <div className={styles.emptyState}>No orders in this view.</div>}
+      </section>
     </section>
-  </main>;
+  );
 }
