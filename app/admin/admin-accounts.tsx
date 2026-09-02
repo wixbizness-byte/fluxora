@@ -165,56 +165,66 @@ export default function AdminAccounts() {
   }
 
   if (checking) {
-    return <main className={styles.adminPage}><section className={styles.emptyState}><p>Checking admin access…</p></section></main>;
+    return (
+      <section className={styles.authState} aria-live="polite" aria-busy="true">
+        <div className={styles.emptyState}>
+          <span className={styles.kicker}>Admin Accounts</span>
+          <h1>Checking admin access</h1>
+          <p>Verifying your current Fluxora Admin session…</p>
+        </div>
+      </section>
+    );
   }
 
   if (!session) {
     return (
-      <main className={styles.adminPage}>
-        <section className={styles.emptyState}>
+      <section className={styles.authState} aria-labelledby="accounts-login-heading">
+        <div className={styles.emptyState}>
           <span className={styles.kicker}>Protected workspace</span>
-          <h1>Admin Accounts</h1>
+          <h1 id="accounts-login-heading">Admin Accounts</h1>
           <p>Sign in through the Fluxora Admin page first.</p>
-          <a href="/admin">Go to Admin Login</a>
-        </section>
-      </main>
+          <a className={styles.primaryAction} href="/admin">Go to Admin Login</a>
+        </div>
+      </section>
     );
   }
 
   if (!authorized) {
     return (
-      <main className={styles.adminPage}>
-        <section className={styles.emptyState}>
+      <section className={styles.authState} aria-labelledby="accounts-not-authorized-heading">
+        <div className={styles.emptyState}>
           <span className={styles.kicker}>Restricted</span>
-          <h1>Not authorized</h1>
+          <h1 id="accounts-not-authorized-heading">Not authorized</h1>
           <p>Your Google account is not listed as a Fluxora admin.</p>
-          <a href="/admin">Back to Admin</a>
-        </section>
-      </main>
+          <a className={styles.secondaryAction} href="/admin">Back to Admin</a>
+        </div>
+      </section>
     );
   }
 
-  return (
-    <main className={styles.adminPage}>
-      <header className={styles.adminHeader}>
-        <div>
-          <span className={styles.kicker}>Fluxora access control</span>
-          <h1>Admin Accounts</h1>
-          <p>View, add, and remove Google accounts that can access Fluxora Admin.</p>
-        </div>
-        <div className={styles.headerActions}>
-          <a href="/admin">Back to Admin</a>
-        </div>
-      </header>
+  const noticeIsBusy = notice === "Adding admin…" || notice === "Removing admin…";
+  const noticeIsSuccess = notice.endsWith("now has admin access.") || notice.endsWith("no longer has admin access.");
+  const noticeIsError = Boolean(notice) && !noticeIsBusy && !noticeIsSuccess;
 
-      <section className={styles.settingsCard}>
+  return (
+    <div className={styles.adminWorkspace}>
+      <section className={styles.adminIntro} aria-labelledby="admin-accounts-heading">
         <div>
-          <span className={styles.kicker}>Add administrator</span>
-          <h2>Authorize a Gmail</h2>
+          <span className={styles.kicker}>Admin</span>
+          <h1 id="admin-accounts-heading">Admin Accounts</h1>
+          <p>Manage Google accounts authorized to access Fluxora Admin.</p>
+          <span className={styles.accountLine}>{session.user.email}</span>
+        </div>
+      </section>
+
+      <section className={styles.settingsCard} aria-labelledby="authorize-admin-heading">
+        <div>
+          <span className={styles.kicker}>Authorize administrator</span>
+          <h2 id="authorize-admin-heading">Add an administrator</h2>
           <p>The Gmail must have signed in to Fluxora at least once so it already exists in Supabase Auth.</p>
         </div>
         <form className={styles.settingsFields} onSubmit={addAdmin}>
-          <label style={{ gridColumn: "1 / span 2" }}>
+          <label className={styles.fullField}>
             Gmail address
             <input
               type="email"
@@ -225,32 +235,36 @@ export default function AdminAccounts() {
               disabled={busy}
             />
           </label>
-          <button type="submit" disabled={busy}>{busy ? "Working…" : "Add Admin"}</button>
+          <button className={styles.primaryAction} type="submit" disabled={busy}>{busy ? "Working…" : "Add Admin"}</button>
         </form>
       </section>
 
-      {notice && <div className={styles.notice}>{notice}</div>}
+      <p
+        className={`${styles.notice} ${noticeIsError ? styles.noticeError : ""} ${noticeIsSuccess ? styles.noticeSuccess : ""}`}
+        role="status"
+        aria-live="polite"
+      >
+        {notice}
+      </p>
 
-      <section className={styles.editorHeader}>
+      <section className={styles.editorHeader} aria-labelledby="authorized-accounts-heading">
         <div>
           <span className={styles.kicker}>Authorized accounts</span>
-          <h2>{accounts.length} Admin{accounts.length === 1 ? "" : "s"}</h2>
+          <h2 id="authorized-accounts-heading">{accounts.length} Admin{accounts.length === 1 ? "" : "s"}</h2>
           <p>Removing an account revokes its admin access immediately. The last remaining admin cannot be removed.</p>
         </div>
       </section>
 
-      <div className={styles.rowGrid} style={{ marginTop: 18 }}>
+      <section className={styles.accountGrid} aria-label="Authorized Fluxora administrators">
         {sortedAccounts.map((account) => (
-          <article className={styles.rowCard} key={account.user_id}>
-            <div className={styles.rowTop} style={{ minHeight: 0, marginBottom: 12 }}>
+          <article className={styles.accountCard} key={account.user_id}>
+            <div className={styles.accountCardHeader}>
               <div>
-                <span>{account.user_id === currentUserId ? "Current account" : "Administrator"}</span>
+                <span className={styles.accountRole}>{account.user_id === currentUserId ? "Current account" : "Administrator"}</span>
                 <strong>{account.email || "Email unavailable"}</strong>
               </div>
             </div>
-            <p style={{ color: "#cdb7c0", margin: 0, lineHeight: 1.6, fontSize: ".8rem" }}>
-              Added {formatAdded(account.created_at)}
-            </p>
+            <p className={styles.accountMeta}>Added {formatAdded(account.created_at)}</p>
             <div className={styles.rowActions}>
               <button
                 type="button"
@@ -263,7 +277,7 @@ export default function AdminAccounts() {
             </div>
           </article>
         ))}
-      </div>
-    </main>
+      </section>
+    </div>
   );
 }
