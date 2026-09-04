@@ -6,18 +6,18 @@ import { useState } from "react";
 import styles from "./fluxora.module.css";
 
 type HeaderLink = { href: string; label: string; target?: "_blank" | "_self" };
-type SiteHeaderProps = { cta: HeaderLink; links: HeaderLink[]; brandHref?: string; brandLabel?: string; brandTarget?: "_blank" | "_self" };
+type SiteHeaderProps = { cta: HeaderLink; links: HeaderLink[]; active?: string; brandHref?: string; brandLabel?: string; brandTarget?: "_blank" | "_self" };
 const NAV_ID = "site-header-nav";
 function externalRel(target?: string) {
   return target === "_blank" ? "noopener noreferrer" : undefined;
 }
-function NavLink({ className, link, onClick }: { className: string; link: HeaderLink; onClick: () => void }) {
+function NavLink({ className, link, active, onClick }: { className: string; link: HeaderLink; active?: boolean; onClick: () => void }) {
   if (link.target === "_blank" || link.href.startsWith("http")) {
-    return <a className={className} href={link.href} target={link.target} rel={externalRel(link.target)} onClick={onClick}>{link.label}</a>;
+    return <a className={className} data-active={active || undefined} href={link.href} target={link.target} rel={externalRel(link.target)} onClick={onClick}>{link.label}</a>;
   }
-  return <Link className={className} href={link.href} onClick={onClick}>{link.label}</Link>;
+  return <Link className={className} data-active={active || undefined} href={link.href} onClick={onClick}>{link.label}</Link>;
 }
-export function SiteHeader({ brandHref = "/", brandLabel = "Fluxora", brandTarget, cta, links }: SiteHeaderProps) {
+export function SiteHeader({ active, brandHref = "/", brandLabel = "Fluxora", brandTarget, cta, links }: SiteHeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
   return <header className={styles.siteHeader}>
@@ -27,7 +27,7 @@ export function SiteHeader({ brandHref = "/", brandLabel = "Fluxora", brandTarge
         {menuOpen ? <X size={20} strokeWidth={2} /> : <Menu size={20} strokeWidth={2} />}
       </button>
       <nav id={NAV_ID} className={[styles.headerNav, menuOpen ? styles.headerNavOpen : ""].filter(Boolean).join(" ")} aria-label="Primary navigation">
-        {links.map((link) => <NavLink className={styles.headerLink} key={link.href} link={link} onClick={closeMenu} />)}
+        {links.map((link) => <NavLink className={styles.headerLink} key={link.href} link={link} active={link.label === active} onClick={closeMenu} />)}
         <NavLink className={[styles.button, styles.buttonPrimary, styles.headerCta].join(" ")} link={cta} onClick={closeMenu} />
       </nav>
     </div>

@@ -25,17 +25,15 @@
 .sectionTitle { margin: 0; color: var(--fluxora-color-text); font: 700 clamp(28px, 4vw, 44px)/1.1 var(--font-inter), Inter, Arial, sans-serif; letter-spacing: -.03em; }
 .sectionDescription { max-width: 620px; margin: var(--fluxora-space-3) 0 0; color: var(--fluxora-color-text-secondary); font: 400 16px/1.6 var(--font-inter), Inter, Arial, sans-serif; }
 .sectionHeadingCenter .sectionDescription { margin-inline: auto; }
-.siteHeader { position: sticky; z-index: 20; top: 0; border-bottom: 1px solid rgba(228, 228, 231, .82); background: rgba(255, 255, 255, .82); box-shadow: 0 1px 10px rgba(24, 24, 27, .025); backdrop-filter: blur(16px) saturate(135%); -webkit-backdrop-filter: blur(16px) saturate(135%); font-family: var(--font-inter), Inter, Arial, sans-serif; }
+.siteHeader { position: sticky; z-index: 20; top: 0; border-bottom: 1px solid var(--fluxora-color-border); background: var(--fluxora-color-surface); box-shadow: 0 1px 10px rgba(24, 24, 27, .025); font-family: var(--font-inter), Inter, Arial, sans-serif; }
 .siteHeaderInner { width: min(100% - 32px, 1180px); min-height: 64px; display: flex; align-items: center; gap: var(--fluxora-space-6); margin-inline: auto; }
 .brand { display: inline-flex; align-items: center; gap: var(--fluxora-space-2); color: var(--fluxora-color-text); font-weight: 700; text-decoration: none; }
 .brandMark { width: 28px; height: 28px; flex: 0 0 auto; object-fit: contain; transition: transform 220ms ease, filter 220ms ease; }
 .brand:hover .brandMark { transform: translateY(-1px) rotate(-2deg); filter: drop-shadow(0 5px 7px rgba(102, 88, 232, .16)); }
 .brandLabel { font-size: 16px; letter-spacing: -.02em; }
 .headerNav { display: flex; align-items: center; gap: var(--fluxora-space-6); margin-left: auto; }
-.headerLink { position: relative; color: var(--fluxora-color-text-secondary); font-size: 15px; font-weight: 600; text-decoration: none; transition: color 160ms ease; }
-.headerLink::after { position: absolute; right: 0; bottom: -7px; left: 0; height: 2px; border-radius: 999px; background: var(--fluxora-color-brand); transform: scaleX(0); transform-origin: center; transition: transform 180ms ease; content: ""; }
-.headerLink:hover { color: var(--fluxora-color-brand); }
-.headerLink:hover::after { transform: scaleX(1); }
+.headerLink { color: var(--fluxora-color-text-secondary); font-size: 15px; font-weight: 600; text-decoration: none; padding: 8px 11px; border-radius: var(--fluxora-radius-md); transition: color 160ms ease, background-color 160ms ease; }
+.headerLink:hover, .headerLink[data-active="true"] { color: var(--fluxora-color-brand); background: var(--fluxora-color-brand-soft); }
 .headerCta { min-height: 44px; margin-left: var(--fluxora-space-2); text-decoration: none; }
 .headerMenuButton { width: 44px; height: 44px; display: none; place-items: center; margin-left: auto; padding: 0; border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-md); color: var(--fluxora-color-text); background: rgba(255, 255, 255, .9); cursor: pointer; box-shadow: var(--fluxora-shadow-sm); }
 .siteFooter { border-top: 1px solid var(--fluxora-color-border); background: rgba(255, 255, 255, .86); font-family: var(--font-inter), Inter, Arial, sans-serif; backdrop-filter: blur(10px); }
@@ -49,11 +47,10 @@
   .headerNav { position: absolute; top: calc(100% + 1px); right: 16px; left: 16px; display: none; align-items: stretch; flex-direction: column; gap: var(--fluxora-space-1); padding: var(--fluxora-space-2); border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-lg); background: rgba(255, 255, 255, .97); box-shadow: var(--fluxora-shadow-lg); backdrop-filter: blur(16px); }
   .headerNavOpen { display: flex; }
   .headerLink { padding: var(--fluxora-space-3); }
-  .headerLink::after { display: none; }
   .headerCta { margin: var(--fluxora-space-1) 0 0; }
   .siteFooter > .siteFooterInner { gap: var(--fluxora-space-2); }
 }
 @media (prefers-reduced-motion: reduce) {
-  .button, .brandMark, .headerLink::after { transition: none; }
+  .button, .brandMark, .headerLink { transition: none; }
   .buttonPrimary:not(:disabled):hover, .buttonSecondary:not(:disabled):hover, .buttonPrimary:not(:disabled):active, .buttonSecondary:not(:disabled):active, .brand:hover .brandMark { transform: none; }
 }
