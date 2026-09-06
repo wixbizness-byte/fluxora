@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node --test tests/member-manager-creator-preview.test.mjs && next build",
     "start": "next start",
     "lint": "eslint"
   },
