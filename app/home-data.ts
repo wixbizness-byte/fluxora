@@ -4,6 +4,7 @@ export type HomeGalleryImage = {
   id: string;
   image_url: string;
   target_url: string;
+  cta_label: string;
   alt_text: string;
   row_position: GalleryRow;
   sort_order: number;
@@ -56,6 +57,7 @@ const fallbackImages: HomeGalleryImage[] = [
   alt_text: alt as string,
   image_url: image as string,
   target_url: target as string,
+  cta_label: "View prompt",
   is_active: true,
 }));
 
