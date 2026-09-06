@@ -1,0 +1,25 @@
+name: Fluxora Member V2 Admin Hotfix
+
+on:
+  push:
+    branches:
+      - fluxora-member-v2-admin-hotfix
+  workflow_dispatch:
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout hotfix branch
+        uses: actions/checkout@v4
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Member Manager V2 contract
+        run: node --test tests/member-manager-v2-effective-access.test.mjs
+      - name: Production build
+        run: npm run build
