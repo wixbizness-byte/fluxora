@@ -203,3 +203,27 @@ export async function upsertRow<T>(table: string, body: Record<string, unknown>,
   });
   return { data: result.data?.[0] || null, error: result.error };
 }
+
+export async function uploadPublicFile(bucket: string, path: string, file: File): Promise<ApiResult<string>> {
+  const { url, key } = getConfig();
+  if (!url || !key) return { data: null, error: { message: "Supabase environment variables are missing." } };
+
+  const session = await getSession();
+  if (!session) return { data: null, error: { message: "Your admin session has expired. Sign in again." } };
+
+  const safeBucket = encodeURIComponent(bucket);
+  const safePath = path.split("/").filter(Boolean).map((part) => encodeURIComponent(part)).join("/");
+  const response = await fetch(`${url}/storage/v1/object/${safeBucket}/${safePath}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${session.access_token}`,
+      "Content-Type": file.type || "application/octet-stream",
+      "x-upsert": "true",
+    },
+    body: file,
+  });
+
+  if (!response.ok) return { data: null, error: { message: await parseError(response) } };
+  return { data: `${url}/storage/v1/object/public/${safeBucket}/${safePath}`, error: null };
+}
