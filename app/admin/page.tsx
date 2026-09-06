@@ -1,5 +1,6 @@
 import AdminShell from "./admin-shell";
 import GoogleAdminGate from "./google-admin-gate";
+import HomepageContentAdmin from "./homepage-content-admin";
 import PricingTierAdminEnhancer from "./pricing-tier-admin-enhancer";
 
 export const metadata = {
@@ -10,6 +11,7 @@ export const metadata = {
 export default function AdminPage() {
   return (
     <AdminShell>
+      <HomepageContentAdmin />
       <GoogleAdminGate />
       <PricingTierAdminEnhancer />
     </AdminShell>
