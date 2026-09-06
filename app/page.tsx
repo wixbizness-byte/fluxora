@@ -72,9 +72,6 @@ export default async function HomePage() {
               <input name="search" placeholder='Search tools — "product video", "fashion", "affiliate"…' aria-label="Search Fluxora tools" />
               <button type="submit">Search</button>
             </form>
-            <div className={styles.heroChips} aria-label="Popular directions">
-              {['Product content','AI video','Fashion','Social media','Learn AI'].map((chip) => <span key={chip}>{chip}</span>)}
-            </div>
           </div>
         </PageContainer>
       </section>
