@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { getSession, queryOne, queryRows, updateRow, type SupabaseSession } from "../lib/supabase";
+import { getSession, queryOne, queryRows, updateRow, uploadPublicFile, type SupabaseSession } from "../lib/supabase";
 import styles from "./homepage-content-admin.module.css";
 
 type Primitive = string | number | boolean | null;
@@ -10,9 +10,14 @@ type ToolRow = Record<string, Primitive> & { id: string; sort_order?: Primitive 
 type FaqRow = Record<string, Primitive> & { id: string; sort_order?: Primitive };
 
 const rowOrder = ["top", "middle", "bottom"];
+const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 function patch<T extends { id: string }>(rows: T[], id: string, key: string, value: Primitive) {
   return rows.map((row) => row.id === id ? { ...row, [key]: value } : row);
+}
+
+function safeFileName(name: string) {
+  return name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "image";
 }
 
 export default function HomepageContentAdmin() {
@@ -58,6 +63,41 @@ export default function HomepageContentAdmin() {
     setBusy("");
   }
 
+  async function uploadGalleryImage(row: GalleryRow, file: File) {
+    if (!file.type.startsWith("image/")) {
+      setNotice("Choose an image file.");
+      return;
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      setNotice("Image must be 10 MB or smaller.");
+      return;
+    }
+
+    const uploadKey = `upload-${row.id}`;
+    setBusy(uploadKey);
+    setNotice("Uploading homepage image…");
+    const rowName = String(row.row_position || "row");
+    const order = Number(row.sort_order || 0);
+    const path = `hero/${rowName}-${order}-${Date.now()}-${safeFileName(file.name)}`;
+    const uploaded = await uploadPublicFile("homepage-media", path, file);
+    if (uploaded.error || !uploaded.data) {
+      setNotice(uploaded.error?.message || "Image upload failed.");
+      setBusy("");
+      return;
+    }
+
+    const saved = await updateRow<GalleryRow>("gallery_images", row.id, { image_url: uploaded.data });
+    if (saved.error) {
+      setNotice(saved.error.message);
+      setBusy("");
+      return;
+    }
+
+    setGallery((current) => patch(current, row.id, "image_url", uploaded.data));
+    setNotice("Image uploaded and published to this homepage slot.");
+    setBusy("");
+  }
+
   if (!session || !authorized) return null;
 
   return (
@@ -75,7 +115,7 @@ export default function HomepageContentAdmin() {
 
       <div className={styles.sectionBlock}>
         <div className={styles.sectionTitle}>
-          <div><h3>3 moving image rows</h3><p>Fixed to 6 slots per row. Top and bottom move left; middle moves right.</p></div>
+          <div><h3>3 moving image rows</h3><p>Fixed to 6 slots per row. Upload any image directly or paste an image URL. Each slot can link to a prompt, tool, workflow, GPT, or any other resource.</p></div>
           <strong>18 slots · max 6 per row</strong>
         </div>
         {rowOrder.map((rowName) => (
@@ -85,11 +125,13 @@ export default function HomepageContentAdmin() {
               {(groupedGallery[rowName] || []).map((row: GalleryRow) => (
                 <article className={styles.itemCard} key={row.id}>
                   <div className={styles.preview}>{row.image_url ? <img src={String(row.image_url)} alt="" /> : <span>No image</span>}</div>
+                  <label>Upload image<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={busy === `upload-${row.id}`} onChange={(e: ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) void uploadGalleryImage(row, file); e.currentTarget.value = ""; }} /></label>
                   <label>Image URL<input value={String(row.image_url || "")} onChange={(e: ChangeEvent<HTMLInputElement>) => setGallery((current) => patch(current,row.id,"image_url",e.target.value))} /></label>
                   <label>Click / preview link<input value={String(row.target_url || "")} onChange={(e: ChangeEvent<HTMLInputElement>) => setGallery((current) => patch(current,row.id,"target_url",e.target.value))} /></label>
+                  <label>CTA label<input placeholder="View prompt / Open tool / View workflow" value={String(row.cta_label || "")} onChange={(e: ChangeEvent<HTMLInputElement>) => setGallery((current) => patch(current,row.id,"cta_label",e.target.value))} /></label>
                   <label>Alt text<input value={String(row.alt_text || "")} onChange={(e: ChangeEvent<HTMLInputElement>) => setGallery((current) => patch(current,row.id,"alt_text",e.target.value))} /></label>
                   <label className={styles.toggle}><input type="checkbox" checked={Boolean(row.is_active)} onChange={(e) => setGallery((current) => patch(current,row.id,"is_active",e.target.checked))} /> Show image</label>
-                  <button type="button" onClick={() => save("gallery_images", row)} disabled={busy === `gallery_images-${row.id}`}>{busy === `gallery_images-${row.id}` ? "Saving…" : "Save slot"}</button>
+                  <button type="button" onClick={() => save("gallery_images", row)} disabled={busy === `gallery_images-${row.id}` || busy === `upload-${row.id}`}>{busy === `gallery_images-${row.id}` ? "Saving…" : busy === `upload-${row.id}` ? "Uploading…" : "Save slot"}</button>
                 </article>
               ))}
             </div>
