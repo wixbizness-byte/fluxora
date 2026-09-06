@@ -8,6 +8,18 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
+        source: "/refer/admin",
+        destination: `${PROMPTS_ORIGIN}/prompts/admin/referrals`,
+      },
+      {
+        source: "/refer/admin/tree",
+        destination: `${PROMPTS_ORIGIN}/prompts/admin/referrals/tree`,
+      },
+      {
+        source: "/refer/admin/risk",
+        destination: `${PROMPTS_ORIGIN}/prompts/admin/referral-risk`,
+      },
+      {
         source: "/prompts",
         destination: `${PROMPTS_ORIGIN}/prompts`,
       },
