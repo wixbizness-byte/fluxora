@@ -35,3 +35,11 @@ test("homepage admin supports direct image upload", () => {
   assert.match(admin, /uploadPublicFile/);
   assert.match(lib, /export async function uploadPublicFile/);
 });
+
+test("featured preview cards support direct image upload too", () => {
+  const admin = read("app/admin/homepage-content-admin.tsx");
+  assert.match(admin, /async function uploadToolImage/);
+  assert.match(admin, /tools\/\$\{order\}-\$\{Date\.now\(\)\}/);
+  assert.match(admin, /uploadToolImage\(row, file\)/);
+  assert.match(admin, /Uploading featured preview image/);
+});
