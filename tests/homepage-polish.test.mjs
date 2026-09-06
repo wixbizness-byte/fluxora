@@ -13,6 +13,13 @@ test("homepage removes hero chips and keeps sans-serif typography", () => {
   assert.match(css, /\.previewMeta h2[^}]*var\(--font-inter\)/s);
 });
 
+test("homepage search UI is removed", () => {
+  const page = read("app/page.tsx");
+  assert.equal(page.includes("search={{"), false, "header search should be removed");
+  assert.equal(page.includes("heroSearch"), false, "hero search form should be removed");
+  assert.equal(page.includes("Search Fluxora"), false, "homepage should not render a search control");
+});
+
 test("mobile hero has visible gallery with edge blending", () => {
   const css = read("app/home.module.css");
   assert.match(css, /@media \(max-width: 720px\)[\s\S]*\.heroGallery \{[^}]*opacity:\s*\.98/s);
