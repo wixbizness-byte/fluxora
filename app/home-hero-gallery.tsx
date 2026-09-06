@@ -63,8 +63,8 @@ export function HomeHeroGallery({ rows }: { rows: GalleryRows }) {
             <div className={styles.previewMeta}>
               <span>Fluxora preview</span>
               <h2>{selected.alt_text || "Creative preview"}</h2>
-              <p>See the visual direction up close, then open the source prompt if you want to study or adapt it.</p>
-              {selected.target_url && <a href={selected.target_url}>View prompt <ExternalLink size={15} /></a>}
+              <p>See the visual direction up close, then open the linked resource to explore it.</p>
+              {selected.target_url && <a href={selected.target_url} target="_blank" rel="noopener noreferrer">{selected.cta_label || "Open resource"} <ExternalLink size={15} /></a>}
             </div>
           </div>
         </div>
