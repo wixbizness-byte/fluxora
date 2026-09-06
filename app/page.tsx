@@ -52,7 +52,6 @@ export default async function HomePage() {
           { href: "/prompts", label: "Prompts", target: "_blank" },
           { href: "/tools", label: "Tools", target: "_blank" },
         ]}
-        search={{ href: "/tools", placeholder: "Search Fluxora", param: "search" }}
         cta={{ href: "/start", label: "Start with Fluxora" }}
       />
 
@@ -67,11 +66,6 @@ export default async function HomePage() {
               <Button href="/tools">Explore tools <ArrowUpRight size={16} /></Button>
               <Button href="/start" variant="secondary">Start with Fluxora</Button>
             </div>
-            <form className={styles.heroSearch} action="/tools">
-              <span aria-hidden="true">⌕</span>
-              <input name="search" placeholder='Search tools — "product video", "fashion", "affiliate"…' aria-label="Search Fluxora tools" />
-              <button type="submit">Search</button>
-            </form>
           </div>
         </PageContainer>
       </section>
