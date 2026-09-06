@@ -63,15 +63,20 @@ export default function HomepageContentAdmin() {
     setBusy("");
   }
 
-  async function uploadGalleryImage(row: GalleryRow, file: File) {
+  function validateImage(file: File) {
     if (!file.type.startsWith("image/")) {
       setNotice("Choose an image file.");
-      return;
+      return false;
     }
     if (file.size > MAX_UPLOAD_BYTES) {
       setNotice("Image must be 10 MB or smaller.");
-      return;
+      return false;
     }
+    return true;
+  }
+
+  async function uploadGalleryImage(row: GalleryRow, file: File) {
+    if (!validateImage(file)) return;
 
     const uploadKey = `upload-${row.id}`;
     setBusy(uploadKey);
@@ -95,6 +100,33 @@ export default function HomepageContentAdmin() {
 
     setGallery((current) => patch(current, row.id, "image_url", uploaded.data));
     setNotice("Image uploaded and published to this homepage slot.");
+    setBusy("");
+  }
+
+  async function uploadToolImage(row: ToolRow, file: File) {
+    if (!validateImage(file)) return;
+
+    const uploadKey = `tool-upload-${row.id}`;
+    setBusy(uploadKey);
+    setNotice("Uploading featured preview image…");
+    const order = Number(row.sort_order || 0);
+    const path = `tools/${order}-${Date.now()}-${safeFileName(file.name)}`;
+    const uploaded = await uploadPublicFile("homepage-media", path, file);
+    if (uploaded.error || !uploaded.data) {
+      setNotice(uploaded.error?.message || "Featured preview image upload failed.");
+      setBusy("");
+      return;
+    }
+
+    const saved = await updateRow<ToolRow>("homepage_tool_previews", row.id, { image_url: uploaded.data });
+    if (saved.error) {
+      setNotice(saved.error.message);
+      setBusy("");
+      return;
+    }
+
+    setTools((current) => patch(current, row.id, "image_url", uploaded.data));
+    setNotice("Featured preview image uploaded and published.");
     setBusy("");
   }
 
@@ -140,11 +172,12 @@ export default function HomepageContentAdmin() {
       </div>
 
       <div className={styles.sectionBlock}>
-        <div className={styles.sectionTitle}><div><h3>3 tool previews</h3><p>Featured tools shown directly below the Explore Fluxora directory.</p></div><strong>Fixed max 3</strong></div>
+        <div className={styles.sectionTitle}><div><h3>3 tool previews</h3><p>Every field is editable. Upload a new preview image directly or paste an image URL, then customize the badge, title, description, button label, and destination.</p></div><strong>Fixed max 3</strong></div>
         <div className={styles.itemGridThree}>
           {tools.map((row) => (
             <article className={styles.itemCard} key={row.id}>
               <div className={styles.previewWide}>{row.image_url ? <img src={String(row.image_url)} alt="" /> : <span>No image</span>}</div>
+              <label>Upload image<input type="file" accept="image/png,image/jpeg,image/webp,image/gif" disabled={busy === `tool-upload-${row.id}`} onChange={(e: ChangeEvent<HTMLInputElement>) => { const file = e.target.files?.[0]; if (file) void uploadToolImage(row, file); e.currentTarget.value = ""; }} /></label>
               <label>Badge<input value={String(row.badge || "")} onChange={(e) => setTools((current) => patch(current,row.id,"badge",e.target.value))} /></label>
               <label>Title<input value={String(row.title || "")} onChange={(e) => setTools((current) => patch(current,row.id,"title",e.target.value))} /></label>
               <label>Description<textarea value={String(row.description || "")} onChange={(e) => setTools((current) => patch(current,row.id,"description",e.target.value))} /></label>
@@ -152,7 +185,7 @@ export default function HomepageContentAdmin() {
               <label>Button label<input value={String(row.button_label || "")} onChange={(e) => setTools((current) => patch(current,row.id,"button_label",e.target.value))} /></label>
               <label>Button URL<input value={String(row.button_url || "")} onChange={(e) => setTools((current) => patch(current,row.id,"button_url",e.target.value))} /></label>
               <label className={styles.toggle}><input type="checkbox" checked={Boolean(row.is_active)} onChange={(e) => setTools((current) => patch(current,row.id,"is_active",e.target.checked))} /> Show preview</label>
-              <button type="button" onClick={() => save("homepage_tool_previews", row)} disabled={busy === `homepage_tool_previews-${row.id}`}>{busy === `homepage_tool_previews-${row.id}` ? "Saving…" : "Save preview"}</button>
+              <button type="button" onClick={() => save("homepage_tool_previews", row)} disabled={busy === `homepage_tool_previews-${row.id}` || busy === `tool-upload-${row.id}`}>{busy === `homepage_tool_previews-${row.id}` ? "Saving…" : busy === `tool-upload-${row.id}` ? "Uploading…" : "Save preview"}</button>
             </article>
           ))}
         </div>
