@@ -1,0 +1,29 @@
+.panel { margin: 0 0 32px; padding: 26px; border: 1px solid #dfdcea; border-radius: 22px; background: linear-gradient(145deg,#fff,#faf9ff); box-shadow: 0 12px 32px rgba(35,31,80,.05); }
+.heading, .sectionTitle { display: flex; align-items: flex-start; justify-content: space-between; gap: 22px; }
+.heading > div > span { color: #6655f5; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+.heading h2 { margin: 7px 0; font-size: 30px; letter-spacing: -.035em; }
+.heading p, .sectionTitle p { margin: 0; color: #6d6d78; line-height: 1.55; }
+.heading > a { flex: 0 0 auto; padding: 10px 13px; border: 1px solid #dfdcea; border-radius: 11px; color: #6655f5; background: #fff; font-size: 13px; font-weight: 700; text-decoration: none; }
+.notice { min-height: 20px; margin: 14px 0 0; color: #757580; font-size: 12px; }
+.sectionBlock { margin-top: 26px; padding-top: 24px; border-top: 1px solid #e8e6ef; }
+.sectionTitle h3 { margin: 0 0 6px; font-size: 21px; }
+.sectionTitle strong { padding: 6px 9px; border-radius: 999px; color: #6655f5; background: #f0efff; font-size: 11px; white-space: nowrap; }
+.rowGroup { margin-top: 20px; }
+.rowGroup h4 { margin: 0 0 10px; color: #44444f; font-size: 13px; }
+.itemGrid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.itemGridThree { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+.itemCard, .faqCard { padding: 14px; border: 1px solid #e1dfe8; border-radius: 15px; background: #fff; }
+.preview { width: 86px; aspect-ratio: 9/16; overflow: hidden; margin-bottom: 12px; border-radius: 10px; background: #f3f2f7; }
+.previewWide { width: 100%; height: 120px; overflow: hidden; margin-bottom: 12px; border-radius: 10px; background: #f3f2f7; }
+.preview img, .previewWide img { width: 100%; height: 100%; display: block; object-fit: cover; }
+.preview span, .previewWide span { height: 100%; display: grid; place-items: center; color: #9997a2; font-size: 11px; }
+.itemCard label, .faqCard label { display: grid; gap: 5px; margin-top: 9px; color: #5d5c67; font-size: 11px; font-weight: 700; }
+.itemCard input:not([type="checkbox"]), .itemCard textarea, .faqCard input:not([type="checkbox"]), .faqCard textarea { width: 100%; min-height: 38px; padding: 9px 10px; border: 1px solid #dfdce8; border-radius: 9px; color: #22222a; background: #fff; font: inherit; font-weight: 500; outline: 0; }
+.itemCard textarea, .faqCard textarea { min-height: 76px; resize: vertical; }
+.toggle { display: flex !important; align-items: center; gap: 7px !important; }
+.itemCard button, .faqCard button { width: 100%; min-height: 38px; margin-top: 12px; border: 0; border-radius: 9px; color: #fff; background: #6655f5; font-size: 12px; font-weight: 800; cursor: pointer; }
+.itemCard button:disabled, .faqCard button:disabled { opacity: .55; cursor: wait; }
+.faqGrid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+.faqCard > span { color: #6655f5; font-size: 10px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
+@media (max-width: 900px) { .itemGrid, .itemGridThree { grid-template-columns: repeat(2,minmax(0,1fr)); } }
+@media (max-width: 620px) { .panel { padding: 18px; } .heading, .sectionTitle { flex-direction: column; } .itemGrid, .itemGridThree, .faqGrid { grid-template-columns: 1fr; } }
