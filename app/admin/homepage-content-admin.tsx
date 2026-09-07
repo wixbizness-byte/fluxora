@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState, type ChangeEvent } from "react";
-import { getSession, queryOne, queryRows, updateRow, uploadPublicFile, type SupabaseSession } from "../lib/supabase";
+import { getSession, queryOne, queryRows, updateRow, type SupabaseSession } from "../lib/supabase";
+import { uploadHomepageMedia } from "../lib/homepage-media-upload";
 import styles from "./homepage-content-admin.module.css";
 
 type Primitive = string | number | boolean | null;
@@ -14,10 +15,6 @@ const MAX_UPLOAD_BYTES = 10 * 1024 * 1024;
 
 function patch<T extends { id: string }>(rows: T[], id: string, key: string, value: Primitive) {
   return rows.map((row) => row.id === id ? { ...row, [key]: value } : row);
-}
-
-function safeFileName(name: string) {
-  return name.toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "") || "image";
 }
 
 export default function HomepageContentAdmin() {
@@ -81,26 +78,20 @@ export default function HomepageContentAdmin() {
     const uploadKey = `upload-${row.id}`;
     setBusy(uploadKey);
     setNotice("Uploading homepage image…");
-    const rowName = String(row.row_position || "row");
-    const order = Number(row.sort_order || 0);
-    const path = `hero/${rowName}-${order}-${Date.now()}-${safeFileName(file.name)}`;
-    const uploaded = await uploadPublicFile("homepage-media", path, file);
-    if (uploaded.error || !uploaded.data) {
-      setNotice(uploaded.error?.message || "Image upload failed.");
+    try {
+      const activeSession = await getSession();
+      if (!activeSession) throw new Error("Your admin session has expired. Sign in again.");
+      const uploadedUrl = await uploadHomepageMedia(file, "hero", activeSession.access_token);
+      const saved = await updateRow<GalleryRow>("gallery_images", row.id, { image_url: uploadedUrl });
+      if (saved.error) throw new Error(saved.error.message);
+      if (saved.data?.id !== row.id) throw new Error("The image uploaded, but this homepage slot could not be published. Your previous image is still active.");
+      setGallery((current) => patch(current, row.id, "image_url", uploadedUrl));
+      setNotice("Image uploaded and published to this homepage slot.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Image upload failed.");
+    } finally {
       setBusy("");
-      return;
     }
-
-    const saved = await updateRow<GalleryRow>("gallery_images", row.id, { image_url: uploaded.data });
-    if (saved.error) {
-      setNotice(saved.error.message);
-      setBusy("");
-      return;
-    }
-
-    setGallery((current) => patch(current, row.id, "image_url", uploaded.data));
-    setNotice("Image uploaded and published to this homepage slot.");
-    setBusy("");
   }
 
   async function uploadToolImage(row: ToolRow, file: File) {
@@ -109,25 +100,20 @@ export default function HomepageContentAdmin() {
     const uploadKey = `tool-upload-${row.id}`;
     setBusy(uploadKey);
     setNotice("Uploading featured preview image…");
-    const order = Number(row.sort_order || 0);
-    const path = `tools/${order}-${Date.now()}-${safeFileName(file.name)}`;
-    const uploaded = await uploadPublicFile("homepage-media", path, file);
-    if (uploaded.error || !uploaded.data) {
-      setNotice(uploaded.error?.message || "Featured preview image upload failed.");
+    try {
+      const activeSession = await getSession();
+      if (!activeSession) throw new Error("Your admin session has expired. Sign in again.");
+      const uploadedUrl = await uploadHomepageMedia(file, "tools", activeSession.access_token);
+      const saved = await updateRow<ToolRow>("homepage_tool_previews", row.id, { image_url: uploadedUrl });
+      if (saved.error) throw new Error(saved.error.message);
+      if (saved.data?.id !== row.id) throw new Error("The image uploaded, but this featured preview could not be published. Your previous image is still active.");
+      setTools((current) => patch(current, row.id, "image_url", uploadedUrl));
+      setNotice("Featured preview image uploaded and published.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Featured preview image upload failed.");
+    } finally {
       setBusy("");
-      return;
     }
-
-    const saved = await updateRow<ToolRow>("homepage_tool_previews", row.id, { image_url: uploaded.data });
-    if (saved.error) {
-      setNotice(saved.error.message);
-      setBusy("");
-      return;
-    }
-
-    setTools((current) => patch(current, row.id, "image_url", uploaded.data));
-    setNotice("Featured preview image uploaded and published.");
-    setBusy("");
   }
 
   if (!session || !authorized) return null;
