@@ -1,15 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { fetchMemberPortal } from "./member-portal-client";
 import styles from "./member-auth-gate.module.css";
 
 type GateState = "loading" | "ready" | "signed-out" | "error";
-
-type MemberPortalResponse = {
-  role?: "admin" | "member" | "free" | "none";
-  email?: string;
-  error?: string;
-};
 
 function currentReturnTo() {
   if (typeof window === "undefined") return "/member";
@@ -36,19 +31,16 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
     setLoginUrl(loginHref());
 
     try {
-      const response = await fetch("/prompts/api/member-portal", {
-        cache: "no-store",
-        credentials: "include",
-      });
-      const body = (await response.json().catch(() => ({}))) as MemberPortalResponse;
+      const result = await fetchMemberPortal({ force: quiet });
+      const body = result.body;
 
-      if (response.ok && (body.role === "member" || body.role === "admin" || body.role === "free")) {
+      if (result.ok && (body.role === "member" || body.role === "admin" || body.role === "free")) {
         setMessage("");
         moveTo("ready");
         return;
       }
 
-      if (response.status === 401) {
+      if (result.status === 401) {
         setMessage("");
         moveTo("signed-out");
         return;
