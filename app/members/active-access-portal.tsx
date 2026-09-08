@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { createVisibilityPoller } from "../lib/visibility-poller";
 import styles from "./active-access-portal.module.css";
 
 type ActivityRow = {
@@ -57,12 +58,14 @@ export default function ActiveAccessPortal() {
 
   useEffect(() => {
     let cancelled = false;
+    const controller = new AbortController();
 
     async function load() {
       try {
         const response = await fetch("/prompts/api/member-access-usage", {
           cache: "no-store",
           credentials: "include",
+          signal: controller.signal,
         });
         if (cancelled) return;
         if (response.status === 401 || response.status === 403) {
@@ -79,11 +82,12 @@ export default function ActiveAccessPortal() {
       }
     }
 
-    void load();
-    const timer = window.setInterval(load, 60_000);
+    const poller = createVisibilityPoller({ load, intervalMs: 60_000 });
+    void poller.start();
     return () => {
       cancelled = true;
-      window.clearInterval(timer);
+      controller.abort();
+      poller.stop();
     };
   }, []);
 

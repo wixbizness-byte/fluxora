@@ -1,6 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { loadNextBestActionDecision } from "./next-best-action-loader";
+import { createRequestCoordinator } from "./request-coordinator";
 import styles from "./next-best-action.module.css";
 
 type RecommendedTool = {
@@ -51,15 +53,6 @@ type NextBestAction = {
   generatedAt?: string;
 };
 
-type ApiResponse = {
-  nextBestAction?: NextBestAction | null;
-  error?: string;
-};
-
-type RetentionResponse = {
-  retention?: { eligible?: boolean } | null;
-};
-
 const categoryLabels: Record<string, string> = {
   access: "Access",
   onboarding: "Onboarding",
@@ -75,58 +68,47 @@ export default function NextBestActionPanel() {
   const [retentionActive, setRetentionActive] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [coordinator] = useState(() => createRequestCoordinator((signal) => loadNextBestActionDecision<NextBestAction>(fetch, signal)));
 
   const load = useCallback(async () => {
-    try {
-      const [response, retentionResponse] = await Promise.all([
-        fetch("/prompts/api/next-best-action", {
-          cache: "no-store",
-          credentials: "include",
-        }),
-        fetch("/prompts/api/retention", {
-          cache: "no-store",
-          credentials: "include",
-        }).catch(() => null),
-      ]);
-
-      if (response.status === 401) {
-        setData(null);
-        setRetentionActive(false);
-        setError("");
-        setLoading(false);
-        return;
-      }
-
-      if (retentionResponse?.ok) {
-        const retentionBody = (await retentionResponse.json().catch(() => ({}))) as RetentionResponse;
-        const active = Boolean(retentionBody.retention?.eligible);
-        setRetentionActive(active);
-        if (active) {
-          setData(null);
-          setError("");
-          return;
-        }
-      } else {
-        setRetentionActive(false);
-      }
-
-      const body = (await response.json().catch(() => ({}))) as ApiResponse;
-      if (!response.ok) throw new Error(body.error || "Could not choose your next action.");
-      setData(body.nextBestAction || null);
-      setError("");
-    } catch (reason) {
-      setError(reason instanceof Error ? reason.message : "Could not choose your next action.");
-    } finally {
+    const outcome = await coordinator.run();
+    if (!outcome.current) return;
+    if (outcome.status === "rejected") {
+      setError(outcome.reason instanceof Error ? outcome.reason.message : "Could not choose your next action.");
       setLoading(false);
+      return;
     }
-  }, []);
+
+    const decision = outcome.value;
+    if (decision.kind === "retention") {
+      setRetentionActive(true);
+      setData(null);
+      setError("");
+      setLoading(false);
+      return;
+    }
+    setRetentionActive(false);
+    if (decision.kind === "unauthorized") {
+      setData(null);
+      setError("");
+    } else if (decision.kind === "error") {
+      setError(decision.message);
+    } else {
+      setData(decision.data);
+      setError("");
+    }
+    setLoading(false);
+  }, [coordinator]);
 
   useEffect(() => {
     void load();
     const onFocus = () => void load();
     window.addEventListener("focus", onFocus);
-    return () => window.removeEventListener("focus", onFocus);
-  }, [load]);
+    return () => {
+      coordinator.cancel();
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [coordinator, load]);
 
   const context = useMemo(() => {
     const action = data?.action;

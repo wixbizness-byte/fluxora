@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "verify:member-bundle": "next build && node scripts/assert-member-bundle.mjs",
     "start": "next start",
     "lint": "eslint"
   },

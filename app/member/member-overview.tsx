@@ -4,22 +4,10 @@ import Link from "next/link";
 import { ArrowUpRight, FileText, Gift, UserRound, Wrench } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import NextBestActionPanel from "./next-best-action-panel";
+import { useMemberSession, type MemberPortalResponse } from "./member-auth-gate";
+import { visibleOptionalMemberData, type OptionalMemberData } from "./member-overview-state";
+import { createRequestCoordinator } from "./request-coordinator";
 import styles from "./member-overview.module.css";
-
-type Member = {
-  tier?: string;
-  status?: string;
-  expires_at?: string | null;
-  creator_preview_active?: boolean;
-  creator_preview_expires_at?: string | null;
-  effective_access?: string;
-};
-
-type MemberPortalResponse = {
-  role?: "admin" | "member" | "free" | "none";
-  email?: string;
-  member?: Member;
-};
 
 type CommunityProfile = {
   username?: string;
@@ -45,8 +33,16 @@ type MemberOverviewData = {
   profile: CommunityProfile | null;
   progression: ProgressionResponse["progression"] | null;
   activity: ActivityResponse["activity"] | null;
-  loading: boolean;
+  profileLoading: boolean;
+  progressionLoading: boolean;
+  activityLoading: boolean;
 };
+
+type MemberOptionalData = OptionalMemberData<
+  CommunityProfile,
+  ProgressionResponse["progression"],
+  ActivityResponse["activity"]
+>;
 
 const MemberOverviewContext = createContext<MemberOverviewData | null>(null);
 
@@ -84,48 +80,74 @@ function formatExpiry(value: string | null | undefined) {
 }
 
 export function MemberOverviewProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState<MemberOverviewData>({
-    memberPortal: null,
+  const { account } = useMemberSession();
+  const accountKey = `${account.role || "none"}:${account.email || ""}`;
+  const [optionalData, setOptionalData] = useState<MemberOptionalData>({
+    ownerKey: accountKey,
     profile: null,
     progression: null,
     activity: null,
-    loading: true,
+    profileLoading: true,
+    progressionLoading: true,
+    activityLoading: true,
   });
 
-  const load = useCallback((signal: AbortSignal) => {
-    void Promise.allSettled([
-      responseBody<MemberPortalResponse>("/prompts/api/member-portal", signal),
-      responseBody<ProfileResponse>("/prompts/api/community-profile", signal),
-      responseBody<ProgressionResponse>("/prompts/api/progression-profile", signal),
-      responseBody<ActivityResponse>("/prompts/api/daily-activity", signal),
-    ]).then((results) => {
-      if (signal.aborted) return;
-      const valueAt = <T,>(index: number) => results[index].status === "fulfilled" ? results[index].value as T | null : null;
-      const profile = valueAt<ProfileResponse>(1)?.profile || null;
-      const progression = valueAt<ProgressionResponse>(2)?.progression || null;
-      const activity = valueAt<ActivityResponse>(3)?.activity || null;
-      setData({
-        memberPortal: valueAt<MemberPortalResponse>(0),
-        profile,
-        progression,
-        activity,
-        loading: false,
-      });
+  const coordinators = useMemo(() => ({
+    profile: createRequestCoordinator((signal) => responseBody<ProfileResponse>("/prompts/api/community-profile", signal)),
+    progression: createRequestCoordinator((signal) => responseBody<ProgressionResponse>("/prompts/api/progression-profile", signal)),
+    activity: createRequestCoordinator((signal) => responseBody<ActivityResponse>("/prompts/api/daily-activity", signal)),
+  }), [accountKey]);
+
+  const load = useCallback(() => {
+    void coordinators.profile.run().then((outcome) => {
+      if (!outcome.current) return;
+      setOptionalData((current) => ({
+        ...current,
+        profile: outcome.status === "fulfilled" ? outcome.value?.profile || null : null,
+        profileLoading: false,
+      }));
     });
-  }, []);
+    void coordinators.progression.run().then((outcome) => {
+      if (!outcome.current) return;
+      setOptionalData((current) => ({
+        ...current,
+        progression: outcome.status === "fulfilled" ? outcome.value?.progression || null : null,
+        progressionLoading: false,
+      }));
+    });
+    void coordinators.activity.run().then((outcome) => {
+      if (!outcome.current) return;
+      setOptionalData((current) => ({
+        ...current,
+        activity: outcome.status === "fulfilled" ? outcome.value?.activity || null : null,
+        activityLoading: false,
+      }));
+    });
+  }, [coordinators]);
 
   useEffect(() => {
-    const controller = new AbortController();
-    load(controller.signal);
-    const onFocus = () => load(controller.signal);
+    setOptionalData({
+      ownerKey: accountKey,
+      profile: null,
+      progression: null,
+      activity: null,
+      profileLoading: true,
+      progressionLoading: true,
+      activityLoading: true,
+    });
+    load();
+    const onFocus = () => load();
     window.addEventListener("focus", onFocus);
     return () => {
-      controller.abort();
+      coordinators.profile.cancel();
+      coordinators.progression.cancel();
+      coordinators.activity.cancel();
       window.removeEventListener("focus", onFocus);
     };
-  }, [load]);
+  }, [accountKey, coordinators, load]);
 
-  return <MemberOverviewContext.Provider value={data}>{children}</MemberOverviewContext.Provider>;
+  const visibleData = visibleOptionalMemberData(accountKey, optionalData);
+  return <MemberOverviewContext.Provider value={{ memberPortal: account, ...visibleData }}>{children}</MemberOverviewContext.Provider>;
 }
 
 function Avatar({ profile, email }: { profile: CommunityProfile | null; email?: string }) {
@@ -138,16 +160,8 @@ function Avatar({ profile, email }: { profile: CommunityProfile | null; email?: 
   </div>;
 }
 
-function AccountHeroLoading() {
-  return <section className={`${styles.accountHero} ${styles.accountLoading}`} aria-label="Loading your account summary">
-    <div className={styles.identityBlock}><div className={styles.avatarSkeleton} /><div><span className={styles.lineWide} /><span className={styles.lineShort} /></div></div>
-    <div className={styles.summaryList}>{[0, 1, 2].map((item) => <span className={styles.summarySkeleton} key={item} />)}</div>
-  </section>;
-}
-
 export function MemberAccountHero() {
-  const { memberPortal, profile, loading } = useMemberOverviewData();
-  if (loading) return <AccountHeroLoading />;
+  const { memberPortal, profile, profileLoading } = useMemberOverviewData();
 
   const member = memberPortal?.member;
   const email = memberPortal?.email || "";
@@ -161,7 +175,7 @@ export function MemberAccountHero() {
 
   return <section className={styles.accountHero} aria-labelledby="member-account-heading">
     <div className={styles.identityBlock}>
-      <Avatar profile={profile} email={email} />
+      {profileLoading && !profile ? <div className={styles.avatarSkeleton} /> : <Avatar profile={profile} email={email} />}
       <div className={styles.identityCopy}>
         <p className={styles.kicker}>Your Fluxora account is ready.</p>
         <h2 id="member-account-heading">{displayName}</h2>
@@ -185,13 +199,14 @@ export function MemberAccountHero() {
   </section>;
 }
 
-type MetricProps = { label: string; value: string; note?: string };
-function Metric({ label, value, note }: MetricProps) {
+type MetricProps = { label: string; value: string; note?: string; loading?: boolean };
+function Metric({ label, value, note, loading }: MetricProps) {
+  if (loading) return <article className={`${styles.metric} ${styles.metricLoading}`}><span /><strong /><small /></article>;
   return <article className={styles.metric}><span>{label}</span><strong>{value}</strong>{note ? <small>{note}</small> : null}</article>;
 }
 
 export function MemberOverview() {
-  const { memberPortal, progression, activity, loading } = useMemberOverviewData();
+  const { memberPortal, progression, activity, progressionLoading, activityLoading } = useMemberOverviewData();
   const member = memberPortal?.member;
   const level = progression?.level?.level;
   const isFree = memberPortal?.role === "free";
@@ -199,10 +214,10 @@ export function MemberOverview() {
   const status = member?.status || (isFree ? "Free account" : undefined);
   const metrics = useMemo(() => [
     { label: "Current access", value: access, note: status },
-    { label: "Level", value: typeof level === "number" ? `Level ${level}` : "—", note: progression?.level?.name },
-    { label: "Total XP", value: formatNumber(progression?.xp?.total) },
-    { label: "Current streak", value: typeof activity?.currentStreak === "number" ? `${activity.currentStreak} ${activity.currentStreak === 1 ? "day" : "days"}` : "—" },
-  ], [access, activity?.currentStreak, level, progression?.level?.name, progression?.xp?.total, status]);
+    { label: "Level", value: typeof level === "number" ? `Level ${level}` : "—", note: progression?.level?.name, loading: progressionLoading },
+    { label: "Total XP", value: formatNumber(progression?.xp?.total), loading: progressionLoading },
+    { label: "Current streak", value: typeof activity?.currentStreak === "number" ? `${activity.currentStreak} ${activity.currentStreak === 1 ? "day" : "days"}` : "—", loading: activityLoading },
+  ], [access, activity?.currentStreak, activityLoading, level, progression?.level?.name, progression?.xp?.total, progressionLoading, status]);
 
   return <div className={styles.overview}>
     <section className={styles.sectionIntro} aria-labelledby="overview-heading">
@@ -211,9 +226,7 @@ export function MemberOverview() {
     </section>
 
     <section className={styles.metrics} aria-label="Member account at a glance">
-      {loading
-        ? [0, 1, 2, 3].map((item) => <article className={`${styles.metric} ${styles.metricLoading}`} key={item}><span /><strong /><small /></article>)
-        : metrics.map((metric) => <Metric key={metric.label} {...metric} />)}
+      {metrics.map((metric) => <Metric key={metric.label} {...metric} />)}
     </section>
 
     <NextBestActionPanel />
