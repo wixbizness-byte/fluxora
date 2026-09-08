@@ -1,15 +1,47 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createRequestCoordinator } from "./request-coordinator";
 import styles from "./member-auth-gate.module.css";
 
 type GateState = "loading" | "ready" | "signed-out" | "error";
 
-type MemberPortalResponse = {
+export type MemberPortalResponse = {
   role?: "admin" | "member" | "free" | "none";
   email?: string;
+  member?: {
+    tier?: string;
+    status?: string;
+    expires_at?: string | null;
+    creator_preview_active?: boolean;
+    creator_preview_expires_at?: string | null;
+    effective_access?: string;
+  };
   error?: string;
 };
+
+type MemberSessionContextValue = {
+  account: MemberPortalResponse;
+  refresh: (options?: { quiet?: boolean; supersede?: boolean }) => Promise<void>;
+};
+
+const MemberSessionContext = createContext<MemberSessionContextValue | null>(null);
+
+export function useMemberSession() {
+  const context = useContext(MemberSessionContext);
+  if (!context) throw new Error("Member session must be used inside MemberAuthGate.");
+  return context;
+}
+
+async function requestMemberPortal(signal: AbortSignal) {
+  const response = await fetch("/prompts/api/member-portal", {
+    cache: "no-store",
+    credentials: "include",
+    signal,
+  });
+  const body = (await response.json().catch(() => ({}))) as MemberPortalResponse;
+  return { ok: response.ok, status: response.status, body };
+}
 
 function currentReturnTo() {
   if (typeof window === "undefined") return "/member";
@@ -23,45 +55,50 @@ function loginHref() {
 export default function MemberAuthGate({ children }: { children: ReactNode }) {
   const [state, setState] = useState<GateState>("loading");
   const stateRef = useRef<GateState>("loading");
+  const [account, setAccount] = useState<MemberPortalResponse | null>(null);
   const [message, setMessage] = useState("");
   const [loginUrl, setLoginUrl] = useState("/prompts/member-login?returnTo=%2Fmember&auto=1");
+  const [coordinator] = useState(() => createRequestCoordinator(requestMemberPortal));
 
   const moveTo = useCallback((next: GateState) => {
     stateRef.current = next;
     setState(next);
   }, []);
 
-  const check = useCallback(async (quiet = false) => {
+  const check = useCallback(async (quiet = false, supersede = false) => {
     if (!quiet && stateRef.current !== "ready") moveTo("loading");
     setLoginUrl(loginHref());
 
-    try {
-      const response = await fetch("/prompts/api/member-portal", {
-        cache: "no-store",
-        credentials: "include",
-      });
-      const body = (await response.json().catch(() => ({}))) as MemberPortalResponse;
+    const outcome = await coordinator.run({ supersede });
+    if (!outcome.current) return;
 
-      if (response.ok && (body.role === "member" || body.role === "admin" || body.role === "free")) {
+    if (outcome.status === "fulfilled") {
+      const { ok, status, body } = outcome.value;
+
+      if (ok && (body.role === "member" || body.role === "admin" || body.role === "free")) {
+        setAccount(body);
         setMessage("");
         moveTo("ready");
         return;
       }
 
-      if (response.status === 401) {
+      if (status === 401) {
+        setAccount(null);
         setMessage("");
         moveTo("signed-out");
         return;
       }
 
       if (quiet && stateRef.current === "ready") return;
-      throw new Error(body.error || "Could not verify your Fluxora session.");
-    } catch (reason) {
-      if (quiet && stateRef.current === "ready") return;
-      setMessage(reason instanceof Error ? reason.message : "Could not verify your Fluxora session.");
+      setMessage(body.error || "Could not verify your Fluxora session.");
       moveTo("error");
+      return;
     }
-  }, [moveTo]);
+
+    if (quiet && stateRef.current === "ready") return;
+    setMessage(outcome.reason instanceof Error ? outcome.reason.message : "Could not verify your Fluxora session.");
+    moveTo("error");
+  }, [coordinator, moveTo]);
 
   useEffect(() => {
     void check();
@@ -75,13 +112,21 @@ export default function MemberAuthGate({ children }: { children: ReactNode }) {
     window.addEventListener("focus", onFocus);
     document.addEventListener("visibilitychange", onVisibility);
     return () => {
+      coordinator.cancel();
       window.clearInterval(interval);
       window.removeEventListener("focus", onFocus);
       document.removeEventListener("visibilitychange", onVisibility);
     };
-  }, [check]);
+  }, [check, coordinator]);
 
-  if (state === "ready") return <>{children}</>;
+  const session = useMemo<MemberSessionContextValue | null>(() => account ? ({
+    account,
+    refresh: (options = {}) => check(options.quiet ?? true, options.supersede ?? false),
+  }) : null, [account, check]);
+
+  if (state === "ready" && session) {
+    return <MemberSessionContext.Provider value={session}>{children}</MemberSessionContext.Provider>;
+  }
 
   if (state === "loading") {
     return (

@@ -7,9 +7,8 @@ import { SectionHeading } from "./components/fluxora/section-heading";
 import { SiteFooter } from "./components/fluxora/site-footer";
 import { SiteHeader } from "./components/fluxora/site-header";
 import { HomeHeroGallery } from "./home-hero-gallery";
-import { normalizeHomepageContent, type HomeFaq, type HomeGalleryImage, type HomeToolPreview } from "./home-data";
 import { MESSENGER_COMMUNITY_URL, TELEGRAM_COMMUNITY_URL } from "./lib/community-links";
-import { queryRows } from "./lib/supabase";
+import { loadHomepageContent } from "./lib/homepage-content";
 import styles from "./home.module.css";
 
 export const runtime = "nodejs";
@@ -27,20 +26,6 @@ const destinations = [
   { title: "AI Course", description: "Learn practical AI content workflows through structured creator-first lessons.", href: "https://curzzo.com/communities/ai-content-creation-academy", icon: GraduationCap },
   { title: "Karousel", description: "Discover curated clothing finds, outfit inspiration, and affiliate shopping recommendations.", href: "https://karousel.shop", icon: Store },
 ] as const;
-
-async function loadHomepageContent() {
-  const [galleryResult, toolResult, faqResult] = await Promise.all([
-    queryRows<HomeGalleryImage>("gallery_images", "select=*&is_active=eq.true&sort_order=lte.6&order=row_position.asc,sort_order.asc"),
-    queryRows<HomeToolPreview>("homepage_tool_previews", "select=*&is_active=eq.true&order=sort_order.asc&limit=3"),
-    queryRows<HomeFaq>("homepage_faqs", "select=*&is_active=eq.true&order=sort_order.asc&limit=5"),
-  ]);
-
-  return normalizeHomepageContent({
-    gallery: galleryResult.data || [],
-    tools: toolResult.data || [],
-    faqs: faqResult.data || [],
-  });
-}
 
 export default async function HomePage() {
   const content = await loadHomepageContent();
