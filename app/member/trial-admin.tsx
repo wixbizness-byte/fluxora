@@ -89,7 +89,7 @@ export default function TrialAdmin() {
 
   async function resetTrial(trial: Trial) {
     const confirmed = window.confirm(
-      `Reset the free trial for ${trial.gmail}?\n\nThis removes their current trial member record and lets this Google account claim a fresh 1-day trial.`
+      `Release the free trial for ${trial.gmail}?\n\nThis does NOT start a new timer. It makes this Google account eligible to claim a fresh 48-hour trial whenever they choose.`
     );
     if (!confirmed) return;
 
@@ -105,7 +105,7 @@ export default function TrialAdmin() {
     const body = (await response.json().catch(() => ({}))) as TrialResponse;
     if (!response.ok) setError(body.error || "Could not reset trial.");
     else {
-      setNotice(body.message || "Trial reset.");
+      setNotice(body.message || "Trial released.");
       await load();
     }
     setBusy("");
@@ -114,7 +114,7 @@ export default function TrialAdmin() {
   async function resetAllInactive() {
     if (!summary.expired) return;
     const confirmed = window.confirm(
-      `Reset all ${summary.expired} inactive/expired Google trial accounts?\n\nThis removes expired trial claims and their trial-only member records so those Gmail accounts can claim a fresh 1-day trial. Paid or upgraded member accounts are protected and will not be removed.`
+      `Release all ${summary.expired} inactive/expired Google trial accounts?\n\nThis does NOT start new timers or grant fresh credits now. It only makes those Gmail accounts eligible to claim a fresh 48-hour trial whenever they choose. Paid, upgraded, and referral-protected accounts remain protected.`
     );
     if (!confirmed) return;
 
@@ -130,7 +130,7 @@ export default function TrialAdmin() {
     const body = (await response.json().catch(() => ({}))) as TrialResponse;
     if (!response.ok) setError(body.error || "Could not reset inactive trials.");
     else {
-      setNotice(body.message || "Inactive trials reset.");
+      setNotice(body.message || "Inactive trials released for reclaim.");
       await load();
     }
     setBusy("");
@@ -144,7 +144,7 @@ export default function TrialAdmin() {
         <div>
           <p>Free access analytics</p>
           <h2>Google Trial Claims</h2>
-          <span>Every Google account that claims the one-time 1-day trial is recorded here.</span>
+          <span>Every Google account that claims a 48-hour trial is recorded here. Resetting only restores reclaim eligibility; the timer starts when the user claims again.</span>
         </div>
         <div className={styles.headingActions}>
           <strong>{summary.total}</strong>
