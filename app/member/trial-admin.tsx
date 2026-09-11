@@ -87,6 +87,11 @@ export default function TrialAdmin() {
     return trials.filter((trial) => [trial.gmail, trial.member_status, trial.tier || "", displayTrialCode(trial.access_code) || ""].some((value) => value.toLowerCase().includes(needle)));
   }, [query, trials]);
 
+  const resettableExpired = useMemo(
+    () => trials.filter((trial) => !trial.active && trial.resettable).length,
+    [trials],
+  );
+
   async function resetTrial(trial: Trial) {
     const confirmed = window.confirm(
       `Release the free trial for ${trial.gmail}?\n\nThis does NOT start a new timer. It makes this Google account eligible to claim a fresh 48-hour trial whenever they choose.`
@@ -112,9 +117,9 @@ export default function TrialAdmin() {
   }
 
   async function resetAllInactive() {
-    if (!summary.expired) return;
+    if (!resettableExpired) return;
     const confirmed = window.confirm(
-      `Release all ${summary.expired} inactive/expired Google trial accounts?\n\nThis does NOT start new timers or grant fresh credits now. It only makes those Gmail accounts eligible to claim a fresh 48-hour trial whenever they choose. Paid, upgraded, and referral-protected accounts remain protected.`
+      `Release all ${resettableExpired} eligible inactive/expired Google trial accounts?\n\nThis does NOT start new timers or grant fresh credits now. It only makes those Gmail accounts eligible to claim a fresh 48-hour trial whenever they choose. Paid, upgraded, and referral-protected accounts remain protected.`
     );
     if (!confirmed) return;
 
@@ -151,7 +156,7 @@ export default function TrialAdmin() {
           <button
             className={styles.resetAllButton}
             type="button"
-            disabled={!summary.expired || busy === "__all__"}
+            disabled={!resettableExpired || busy === "__all__"}
             onClick={resetAllInactive}
           >
             {busy === "__all__" ? "Resetting…" : "Reset all inactive"}
