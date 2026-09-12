@@ -159,6 +159,9 @@ function MemberFields({ member }: { member?: Member }) {
   const editableTier = member ? baseTier(member) : "Premium";
   const originalStatus = member ? baseStatus(member).trim().toLowerCase() : "";
   const originalExpiry = formatLocalDate(member ? baseExpiry(member) : null);
+  const temporaryOverlay = member
+    ? ["Premium Promotion", "Referral Trial", "Google Trial", "Creator Preview"].includes(effectiveSource(member))
+    : false;
 
   return (
     <div className={styles.formGrid}>
@@ -171,12 +174,12 @@ function MemberFields({ member }: { member?: Member }) {
         <input name="gmail" type="email" required defaultValue={member?.gmail || ""} placeholder="member@gmail.com" />
       </label>
       <label className={styles.field}>
-        <span>Tier *</span>
+        <span>{temporaryOverlay ? "Base tier *" : "Tier *"}</span>
         <select name="tier" defaultValue={editableTier}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>
         <small>Admin has full access, unlimited uses/devices/Canvas slots, and no expiry.</small>
       </label>
       <label className={styles.field}>
-        <span>Status *</span>
+        <span>{temporaryOverlay ? "Base status *" : "Status *"}</span>
         <select
           name="status"
           defaultValue={member ? baseStatus(member) : "active"}
@@ -196,19 +199,19 @@ function MemberFields({ member }: { member?: Member }) {
         </select>
       </label>
       <label className={styles.field}>
-        <span>Max uses</span>
+        <span>{temporaryOverlay ? "Base max uses" : "Max uses"}</span>
         <input name="max_uses" type="number" min="1" defaultValue={member?.max_uses ?? ""} placeholder="Blank = unlimited" />
       </label>
       <label className={styles.field}>
-        <span>Max registered devices</span>
+        <span>{temporaryOverlay ? "Base max registered devices" : "Max registered devices"}</span>
         <input name="max_devices" type="number" min="1" max="20" required defaultValue={editableTier === "Tool" ? 2 : (member?.base_max_devices ?? member?.max_devices ?? 5)} />
         <small>Tool tier is always limited to 2 registered devices.</small>
       </label>
       <label className={styles.field}>
-        <span>Expires at</span>
+        <span>{temporaryOverlay ? "Base expires at" : "Expires at"}</span>
         <input name="expires_at" type="datetime-local" defaultValue={originalExpiry} />
       </label>
-      <label className={`${styles.field} ${styles.full}`}><span>Notes</span><textarea name="notes" rows={3} defaultValue={member?.notes || ""} /></label>
+      <label className={`${styles.field} ${styles.full}`}><span>{temporaryOverlay ? "Base notes" : "Notes"}</span><textarea name="notes" rows={3} defaultValue={member?.notes || ""} /></label>
       <label className={`${styles.field} ${styles.full}`}><span>Account link</span><input name="account_link" type="url" defaultValue={member?.account_link || ""} placeholder="https://..." /></label>
     </div>
   );
@@ -425,7 +428,7 @@ export default function MemberManager() {
             <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{tier}{source !== `${tier} Membership` && source !== "Inactive" ? ` • ${source}` : ""}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{activeLike ? "ACTIVE" : memberBaseStatus.toUpperCase()}</span></div>
             <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
             <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{tier === "Admin" ? " / unlimited" : member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {tier === "Admin" ? "unlimited" : (member.max_devices ?? (memberBaseTier === "Tool" ? 2 : 5))}</span><span>Canvas: {member.canvas_count ?? 0} / {tier === "Admin" ? "unlimited" : (member.canvas_limit ?? "—")}</span><span>Access: {source}{activeLike ? ` · ${effectiveExpiry ? `Expires ${displayDate(effectiveExpiry)}` : "No expiry"}` : ""}</span>{temporaryOverlay && <span>Base: {memberBaseTier} · {memberBaseStatus}</span>}</div>
-            {member.notes && <p className={styles.notes}>{member.notes}</p>}
+            {member.notes && <p className={styles.notes}>{temporaryOverlay ? `Base note: ${member.notes}` : member.notes}</p>}
             {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
             <div className={styles.quickActions}>
               {tier !== "Admin" && <button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : memberBaseStatus === "active" ? "Disable base" : temporaryOverlay ? "Activate base" : "Activate"}</button>}
