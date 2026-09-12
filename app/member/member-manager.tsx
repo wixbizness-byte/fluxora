@@ -176,7 +176,7 @@ function MemberFields({ member }: { member?: Member }) {
       <label className={styles.field}>
         <span>{temporaryOverlay ? "Base tier *" : "Tier *"}</span>
         <select name="tier" defaultValue={editableTier}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>
-        <small>Admin has full access, unlimited uses/devices/Canvas slots, and no expiry.</small>
+        <small>{temporaryOverlay ? "Temporary access is computed separately. This changes only the base membership tier." : "Admin has full access, unlimited uses/devices/Canvas slots, and no expiry."}</small>
       </label>
       <label className={styles.field}>
         <span>{temporaryOverlay ? "Base status *" : "Status *"}</span>
@@ -205,7 +205,7 @@ function MemberFields({ member }: { member?: Member }) {
       <label className={styles.field}>
         <span>{temporaryOverlay ? "Base max registered devices" : "Max registered devices"}</span>
         <input name="max_devices" type="number" min="1" max="20" required defaultValue={editableTier === "Tool" ? 2 : (member?.base_max_devices ?? member?.max_devices ?? 5)} />
-        <small>Tool tier is always limited to 2 registered devices.</small>
+        <small>{temporaryOverlay ? "Base membership limit only. Current temporary access uses the effective device limit shown above." : "Tool tier is always limited to 2 registered devices."}</small>
       </label>
       <label className={styles.field}>
         <span>{temporaryOverlay ? "Base expires at" : "Expires at"}</span>
