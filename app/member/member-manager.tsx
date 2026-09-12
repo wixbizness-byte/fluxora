@@ -8,18 +8,20 @@ type Member = {
   id: string;
   access_code: string;
   gmail: string;
-  tier: "Tool" | "Premium" | "Creator";
+  tier: "Tool" | "Premium" | "Creator" | "Admin";
   status: string;
   access_origin?: string | null;
   creator_preview_expires_at?: string | null;
   max_uses: number | null;
   use_count: number | null;
-  max_devices: number;
+  max_devices: number | null;
   registered_device_count?: number;
   expires_at: string | null;
   notes: string | null;
   account_link: string | null;
   is_affiliate?: boolean;
+  canvas_count?: number;
+  canvas_limit?: number | null;
 };
 
 type Activity = {
@@ -48,7 +50,7 @@ type RegisteredCountsResponse = {
   error?: string;
 };
 
-type MemberFilter = "all" | "trial" | "members" | "tool" | "premium" | "creator" | "affiliate";
+type MemberFilter = "all" | "trial" | "members" | "tool" | "premium" | "creator" | "admin" | "affiliate";
 
 const PAGE_SIZE = 10;
 const MEMBER_STATUSES = [
@@ -102,10 +104,10 @@ function payloadFromForm(form: HTMLFormElement) {
     access_code: String(data.get("access_code") || "").trim(),
     gmail: String(data.get("gmail") || "").trim(),
     tier,
-    status: String(data.get("status") || "active"),
-    max_uses: String(data.get("max_uses") || "").trim() || null,
-    max_devices: tier === "Tool" ? "2" : (String(data.get("max_devices") || "5").trim() || "5"),
-    expires_at: String(data.get("expires_at") || "").trim() || null,
+    status: tier === "Admin" ? "active" : String(data.get("status") || "active"),
+    max_uses: tier === "Admin" ? null : (String(data.get("max_uses") || "").trim() || null),
+    max_devices: tier === "Admin" ? "5" : (tier === "Tool" ? "2" : (String(data.get("max_devices") || "5").trim() || "5")),
+    expires_at: tier === "Admin" ? null : (String(data.get("expires_at") || "").trim() || null),
     notes: String(data.get("notes") || "").trim() || null,
     account_link: String(data.get("account_link") || "").trim() || null,
   };
@@ -127,7 +129,8 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Tier *</span>
-        <select name="tier" defaultValue={member?.tier || "Premium"}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option></select>
+        <select name="tier" defaultValue={member?.tier || "Premium"}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>
+        <small>Admin has full access, unlimited uses/devices/Canvas slots, and no expiry.</small>
       </label>
       <label className={styles.field}>
         <span>Status *</span>
@@ -218,10 +221,11 @@ export default function MemberManager() {
   const filterCounts = useMemo(() => ({
     all: members.length,
     trial: members.filter((m) => m.status.toLowerCase() === "google_trial").length,
-    members: members.filter((m) => m.status.toLowerCase() !== "google_trial" && (m.tier === "Premium" || m.tier === "Creator")).length,
+    members: members.filter((m) => m.status.toLowerCase() !== "google_trial" && (m.tier === "Premium" || m.tier === "Creator" || m.tier === "Admin")).length,
     tool: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Tool").length,
     premium: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Premium").length,
     creator: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Creator").length,
+    admin: members.filter((m) => m.tier === "Admin").length,
     affiliate: members.filter((m) => m.is_affiliate).length,
   }), [members]);
 
@@ -232,10 +236,11 @@ export default function MemberManager() {
       const matchesFilter =
         filter === "all" ? true :
         filter === "trial" ? status === "google_trial" :
-        filter === "members" ? status !== "google_trial" && (member.tier === "Premium" || member.tier === "Creator") :
+        filter === "members" ? status !== "google_trial" && (member.tier === "Premium" || member.tier === "Creator" || member.tier === "Admin") :
         filter === "tool" ? status !== "google_trial" && member.tier === "Tool" :
         filter === "premium" ? status !== "google_trial" && member.tier === "Premium" :
         filter === "creator" ? status !== "google_trial" && member.tier === "Creator" :
+        filter === "admin" ? member.tier === "Admin" :
         Boolean(member.is_affiliate);
       if (!matchesFilter) return false;
       if (!needle) return true;
@@ -324,6 +329,7 @@ export default function MemberManager() {
     { key: "tool", label: "Tool" },
     { key: "premium", label: "Premium" },
     { key: "creator", label: "Creator" },
+    { key: "admin", label: "Admin" },
     { key: "affiliate", label: "Affiliate" },
   ];
 
@@ -363,11 +369,11 @@ export default function MemberManager() {
           return <article className={styles.item} key={member.id}>
             <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}{previewActive ? " • Creator Preview" : ""}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{member.status}</span></div>
             <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
-            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {member.max_devices ?? (member.tier === "Tool" ? 2 : 5)}</span><span>Premium: {displayDate(member.expires_at)}</span>{previewActive && <span>Creator Preview: {displayDate(member.creator_preview_expires_at)}</span>}</div>
+            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.tier === "Admin" ? " / unlimited" : member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {member.tier === "Admin" ? "unlimited" : (member.max_devices ?? (member.tier === "Tool" ? 2 : 5))}</span><span>Canvas: {member.canvas_count ?? 0} / {member.tier === "Admin" ? "unlimited" : (member.canvas_limit ?? "—")}</span><span>Premium: {member.tier === "Admin" ? "No expiry" : displayDate(member.expires_at)}</span>{previewActive && <span>Creator Preview: {displayDate(member.creator_preview_expires_at)}</span>}</div>
             {member.notes && <p className={styles.notes}>{member.notes}</p>}
             {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
             <div className={styles.quickActions}>
-              {!isTrial && <button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : member.status === "active" ? "Disable" : "Activate"}</button>}
+              {!isTrial && member.tier !== "Admin" && <button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : member.status === "active" ? "Disable" : "Activate"}</button>}
               <details className={styles.editPanel}><summary>Edit</summary><form className={styles.form} onSubmit={(event) => updateMember(event, member.id)}><MemberFields member={member} /><button className={styles.primaryButton} disabled={busy === `update-${member.id}`} type="submit">{busy === `update-${member.id}` ? "Saving…" : "Save Member"}</button></form></details>
             </div>
           </article>;
