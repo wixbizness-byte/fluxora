@@ -162,6 +162,15 @@ function activityTitle(activity: PublicReferralActivity) {
   return "Referral link opened";
 }
 
+
+function SignOutAction() {
+  return (
+    <form action="/prompts/logout?returnTo=/refer" method="post">
+      <button type="submit" className={styles.headerActionButton}>Sign out</button>
+    </form>
+  );
+}
+
 function rejectionLabel(reason: string | null) {
   if (reason === "self_referral") return "Self-referral blocked";
   if (reason === "already_claimed_referral") return "Referral trial already used";
@@ -376,7 +385,7 @@ export default function ReferClient({ showRecentActivity = true }: { showRecentA
       <div className={styles.page}>
         <header className={styles.header}>
           <div><p className={styles.kicker}>Fluxora Refer & Earn</p><h1>Verify Telegram</h1><p>Gmail verified: {publicState.gmail}</p></div>
-          <div className={styles.headerActions}><a href="/">Fluxora</a><a href="/prompts/referrer-login">Google account</a></div>
+          <div className={styles.headerActions}><a href="/">Fluxora</a><a href="/prompts/referrer-login">Google account</a><SignOutAction /></div>
         </header>
 
         {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
@@ -424,7 +433,7 @@ export default function ReferClient({ showRecentActivity = true }: { showRecentA
       <div className={styles.page}>
         <header className={styles.header}>
           <div><p className={styles.kicker}>Fluxora Refer & Earn</p><h1>Referral Dashboard</h1><p>{referrer.gmail}</p></div>
-          <div className={styles.headerActions}><a href="/">Fluxora</a><a href="/prompts/referrer-login">Account</a></div>
+          <div className={styles.headerActions}><a href="/">Fluxora</a><a href="/prompts/referrer-login">Account</a><SignOutAction /></div>
         </header>
 
         {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
@@ -516,7 +525,7 @@ export default function ReferClient({ showRecentActivity = true }: { showRecentA
           <p>{affiliate?.display_name || affiliate?.gmail}</p>
           <p>{canIssueCreator ? "Can issue Premium + Creator" : "Can issue Premium only"}</p>
         </div>
-        <div className={styles.headerActions}><a href="/">Fluxora</a><a href="/prompts/affiliate-login">Account</a></div>
+        <div className={styles.headerActions}><a href="/">Fluxora</a><a href="/prompts/affiliate-login">Account</a><SignOutAction /></div>
       </header>
 
       <section className={styles.stats}>
