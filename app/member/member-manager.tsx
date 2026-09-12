@@ -10,8 +10,21 @@ type Member = {
   gmail: string;
   tier: "Tool" | "Premium" | "Creator" | "Admin";
   status: string;
+  is_admin?: boolean;
   access_origin?: string | null;
+  premium_promo_expires_at?: string | null;
   creator_preview_expires_at?: string | null;
+  base_tier?: "Tool" | "Premium" | "Creator";
+  base_status?: string;
+  base_expires_at?: string | null;
+  base_max_devices?: number | null;
+  effective_active?: boolean;
+  effective_label?: string;
+  effective_source?: string;
+  effective_tier?: "Tool" | "Premium" | "Creator" | "Admin";
+  effective_expires_at?: string | null;
+  trial_type?: string | null;
+  trial_expires_at?: string | null;
   max_uses: number | null;
   use_count: number | null;
   max_devices: number | null;
@@ -75,9 +88,38 @@ function displayDate(value: string | null | undefined) {
   return Number.isNaN(date.getTime()) ? "No expiry" : date.toLocaleString();
 }
 
+function baseTier(member: Member) {
+  if (member.is_admin || member.tier === "Admin") return "Admin" as const;
+  return member.base_tier || member.tier;
+}
+
+function baseStatus(member: Member) {
+  return member.base_status || member.status;
+}
+
+function baseExpiry(member: Member) {
+  return member.base_expires_at !== undefined ? member.base_expires_at : member.expires_at;
+}
+
+function effectiveTier(member: Member) {
+  return member.effective_tier || member.tier;
+}
+
+function effectiveSource(member: Member) {
+  if (member.effective_source) return member.effective_source;
+  if (member.status.toLowerCase() === "google_trial") return member.trial_type === "referral_trial" ? "Referral Trial" : "Google Trial";
+  return member.status.toLowerCase() === "active" ? `${member.tier} Membership` : "Inactive";
+}
+
+function isEffectivelyActive(member: Member) {
+  return member.effective_active ?? ["active", "google_trial"].includes(member.status.toLowerCase());
+}
+
 function hasCreatorPreview(member: Member) {
-  if (member.tier !== "Premium") return false;
-  const status = member.status.trim().toLowerCase();
+  if (member.effective_source === "Creator Preview" && member.effective_active) return true;
+  const tier = baseTier(member);
+  if (tier !== "Premium") return false;
+  const status = baseStatus(member).trim().toLowerCase();
   const origin = String(member.access_origin || "").trim().toLowerCase();
   if (["google_trial", "inactive", "blocked"].includes(status)) return false;
   if (["google_trial", "referral_trial"].includes(origin)) return false;
@@ -114,8 +156,9 @@ function payloadFromForm(form: HTMLFormElement) {
 }
 
 function MemberFields({ member }: { member?: Member }) {
-  const originalStatus = member?.status.trim().toLowerCase() || "";
-  const originalExpiry = formatLocalDate(member?.expires_at || null);
+  const editableTier = member ? baseTier(member) : "Premium";
+  const originalStatus = member ? baseStatus(member).trim().toLowerCase() : "";
+  const originalExpiry = formatLocalDate(member ? baseExpiry(member) : null);
 
   return (
     <div className={styles.formGrid}>
@@ -129,14 +172,14 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Tier *</span>
-        <select name="tier" defaultValue={member?.tier || "Premium"}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>
+        <select name="tier" defaultValue={editableTier}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>
         <small>Admin has full access, unlimited uses/devices/Canvas slots, and no expiry.</small>
       </label>
       <label className={styles.field}>
         <span>Status *</span>
         <select
           name="status"
-          defaultValue={member?.status || "active"}
+          defaultValue={member ? baseStatus(member) : "active"}
           onChange={(event) => {
             const activatingFromTimed = event.currentTarget.value === "active"
               && (originalStatus === "google_trial" || TIMED_MEMBER_STATUSES.has(originalStatus));
@@ -148,7 +191,7 @@ function MemberFields({ member }: { member?: Member }) {
             }
           }}
         >
-          {member?.status === "google_trial" && <option value="google_trial">Google Trial</option>}
+          {member && baseStatus(member) === "google_trial" && <option value="google_trial">Google Trial</option>}
           {MEMBER_STATUSES.map((status) => <option value={status} key={status}>{status}</option>)}
         </select>
       </label>
@@ -158,7 +201,7 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>Max registered devices</span>
-        <input name="max_devices" type="number" min="1" max="20" required defaultValue={member?.tier === "Tool" ? 2 : (member?.max_devices ?? 5)} />
+        <input name="max_devices" type="number" min="1" max="20" required defaultValue={editableTier === "Tool" ? 2 : (member?.base_max_devices ?? member?.max_devices ?? 5)} />
         <small>Tool tier is always limited to 2 registered devices.</small>
       </label>
       <label className={styles.field}>
@@ -220,31 +263,42 @@ export default function MemberManager() {
 
   const filterCounts = useMemo(() => ({
     all: members.length,
-    trial: members.filter((m) => m.status.toLowerCase() === "google_trial").length,
-    members: members.filter((m) => m.status.toLowerCase() !== "google_trial" && (m.tier === "Premium" || m.tier === "Creator" || m.tier === "Admin")).length,
-    tool: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Tool").length,
-    premium: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Premium").length,
-    creator: members.filter((m) => m.status.toLowerCase() !== "google_trial" && m.tier === "Creator").length,
-    admin: members.filter((m) => m.tier === "Admin").length,
+    trial: members.filter((m) => ["Google Trial", "Referral Trial"].includes(effectiveSource(m)) && isEffectivelyActive(m)).length,
+    members: members.filter((m) => ["Premium", "Creator", "Admin"].includes(effectiveTier(m)) && !["Google Trial", "Referral Trial"].includes(effectiveSource(m))).length,
+    tool: members.filter((m) => effectiveTier(m) === "Tool").length,
+    premium: members.filter((m) => effectiveTier(m) === "Premium").length,
+    creator: members.filter((m) => effectiveTier(m) === "Creator").length,
+    admin: members.filter((m) => effectiveTier(m) === "Admin").length,
     affiliate: members.filter((m) => m.is_affiliate).length,
   }), [members]);
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return members.filter((member) => {
-      const status = member.status.toLowerCase();
+      const source = effectiveSource(member);
+      const tier = effectiveTier(member);
       const matchesFilter =
         filter === "all" ? true :
-        filter === "trial" ? status === "google_trial" :
-        filter === "members" ? status !== "google_trial" && (member.tier === "Premium" || member.tier === "Creator" || member.tier === "Admin") :
-        filter === "tool" ? status !== "google_trial" && member.tier === "Tool" :
-        filter === "premium" ? status !== "google_trial" && member.tier === "Premium" :
-        filter === "creator" ? status !== "google_trial" && member.tier === "Creator" :
-        filter === "admin" ? member.tier === "Admin" :
+        filter === "trial" ? ["Google Trial", "Referral Trial"].includes(source) && isEffectivelyActive(member) :
+        filter === "members" ? ["Premium", "Creator", "Admin"].includes(tier) && !["Google Trial", "Referral Trial"].includes(source) :
+        filter === "tool" ? tier === "Tool" :
+        filter === "premium" ? tier === "Premium" :
+        filter === "creator" ? tier === "Creator" :
+        filter === "admin" ? tier === "Admin" :
         Boolean(member.is_affiliate);
       if (!matchesFilter) return false;
       if (!needle) return true;
-      return [member.gmail, member.access_code, member.tier, member.status, member.notes || "", member.account_link || "", hasCreatorPreview(member) ? "creator preview" : ""].some((value) => value.toLowerCase().includes(needle));
+      return [
+        member.gmail,
+        member.access_code,
+        tier,
+        source,
+        member.effective_label || "",
+        baseStatus(member),
+        member.notes || "",
+        member.account_link || "",
+        hasCreatorPreview(member) ? "creator preview" : "",
+      ].some((value) => value.toLowerCase().includes(needle));
     });
   }, [filter, members, query]);
 
@@ -292,7 +346,7 @@ export default function MemberManager() {
   async function toggleStatus(member: Member) {
     setBusy(`toggle-${member.id}`); setError(""); setNotice("");
     try {
-      const result = await mutate({ id: member.id, action: "toggle", current_status: member.status }, "PATCH");
+      const result = await mutate({ id: member.id, action: "toggle", current_status: baseStatus(member) }, "PATCH");
       if (result.member) replaceMember(result.member);
       setNotice(result.message || "Member status updated.");
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Could not update member status."); }
@@ -333,12 +387,9 @@ export default function MemberManager() {
     { key: "affiliate", label: "Affiliate" },
   ];
 
-  const activeTrials = members.filter((member) => {
-    if (member.status.toLowerCase() !== "google_trial") return false;
-    if (!member.expires_at) return true;
-    const expiry = new Date(member.expires_at).getTime();
-    return !Number.isFinite(expiry) || expiry > Date.now();
-  }).length;
+  const activeTrials = members.filter((member) =>
+    isEffectivelyActive(member) && ["Google Trial", "Referral Trial"].includes(effectiveSource(member))
+  ).length;
 
   const activeCreatorPreviews = members.filter(hasCreatorPreview).length;
 
@@ -363,17 +414,21 @@ export default function MemberManager() {
 
         <div className={styles.list}>{visible.map((member) => {
           const isRevealed = revealed.has(member.id);
-          const activeLike = member.status === "active" || member.status === "google_trial";
-          const isTrial = member.status.toLowerCase() === "google_trial";
-          const previewActive = hasCreatorPreview(member);
+          const activeLike = isEffectivelyActive(member);
+          const source = effectiveSource(member);
+          const tier = effectiveTier(member);
+          const memberBaseStatus = baseStatus(member);
+          const memberBaseTier = baseTier(member);
+          const effectiveExpiry = member.effective_expires_at !== undefined ? member.effective_expires_at : member.expires_at;
+          const temporaryOverlay = ["Premium Promotion", "Referral Trial", "Google Trial", "Creator Preview"].includes(source);
           return <article className={styles.item} key={member.id}>
-            <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{member.tier}{previewActive ? " • Creator Preview" : ""}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{member.status}</span></div>
+            <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{tier}{source !== `${tier} Membership` && source !== "Inactive" ? ` • ${source}` : ""}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{activeLike ? "ACTIVE" : memberBaseStatus.toUpperCase()}</span></div>
             <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
-            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{member.tier === "Admin" ? " / unlimited" : member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {member.tier === "Admin" ? "unlimited" : (member.max_devices ?? (member.tier === "Tool" ? 2 : 5))}</span><span>Canvas: {member.canvas_count ?? 0} / {member.tier === "Admin" ? "unlimited" : (member.canvas_limit ?? "—")}</span><span>Premium: {member.tier === "Admin" ? "No expiry" : displayDate(member.expires_at)}</span>{previewActive && <span>Creator Preview: {displayDate(member.creator_preview_expires_at)}</span>}</div>
+            <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{tier === "Admin" ? " / unlimited" : member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {tier === "Admin" ? "unlimited" : (member.max_devices ?? (memberBaseTier === "Tool" ? 2 : 5))}</span><span>Canvas: {member.canvas_count ?? 0} / {tier === "Admin" ? "unlimited" : (member.canvas_limit ?? "—")}</span><span>Access: {source}{activeLike ? ` · ${effectiveExpiry ? `Expires ${displayDate(effectiveExpiry)}` : "No expiry"}` : ""}</span>{temporaryOverlay && <span>Base: {memberBaseTier} · {memberBaseStatus}</span>}</div>
             {member.notes && <p className={styles.notes}>{member.notes}</p>}
             {member.account_link && <a className={styles.accountLink} href={member.account_link} target="_blank" rel="noopener noreferrer">Open account link ↗</a>}
             <div className={styles.quickActions}>
-              {!isTrial && member.tier !== "Admin" && <button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : member.status === "active" ? "Disable" : "Activate"}</button>}
+              {tier !== "Admin" && <button type="button" className={styles.smallButton} disabled={busy === `toggle-${member.id}`} onClick={() => toggleStatus(member)}>{busy === `toggle-${member.id}` ? "Saving…" : memberBaseStatus === "active" ? "Disable base" : temporaryOverlay ? "Activate base" : "Activate"}</button>}
               <details className={styles.editPanel}><summary>Edit</summary><form className={styles.form} onSubmit={(event) => updateMember(event, member.id)}><MemberFields member={member} /><button className={styles.primaryButton} disabled={busy === `update-${member.id}`} type="submit">{busy === `update-${member.id}` ? "Saving…" : "Save Member"}</button></form></details>
             </div>
           </article>;
