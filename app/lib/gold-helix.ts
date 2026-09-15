@@ -116,21 +116,6 @@ export const fragmentSource = `
 export type HelixCloud = ReturnType<typeof createHelixParticles>;
 const clamp = (value: number, low: number, high: number) => Math.max(low, Math.min(high, value));
 
-/** Batch separate grains into SVG paths for an SSR-safe, no-WebGL fallback. */
-export function createHelixFallback(cloud: HelixCloud) {
-  const batches = new Map<string, { width: number; opacity: number; points: string[] }>();
-  for (let i = 0; i < cloud.vertices.length; i += 9) {
-    const [x, y, z, size, gain] = cloud.vertices.subarray(i, i + 5);
-    const depth = clamp((z + 240) / 480, 0, 1);
-    const width = Math.round(size * (.9 + .2 * depth) * 2) / 2;
-    const opacity = Math.max(.08, Math.round(gain * (.65 + .35 * depth) / .08) * .08);
-    const key = `${width}:${opacity}`;
-    if (!batches.has(key)) batches.set(key, { width, opacity, points: [] });
-    batches.get(key)!.points.push(`M${(x + .38 * z + 850).toFixed(1)},${(y + .12 * z + 300).toFixed(1)}h.01`);
-  }
-  return [...batches.entries()].map(([key, batch]) => ({ key, width: batch.width, opacity: batch.opacity, d: batch.points.join(' ') }));
-}
-
 type UniformName = 'uSpin' | 'uLean' | 'uViewport' | 'uCenter' | 'uScale' | 'uPixelRatio' | 'uGlow';
 type Uniforms = Record<UniformName, WebGLUniformLocation | null>;
 

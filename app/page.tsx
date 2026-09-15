@@ -14,7 +14,7 @@ import { loadHomepageContent } from "./lib/homepage-content";
 import styles from "./home.module.css";
 
 export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export const metadata: Metadata = {
   title: "Fluxora — Create. Ideate. Generate.",
@@ -99,7 +99,7 @@ export default async function HomePage() {
           <div className={styles.toolPreviewGrid}>
             {content.tools.map((tool, index) => (
               <a className={`${styles.toolPreviewCard} ${index === 0 ? styles.toolPreviewPrimary : ""}`} href={tool.button_url || "/tools"} key={tool.id}>
-                <div className={styles.toolPreviewImage}><img src={tool.image_url} alt="" loading="lazy" /></div>
+                <div className={styles.toolPreviewImage}><img src={tool.image_url} alt="" loading="lazy" decoding="async" fetchPriority="low" /></div>
                 <div className={styles.toolPreviewBody}>
                   <span>{tool.badge}</span>
                   <h2>{tool.title}</h2>
