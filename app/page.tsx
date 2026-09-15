@@ -6,7 +6,9 @@ import { PageContainer } from "./components/fluxora/page-container";
 import { SectionHeading } from "./components/fluxora/section-heading";
 import { SiteFooter } from "./components/fluxora/site-footer";
 import { SiteHeader } from "./components/fluxora/site-header";
-import { HomeHeroGallery } from "./home-hero-gallery";
+import { HomeOutputGallery } from "./home-output-gallery";
+import { HomeDnaBackdrop } from "./home-dna-backdrop";
+import { HomeTextReveal } from "./home-text-reveal";
 import { MESSENGER_COMMUNITY_URL, TELEGRAM_COMMUNITY_URL } from "./lib/community-links";
 import { loadHomepageContent } from "./lib/homepage-content";
 import styles from "./home.module.css";
@@ -31,7 +33,9 @@ export default async function HomePage() {
   const content = await loadHomepageContent();
 
   return (
-    <main className={`fluxora-theme ${styles.page}`}>
+    <main className={`fluxora-theme ${styles.page}`} data-home-theme="gold">
+      <HomeDnaBackdrop />
+      <HomeTextReveal />
       <SiteHeader
         links={[
           { href: "/prompts", label: "Prompts", target: "_blank" },
@@ -42,12 +46,10 @@ export default async function HomePage() {
 
       <section className={styles.hero}>
         <PageContainer className={styles.heroFrame}>
-          <HomeHeroGallery rows={content.gallery} />
-          <div className={styles.heroShade} aria-hidden="true" />
           <div className={styles.heroContent}>
             <h1>Creator tools that turn ideas into output.</h1>
             <p>Fluxora gives creators practical AI tools, workflows, and supporting prompts in one clean place — built to help you make more, faster.</p>
-            <div className={styles.heroActions}>
+            <div className={styles.heroActions} data-hero-actions>
               <Button href="/tools">Explore tools <ArrowUpRight size={16} /></Button>
               <Button href="/start" variant="secondary">Start with Fluxora</Button>
             </div>
@@ -55,9 +57,9 @@ export default async function HomePage() {
         </PageContainer>
       </section>
 
-      <PageContainer>
-        <section className={styles.destinations}>
-          <SectionHeading eyebrow="Explore Fluxora" title="Everything in one place." description="Jump straight to the part of Fluxora you need." />
+      <PageContainer className={styles.content}>
+        <section className={styles.destinations} data-destinations>
+          <SectionHeading eyebrow="Explore Fluxora" title="Everything in one place." />
           <div className={styles.destinationGrid}>
             {destinations.map((item) => {
               const Icon = item.icon;
@@ -91,17 +93,16 @@ export default async function HomePage() {
 
         <section className={styles.featuredTools}>
           <div className={styles.sectionSplitHead}>
-            <SectionHeading eyebrow="Featured Fluxora tools" title="Start with what you want to make." description="Three useful starting points from the Fluxora tool library." />
+            <SectionHeading eyebrow="Featured Fluxora tools" title="Start with what you want to make." />
             <a href="/tools">View all tools <ArrowUpRight size={14} /></a>
           </div>
           <div className={styles.toolPreviewGrid}>
             {content.tools.map((tool, index) => (
               <a className={`${styles.toolPreviewCard} ${index === 0 ? styles.toolPreviewPrimary : ""}`} href={tool.button_url || "/tools"} key={tool.id}>
-                <div className={styles.toolPreviewImage}><img src={tool.image_url} alt="" /></div>
+                <div className={styles.toolPreviewImage}><img src={tool.image_url} alt="" loading="lazy" /></div>
                 <div className={styles.toolPreviewBody}>
                   <span>{tool.badge}</span>
                   <h2>{tool.title}</h2>
-                  <p>{tool.description}</p>
                   <strong>{tool.button_label || "Open tool"} <ArrowUpRight size={14} /></strong>
                 </div>
               </a>
@@ -109,8 +110,13 @@ export default async function HomePage() {
           </div>
         </section>
 
+        <section className={styles.outputsSection} aria-label="Actual outputs made with Fluxora">
+          <SectionHeading eyebrow="Made with Fluxora" title="Actual Outputs, Actual Results" />
+          <HomeOutputGallery rows={content.gallery} />
+        </section>
+
         <section className={styles.faqSection}>
-          <SectionHeading eyebrow="Frequently asked questions" title="What new users usually ask first." description="Quick answers before you jump into the tools." />
+          <SectionHeading eyebrow="Frequently asked questions" title="What new users usually ask first." />
           <div className={styles.faqList}>
             {content.faqs.map((faq, index) => (
               <details className={styles.faqItem} key={faq.id} open={index === 0}>
@@ -125,7 +131,6 @@ export default async function HomePage() {
           <div>
             <span>Ready when you are</span>
             <h2>Make something with Fluxora.</h2>
-            <p>Explore the creator tools, choose what you want to make, and move straight from idea to usable output.</p>
             <div className={styles.finalCtaActions}>
               <Button href="/tools">Explore Fluxora Tools <ArrowUpRight size={16} /></Button>
               <Button href="/start" variant="secondary">Start with Fluxora</Button>

@@ -66,3 +66,16 @@
   .button, .brandMark, .headerLink::after { transition: none; }
   .buttonPrimary:not(:disabled):hover, .buttonSecondary:not(:disabled):hover, .buttonPrimary:not(:disabled):active, .buttonSecondary:not(:disabled):active, .brand:hover .brandMark { transform: none; }
 }
+
+/* Supplied homepage dark variant. */
+:global([data-home-theme="gold"]) .siteHeader { border-bottom: 1px solid rgba(136,149,182,.18); background: rgba(10,13,21,.91); box-shadow: 0 1px 10px rgba(24,24,27,.025); }
+:global([data-home-theme="gold"]) .headerMenuButton { border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-md); color: var(--fluxora-color-text); background: rgba(24,30,43,.95); box-shadow: var(--fluxora-shadow-sm); }
+:global([data-home-theme="gold"]) .buttonPrimary { color: #ffffff; background: linear-gradient(135deg,#775edf 0%,#7154dd 52%,#6243cc 100%); box-shadow: 0 7px 18px rgba(102,88,232,.18), inset 0 1px rgba(255,255,255,.11); }
+:global([data-home-theme="gold"]) .buttonPrimary:hover { background: linear-gradient(135deg,#765cdd 0%,#7154d9 100%); box-shadow: 0 11px 24px rgba(174,152,255,.34), inset 0 1px rgba(255,255,255,.14); }
+:global([data-home-theme="gold"]) .buttonPrimary:active { box-shadow: 0 3px 8px rgba(102,88,232,.16); }
+:global([data-home-theme="gold"]) .buttonSecondary { color: var(--fluxora-color-text); border-color: var(--fluxora-color-border); background: rgba(24,30,43,.95); box-shadow: 0 2px 0 rgba(43,38,67,.06), 0 5px 12px rgba(24,24,27,.035); }
+:global([data-home-theme="gold"]) .buttonSecondary:hover { border-color: rgba(174,152,255,.34); background: var(--fluxora-color-surface); box-shadow: 0 5px 0 rgba(102,88,232,.07), 0 12px 22px rgba(24,24,27,.06); }
+:global([data-home-theme="gold"]) .buttonSecondary:active { box-shadow: 0 1px 0 rgba(43,38,67,.08), 0 4px 9px rgba(24,24,27,.045); }
+:global([data-home-theme="gold"]) .card { border: 1px solid rgba(136,149,182,.24); border-radius: var(--fluxora-radius-lg); background: rgba(18,23,34,.98); box-shadow: 0 5px 0 rgba(43,38,67,.1), 0 13px 28px rgba(43,38,67,.07); }
+:global([data-home-theme="gold"]) .siteFooter { border-top: 1px solid var(--fluxora-color-border); background: rgba(10,13,21,.94); }
+@media (max-width: 720px) { :global([data-home-theme="gold"]) .headerNav { background: rgba(18,23,34,.98); } }
