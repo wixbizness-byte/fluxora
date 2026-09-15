@@ -11,22 +11,22 @@
 }
 .placement {
   position: absolute;
-  width: min(115vw, 2300px);
+  width: min(118vw, 2360px);
   aspect-ratio: 17 / 6;
-  top: -36px;
-  right: -12vw;
-  opacity: .72;
-  transform: rotate(-8deg);
+  top: 30px;
+  right: -10vw;
+  opacity: .78;
+  transform: rotate(-16deg);
   transform-origin: center;
 }
 .helix { width: 100%; height: 100%; overflow: visible; }
-.canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: none; opacity: .92; }
+.canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: none; opacity: .96; }
 .backdrop[data-renderer="webgl"] .canvas { display: block; }
 .backdrop[data-renderer="webgl"] .placement { display: none; }
 
 @media (max-width: 980px) {
   .canvas { opacity: .80; }
-  .placement { width: 142vw; right: -35vw; top: 5px; opacity: .66; }
+  .placement { width: 142vw; right: -35vw; top: 18px; opacity: .70; transform: rotate(-13deg); }
 }
 @media (max-width: 720px) {
   .backdrop {
@@ -38,7 +38,7 @@
     top: var(--dnaFallbackTop, 250px);
     right: calc(50% - max(350px, 87.5vw));
     opacity: .85;
-    transform: rotate(-7deg);
+    transform: rotate(-10deg);
   }
 }
 @media (prefers-reduced-motion: reduce) {

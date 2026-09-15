@@ -1,6 +1,6 @@
 // Gold particle geometry and shaders ported from the approved homepage design.
 const TAU = Math.PI * 2;
-export const TURN_MS = 14000;
+export const TURN_MS = 56000;
 
 export const vertexSource = `
       attribute vec3 aPosition;
@@ -25,10 +25,10 @@ export const vertexSource = `
         projected = mat2(uLean.x,uLean.y,-uLean.y,uLean.x)*projected*uScale + uCenter;
         gl_Position = vec4(projected.x*2.0/uViewport.x, -projected.y*2.0/uViewport.y, -p.z/700.0, 1.0);
         float depth=clamp((p.z+240.0)/480.0,0.0,1.0);
-        gl_PointSize=clamp(aParticle.x*uScale*1.5*(.90+.20*depth)*mix(1.0,4.5,uGlow),2.6,mix(12.0,54.0,uGlow))*uPixelRatio;
+        gl_PointSize=clamp(aParticle.x*uScale*1.65*(.78+.42*depth)*mix(1.0,4.6,uGlow),3.0,mix(14.0,62.0,uGlow))*uPixelRatio;
         vColor = aColor;
         vGlow = uGlow;
-        vGrain=vec2(aParticle.y*(.65+.35*depth),aParticle.z);
+        vGrain=vec2(aParticle.y*(.58+.42*depth),aParticle.z);
       }
     `;
 export const fragmentSource = `
@@ -43,15 +43,15 @@ export const fragmentSource = `
         p.y+=p.x*(fract(vGrain.y*13.7)-.5)*.28;
         float radius=dot(p,p);
         if (radius>1.0) discard;
-        float core=1.0-smoothstep(.08,.40,radius);
-        float halo=(1.0-radius)*.30;
+        float core=1.0-smoothstep(.06,.38,radius);
+        float halo=(1.0-radius)*.26;
         float alpha=(core+halo)*vGrain.x;
         float shade=.70+.30*sqrt(max(1.0-radius,0.0));
-        vec3 color=mix(vColor,vec3(1.0,.95,.78),core*.35)*shade;
+        vec3 color=mix(vColor,vec3(1.0,.96,.82),core*.42)*shade;
         if (vGlow>.5) {
           // Bloom pass: wide, faint, warm falloff that pools where grains cluster.
-          float bloom=(1.0-radius)*(1.0-radius)*.055*vGrain.x;
-          gl_FragColor=vec4(vec3(1.0,.72,.22)*bloom,bloom);
+          float bloom=(1.0-radius)*(1.0-radius)*.045*vGrain.x;
+          gl_FragColor=vec4(vec3(1.0,.74,.20)*bloom,bloom);
           return;
         }
         gl_FragColor=vec4(color*alpha,alpha);
@@ -70,13 +70,13 @@ export const fragmentSource = `
       const random=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
       const center = (x: number, strand: number) => {
         const angle = (x+850)*k+.38+strand*Math.PI;
-        return [x,170*Math.cos(angle),170*Math.sin(angle)];
+        return [x,184*Math.cos(angle),184*Math.sin(angle)];
       };
       const particle = (p: number[], loose=false) => {
-        const size=2.6+Math.pow(random(),1.30)*3.9;
-        const opacity=(.45+.55*random())*(loose?.46:1);
-        const variation=.88+.12*random();
-        vertices.push(...p,size,opacity,random(),1.0*variation,.80*variation,.32*variation);
+        const size=2.9+Math.pow(random(),1.30)*4.6;
+        const opacity=(.44+.56*random())*(loose?.34:1);
+        const variation=.86+.14*random();
+        vertices.push(...p,size,opacity,random(),1.0*variation,.78*variation,.24*variation);
       };
       // Sample a loose volume, not the skin of a cylinder. The outer 14% form
       // a faint irregular fringe rather than a hard tube boundary.
@@ -85,26 +85,26 @@ export const fragmentSource = `
           const x=-1040+2080*random();
           const angle = (x+850)*k+.38+strand*Math.PI;
           const radial = [0,Math.cos(angle),Math.sin(angle)];
-          const tangent = normalize([1,-170*k*Math.sin(angle),170*k*Math.cos(angle)]);
+          const tangent = normalize([1,-184*k*Math.sin(angle),184*k*Math.cos(angle)]);
           const binormal = cross(tangent,radial);
           const loose=random()<.14;
-          const radius=loose?40+random()*34:35*Math.sqrt(random());
+          const radius=loose?52+random()*44:44*Math.sqrt(random());
           const a=random()*TAU;
           const offset=add(scale(radial,Math.cos(a)*radius),scale(binormal,Math.sin(a)*radius));
-          const jitter=scale(tangent,(random()-.5)*(loose?22:9));
+          const jitter=scale(tangent,(random()-.5)*(loose?28:12));
           particle(add(add(center(x,strand),offset),jitter),loose);
           }
       }
       // Crossbars are also loose grains; nothing solid connects the strands.
-      for (let x=-990;x<=1000;x+=63) {
+      for (let x=-990;x<=1000;x+=60) {
         const a=center(x,0),b=center(x,1);
         const axis=normalize(b.map((value,i)=>value-a[i]));
         const radial=[1,0,0],binormal=cross(axis,radial);
-        for(let i=0;i<54;i++) {
+        for(let i=0;i<60;i++) {
           const t=.035+.93*random();
           const point=a.map((value,j)=>value+(b[j]-value)*t);
           const loose=random()<.12;
-          const radius=loose?16+random()*12:11.8*Math.sqrt(random());
+          const radius=loose?20+random()*14:14.5*Math.sqrt(random());
           const angle=random()*TAU;
           const offset=add(scale(radial,Math.cos(angle)*radius),scale(binormal,Math.sin(angle)*radius));
           particle(add(point,offset),loose);
@@ -149,14 +149,16 @@ export function mountGoldHelix(backdrop: HTMLDivElement, canvas: HTMLCanvasEleme
 
   function draw() {
     if (!ready || disposed || lost || !gl || !uniforms) return;
-    const lean = (-8 + current.scroll * 3 + current.x * .6) * Math.PI / 180;
+    const lean = (-16 + current.scroll * 2 + current.x * .4) * Math.PI / 180;
     gl.uniform2f(uniforms.uSpin, Math.cos(phase), Math.sin(phase));
     gl.uniform2f(uniforms.uLean, Math.cos(lean), Math.sin(lean));
-    gl.uniform2f(uniforms.uCenter, centerX - width / 2 + current.x * 8, centerY - height / 2 + current.y * 5 - current.scroll * 12);
+    gl.uniform2f(uniforms.uCenter, centerX - width / 2 + current.x * 5, centerY - height / 2 + current.y * 3 - current.scroll * 10);
     gl.clear(gl.COLOR_BUFFER_BIT);
     // Two passes of the same point cloud: soft gold bloom, then crisp grains.
+    gl.blendFunc(gl.ONE, gl.ONE);
     gl.uniform1f(uniforms.uGlow, 1);
     gl.drawArrays(gl.POINTS, 0, cloud.count);
+    gl.blendFunc(gl.ONE, gl.ONE_MINUS_SRC_ALPHA);
     gl.uniform1f(uniforms.uGlow, 0);
     gl.drawArrays(gl.POINTS, 0, cloud.count);
   }
@@ -189,9 +191,9 @@ export function mountGoldHelix(backdrop: HTMLDivElement, canvas: HTMLCanvasEleme
     height = Math.max(backdrop.clientHeight, 1);
     scrollRange = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
     const mobile = width <= 720;
-    const artWidth = mobile ? Math.max(700, width * 1.75) : width <= 980 ? width * 1.42 : Math.min(width * 1.15, 2300);
+    const artWidth = mobile ? Math.max(700, width * 1.75) : width <= 980 ? width * 1.42 : Math.min(width * 1.18, 2360);
     artScale = artWidth / 1700;
-    centerX = mobile ? width * .5 : width <= 980 ? width * 1.35 - artWidth / 2 : width * 1.12 - artWidth / 2;
+    centerX = mobile ? width * .5 : width <= 980 ? width * 1.35 - artWidth / 2 : width * 1.10 - artWidth / 2;
     if (mobile) {
       const actions = page.querySelector<HTMLElement>('[data-hero-actions]');
       const eyebrow = page.querySelector<HTMLElement>('[data-destinations] p');
@@ -201,7 +203,7 @@ export function mountGoldHelix(backdrop: HTMLDivElement, canvas: HTMLCanvasEleme
       backdrop.style.setProperty('--dnaTextEnd', `${textEnd}px`);
       backdrop.style.setProperty('--dnaFallbackTop', `${centerY - artWidth * 3 / 17}px`);
     } else {
-      centerY = (width <= 980 ? 5 : -36) + artWidth * 3 / 17;
+      centerY = (width <= 980 ? 18 : 30) + artWidth * 3 / 17;
     }
     target.scroll = clamp(window.scrollY / scrollRange, 0, 1);
     dimOnScroll();
@@ -272,7 +274,7 @@ export function mountGoldHelix(backdrop: HTMLDivElement, canvas: HTMLCanvasEleme
       uniforms = Object.fromEntries(names.map(name => [name, context.getUniformLocation(program!, name)])) as Uniforms;
       context.disable(context.DEPTH_TEST);
       context.enable(context.BLEND);
-      context.blendFunc(context.ONE, context.ONE);
+      context.blendFunc(context.ONE, context.ONE_MINUS_SRC_ALPHA);
       context.clearColor(0, 0, 0, 0);
       ready = true;
       measure();
