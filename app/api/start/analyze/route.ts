@@ -1,10 +1,13 @@
+import { createHash, createHmac, randomUUID } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 
 export const dynamic = "force-dynamic";
+export const runtime = "nodejs";
 
 type QuestionRow = {
   id: string;
   question_key: string;
+  question: string;
   question_type: "single" | "multi" | "text";
   required: boolean;
   max_selections: number | null;
@@ -13,6 +16,8 @@ type QuestionRow = {
 type OptionRow = {
   question_id: string;
   value: string;
+  label: string;
+  description: string;
 };
 
 type ToolRow = {
@@ -44,8 +49,29 @@ type DeepSeekResult = {
   recommendation_reason?: unknown;
 };
 
+type ResultPayload = ReturnType<typeof resultPayload>;
+
+type CachedResult = {
+  expiresAt: number;
+  value: ResultPayload;
+};
+
+type RateLimitResult = {
+  allowed?: boolean;
+};
+
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
 const REQUEST_TIMEOUT_MS = 10_000;
+const CACHE_TTL_MS = 30 * 60 * 1000;
+const SESSION_COOKIE = "fluxora_start_session";
+
+const globalCache = globalThis as typeof globalThis & {
+  __fluxoraStartAnalysisCache?: Map<string, CachedResult>;
+};
+
+const analysisCache =
+  globalCache.__fluxoraStartAnalysisCache ||
+  (globalCache.__fluxoraStartAnalysisCache = new Map<string, CachedResult>());
 
 function supabaseConfig() {
   return {
@@ -74,8 +100,86 @@ async function supabaseGet<T>(path: string): Promise<T> {
   return response.json() as Promise<T>;
 }
 
+async function supabaseRpc<T>(name: string, body: Record<string, unknown>): Promise<T> {
+  const { url, key } = supabaseConfig();
+  if (!url || !key) throw new Error("Supabase is not configured.");
+
+  const response = await fetch(`${url}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: {
+      apikey: key,
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+    cache: "no-store",
+  });
+
+  if (!response.ok) {
+    const detail = await response.text();
+    throw new Error(detail || `Supabase RPC failed (${response.status})`);
+  }
+
+  return response.json() as Promise<T>;
+}
+
 function cleanString(value: unknown, max = 500) {
   return String(value ?? "").trim().slice(0, max);
+}
+
+function validSessionToken(value: string) {
+  return /^[a-zA-Z0-9_-]{16,100}$/.test(value);
+}
+
+function requestIp(request: NextRequest) {
+  const forwarded = request.headers.get("x-forwarded-for") || "";
+  const first = forwarded.split(",")[0]?.trim();
+  return first || request.headers.get("x-real-ip") || "unknown";
+}
+
+function hmac(value: string, secret: string) {
+  return createHmac("sha256", secret).update(value).digest("hex");
+}
+
+function attachSessionCookie(
+  response: NextResponse,
+  token: string,
+  shouldSet: boolean,
+) {
+  if (shouldSet) {
+    response.cookies.set({
+      name: SESSION_COOKIE,
+      value: token,
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 60 * 60,
+    });
+  }
+  return response;
+}
+
+async function consumeRateLimit(
+  request: NextRequest,
+  sessionToken: string,
+) {
+  const secret = process.env.START_RATE_LIMIT_SECRET || "";
+  if (!secret) return { allowed: true };
+
+  const sessionHash = hmac(`session:${sessionToken}`, secret);
+  const ipHash = hmac(`ip:${requestIp(request)}`, secret);
+
+  try {
+    return await supabaseRpc<RateLimitResult>("consume_start_analysis_limits", {
+      p_session_hash: sessionHash,
+      p_ip_hash: ipHash,
+    });
+  } catch (error) {
+    // Do not take onboarding offline if only the limiter is unavailable.
+    console.warn("start rate limiter unavailable", error);
+    return { allowed: true };
+  }
 }
 
 function normalizeAnswers(
@@ -137,6 +241,42 @@ function normalizeAnswers(
   return normalized;
 }
 
+function semanticAnswers(
+  answers: Record<string, string | string[]>,
+  questions: QuestionRow[],
+  options: OptionRow[],
+) {
+  return questions.map((question) => {
+    const raw = answers[question.question_key];
+    if (question.question_type === "text") {
+      return {
+        id: question.question_key,
+        question: question.question,
+        answer: typeof raw === "string" ? raw : "",
+      };
+    }
+
+    const values = Array.isArray(raw) ? raw : raw ? [raw] : [];
+    const selected = values.map((value) => {
+      const option = options.find(
+        (candidate) =>
+          candidate.question_id === question.id && candidate.value === value,
+      );
+      return {
+        value,
+        label: option?.label || value,
+        description: option?.description || "",
+      };
+    });
+
+    return {
+      id: question.question_key,
+      question: question.question,
+      answer: question.question_type === "multi" ? selected : selected[0] || null,
+    };
+  });
+}
+
 function tokenize(value: string) {
   return new Set(
     value
@@ -149,11 +289,15 @@ function tokenize(value: string) {
 
 function fallbackPick(
   answers: Record<string, string | string[]>,
+  semantic: ReturnType<typeof semanticAnswers>,
   tools: Array<ToolRow & { guidance: string }>,
 ) {
-  const answerText = Object.values(answers)
-    .flatMap((value) => (Array.isArray(value) ? value : [value]))
-    .join(" ");
+  const answerText = [
+    ...Object.values(answers).flatMap((value) =>
+      Array.isArray(value) ? value : [value],
+    ),
+    JSON.stringify(semantic),
+  ].join(" ");
 
   const answerTokens = tokenize(answerText);
 
@@ -177,7 +321,9 @@ function fallbackPick(
     return { tool, score };
   });
 
-  scored.sort((a, b) => b.score - a.score || a.tool.title.localeCompare(b.tool.title));
+  scored.sort(
+    (a, b) => b.score - a.score || a.tool.title.localeCompare(b.tool.title),
+  );
   return scored[0]?.tool || tools[0];
 }
 
@@ -186,7 +332,7 @@ function resultPayload(
   profileTitle: string,
   profileSummary: string,
   reason: string,
-  source: "deepseek" | "fallback",
+  source: "deepseek" | "fallback" | "cache",
 ) {
   return {
     source,
@@ -208,8 +354,89 @@ function resultPayload(
   };
 }
 
+function hasFreeText(
+  answers: Record<string, string | string[]>,
+  questions: QuestionRow[],
+) {
+  return questions.some(
+    (question) =>
+      question.question_type === "text" &&
+      typeof answers[question.question_key] === "string" &&
+      String(answers[question.question_key]).trim().length > 0,
+  );
+}
+
+function cacheKey(
+  answers: Record<string, string | string[]>,
+  semantic: ReturnType<typeof semanticAnswers>,
+  tools: Array<ToolRow & { guidance: string }>,
+  model: string,
+) {
+  return createHash("sha256")
+    .update(
+      JSON.stringify({
+        answers,
+        semantic,
+        model,
+        tools: tools.map((tool) => ({
+          id: tool.id,
+          guidance: tool.guidance,
+          title: tool.title,
+        })),
+      }),
+    )
+    .digest("hex");
+}
+
+function getCached(key: string) {
+  const cached = analysisCache.get(key);
+  if (!cached) return null;
+  if (cached.expiresAt <= Date.now()) {
+    analysisCache.delete(key);
+    return null;
+  }
+  return cached.value;
+}
+
+function setCached(key: string, value: ResultPayload) {
+  if (analysisCache.size > 300) {
+    const now = Date.now();
+    for (const [entryKey, entry] of analysisCache) {
+      if (entry.expiresAt <= now) analysisCache.delete(entryKey);
+    }
+    if (analysisCache.size > 300) {
+      const first = analysisCache.keys().next().value as string | undefined;
+      if (first) analysisCache.delete(first);
+    }
+  }
+
+  analysisCache.set(key, {
+    value,
+    expiresAt: Date.now() + CACHE_TTL_MS,
+  });
+}
+
 export async function POST(request: NextRequest) {
+  const existingToken = request.cookies.get(SESSION_COOKIE)?.value || "";
+  const sessionToken = validSessionToken(existingToken)
+    ? existingToken
+    : randomUUID();
+  const shouldSetCookie = sessionToken !== existingToken;
+
   try {
+    const rate = await consumeRateLimit(request, sessionToken);
+    if (rate.allowed === false) {
+      const response = NextResponse.json(
+        {
+          error:
+            "Too many onboarding analyses from this session. Please wait a few minutes and try again.",
+        },
+        { status: 429 },
+      );
+      response.headers.set("Retry-After", "600");
+      return attachSessionCookie(response, sessionToken, shouldSetCookie);
+    }
+
     const body = (await request.json()) as AnalyzeBody;
     const rawAnswers =
       body.answers && typeof body.answers === "object" && !Array.isArray(body.answers)
@@ -217,15 +444,19 @@ export async function POST(request: NextRequest) {
         : null;
 
     if (!rawAnswers) {
-      return NextResponse.json({ error: "answers is required." }, { status: 400 });
+      return attachSessionCookie(
+        NextResponse.json({ error: "answers is required." }, { status: 400 }),
+        sessionToken,
+        shouldSetCookie,
+      );
     }
 
     const [questions, options, recommendationRows, toolRows] = await Promise.all([
       supabaseGet<QuestionRow[]>(
-        "start_questions?select=id,question_key,question_type,required,max_selections&is_active=eq.true&order=position.asc",
+        "start_questions?select=id,question_key,question,question_type,required,max_selections&is_active=eq.true&order=position.asc",
       ),
       supabaseGet<OptionRow[]>(
-        "start_question_options?select=question_id,value&is_active=eq.true",
+        "start_question_options?select=question_id,value,label,description&is_active=eq.true",
       ),
       supabaseGet<RecommendationRow[]>(
         "start_recommendable_tools?select=tool_id,enabled,guidance&enabled=eq.true",
@@ -236,6 +467,7 @@ export async function POST(request: NextRequest) {
     ]);
 
     const answers = normalizeAnswers(rawAnswers, questions, options);
+    const semantic = semanticAnswers(answers, questions, options);
     const recommendationById = new Map(
       recommendationRows.map((row) => [row.tool_id, row]),
     );
@@ -248,30 +480,57 @@ export async function POST(request: NextRequest) {
       }));
 
     if (allowedTools.length === 0) {
-      return NextResponse.json(
-        { error: "No onboarding recommendations are currently enabled." },
-        { status: 503 },
+      return attachSessionCookie(
+        NextResponse.json(
+          { error: "No onboarding recommendations are currently enabled." },
+          { status: 503 },
+        ),
+        sessionToken,
+        shouldSetCookie,
       );
     }
 
-    const fallbackTool = fallbackPick(answers, allowedTools);
+    const fallbackTool = fallbackPick(answers, semantic, allowedTools);
     if (!fallbackTool) {
-      return NextResponse.json({ error: "No recommendation available." }, { status: 503 });
+      return attachSessionCookie(
+        NextResponse.json(
+          { error: "No recommendation available." },
+          { status: 503 },
+        ),
+        sessionToken,
+        shouldSetCookie,
+      );
     }
 
     const apiKey = process.env.DEEPSEEK_API_KEY || "";
     const model = process.env.DEEPSEEK_MODEL || "deepseek-flash";
+    const cacheable = !hasFreeText(answers, questions);
+    const key = cacheable
+      ? cacheKey(answers, semantic, allowedTools, model)
+      : "";
+
+    if (key) {
+      const cached = getCached(key);
+      if (cached) {
+        const response = NextResponse.json({ ...cached, source: "cache" });
+        return attachSessionCookie(response, sessionToken, shouldSetCookie);
+      }
+    }
 
     if (!apiKey) {
-      return NextResponse.json(
-        resultPayload(
-          fallbackTool,
-          "Your Fluxora creator profile",
-          "Fluxora matched your answers to an approved starting point.",
-          fallbackTool.guidance ||
-            "This resource best matches the answers you selected in the onboarding quiz.",
-          "fallback",
-        ),
+      const value = resultPayload(
+        fallbackTool,
+        "Your Fluxora creator profile",
+        "Fluxora matched your answers to an approved starting point.",
+        fallbackTool.guidance ||
+          "This resource best matches the answers you selected in the onboarding quiz.",
+        "fallback",
+      );
+      if (key) setCached(key, value);
+      return attachSessionCookie(
+        NextResponse.json(value),
+        sessionToken,
+        shouldSetCookie,
       );
     }
 
@@ -290,7 +549,8 @@ export async function POST(request: NextRequest) {
       "Return ONLY valid JSON.",
       "Choose exactly one recommended_tool_id from the supplied available_recommendations array.",
       "Never invent tools, IDs, URLs, access levels, or product names.",
-      "Use the quiz answers and optional free text to identify the shortest useful starting point.",
+      "Use the supplied question text, selected answer labels/descriptions, and optional free text.",
+      "Identify the shortest useful starting point for this creator.",
       "Keep profile_title under 60 characters.",
       "Keep profile_summary under 260 characters.",
       "Keep recommendation_reason under 320 characters.",
@@ -314,7 +574,7 @@ export async function POST(request: NextRequest) {
             {
               role: "user",
               content: JSON.stringify({
-                answers,
+                quiz: semantic,
                 available_recommendations: allowedCatalog,
               }),
             },
@@ -327,15 +587,17 @@ export async function POST(request: NextRequest) {
         signal: controller.signal,
       });
 
-      if (!response.ok) throw new Error(`DeepSeek failed (${response.status})`);
+      if (!response.ok) {
+        throw new Error(`DeepSeek failed (${response.status})`);
+      }
 
       const payload = await response.json();
-      const content = payload?.choices?.[0]?.message?.content;
-      if (typeof content !== "string" || !content.trim()) {
+      const responseContent = payload?.choices?.[0]?.message?.content;
+      if (typeof responseContent !== "string" || !responseContent.trim()) {
         throw new Error("DeepSeek returned an empty response.");
       }
 
-      const parsed = JSON.parse(content) as DeepSeekResult;
+      const parsed = JSON.parse(responseContent) as DeepSeekResult;
       const toolId = cleanString(parsed.recommended_tool_id, 80);
       const selected = allowedTools.find((tool) => tool.id === toolId);
 
@@ -343,35 +605,49 @@ export async function POST(request: NextRequest) {
         throw new Error("DeepSeek returned a tool outside the allowlist.");
       }
 
-      return NextResponse.json(
-        resultPayload(
-          selected,
-          cleanString(parsed.profile_title, 60) || "Your Fluxora creator profile",
-          cleanString(parsed.profile_summary, 260) ||
-            "Fluxora matched your answers to a focused starting point.",
-          cleanString(parsed.recommendation_reason, 320) ||
-            selected.guidance ||
-            "This resource best matches your onboarding answers.",
-          "deepseek",
-        ),
+      const value = resultPayload(
+        selected,
+        cleanString(parsed.profile_title, 60) || "Your Fluxora creator profile",
+        cleanString(parsed.profile_summary, 260) ||
+          "Fluxora matched your answers to a focused starting point.",
+        cleanString(parsed.recommendation_reason, 320) ||
+          selected.guidance ||
+          "This resource best matches your onboarding answers.",
+        "deepseek",
+      );
+
+      if (key) setCached(key, value);
+
+      return attachSessionCookie(
+        NextResponse.json(value),
+        sessionToken,
+        shouldSetCookie,
       );
     } catch (error) {
       console.warn("start analyzer fallback", error);
-      return NextResponse.json(
-        resultPayload(
-          fallbackTool,
-          "Your Fluxora creator profile",
-          "Fluxora matched your answers to an approved starting point.",
-          fallbackTool.guidance ||
-            "This resource best matches the answers you selected in the onboarding quiz.",
-          "fallback",
-        ),
+
+      const value = resultPayload(
+        fallbackTool,
+        "Your Fluxora creator profile",
+        "Fluxora matched your answers to an approved starting point.",
+        fallbackTool.guidance ||
+          "This resource best matches the answers you selected in the onboarding quiz.",
+        "fallback",
+      );
+
+      if (key) setCached(key, value);
+
+      return attachSessionCookie(
+        NextResponse.json(value),
+        sessionToken,
+        shouldSetCookie,
       );
     } finally {
       clearTimeout(timer);
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Invalid onboarding request.";
+    const message =
+      error instanceof Error ? error.message : "Invalid onboarding request.";
     const status =
       message.startsWith("Missing required") ||
       message.startsWith("Invalid answer") ||
@@ -380,9 +656,18 @@ export async function POST(request: NextRequest) {
         : 500;
 
     console.error("start analyze failed", error);
-    return NextResponse.json(
-      { error: status === 400 ? message : "Unable to analyze onboarding answers." },
-      { status },
+    return attachSessionCookie(
+      NextResponse.json(
+        {
+          error:
+            status === 400
+              ? message
+              : "Unable to analyze onboarding answers.",
+        },
+        { status },
+      ),
+      sessionToken,
+      shouldSetCookie,
     );
   }
 }
