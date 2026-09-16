@@ -4,7 +4,8 @@ import styles from "./admin.module.css";
 
 const ADMIN_LINKS = [
   { href: "/admin", label: "Content" },
-  { href: "/admin/accounts", label: "Accounts" },\n  { href: "/admin/start", label: "Start" },
+  { href: "/admin/accounts", label: "Accounts" },
+  { href: "/admin/start", label: "Start" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/member", label: "Member" },
 ];
