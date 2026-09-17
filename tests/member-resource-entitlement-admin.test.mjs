@@ -2,14 +2,15 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 
-const manager = readFileSync(new URL("../app/member/member-manager.tsx", import.meta.url), "utf8");
-const panel = readFileSync(new URL("../app/member/member-resource-access.tsx", import.meta.url), "utf8");
+const admin = readFileSync(new URL("../app/member/member-admin.tsx", import.meta.url), "utf8");
+const panel = readFileSync(new URL("../app/member/member-resource-access-admin.tsx", import.meta.url), "utf8");
 
-test("member manager mounts individual CustomGPT access controls", () => {
-  assert.match(manager, /MemberResourceAccess/, "Member Manager must mount the isolated resource access control");
+test("member admin mounts individual CustomGPT access controls", () => {
+  assert.match(admin, /MemberResourceAccessAdmin/, "Member Admin must mount the isolated resource access control");
 });
 
-test("resource access panel loads the dedicated admin entitlement API", () => {
+test("resource access panel loads members and the dedicated entitlement API", () => {
+  assert.match(panel, /\/prompts\/api\/members/, "panel must load canonical member records");
   assert.match(panel, /member-resource-entitlements/, "panel must use the dedicated entitlement admin API");
   assert.match(panel, /customGptResources/, "panel must load the available CustomGPT catalog");
   assert.match(panel, /resourceEntitlements/, "panel must load explicit resource grants");
