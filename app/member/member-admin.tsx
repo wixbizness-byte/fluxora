@@ -1,6 +1,7 @@
 "use client";
 
 import MemberManager from "./member-manager";
+import MemberResourceAccessAdmin from "./member-resource-access-admin";
 import AffiliateAdmin from "./affiliate-admin";
 import TrialAdmin from "./trial-admin";
 import ResourceUsagePortal from "../members/resource-usage-portal";
@@ -17,6 +18,7 @@ export default function MemberAdmin() {
         <p>Manage members, referrals, access analytics, resource usage, and trial administration from one protected workspace.</p>
       </header>
       <MemberManager />
+      <MemberResourceAccessAdmin />
       <div className={styles.analyticsGrid}>
         <ResourceUsagePortal />
         <ActiveAccessPortal />
