@@ -8,20 +8,20 @@ type Member = {
   id: string;
   access_code: string;
   gmail: string;
-  tier: "Tool" | "Premium" | "Creator" | "Admin";
+  tier: "Member" | "Tool" | "Premium" | "Creator" | "Admin";
   status: string;
   is_admin?: boolean;
   access_origin?: string | null;
   premium_promo_expires_at?: string | null;
   creator_preview_expires_at?: string | null;
-  base_tier?: "Tool" | "Premium" | "Creator";
+  base_tier?: "Member" | "Tool" | "Premium" | "Creator";
   base_status?: string;
   base_expires_at?: string | null;
   base_max_devices?: number | null;
   effective_active?: boolean;
   effective_label?: string;
   effective_source?: string;
-  effective_tier?: "Tool" | "Premium" | "Creator" | "Admin";
+  effective_tier?: "Member" | "Tool" | "Premium" | "Creator" | "Admin";
   effective_expires_at?: string | null;
   trial_type?: string | null;
   trial_expires_at?: string | null;
@@ -41,7 +41,7 @@ type Activity = {
   member_id: string;
   access_code: string;
   gmail: string;
-  tier: "Tool" | "Premium" | "Creator";
+  tier: "Member" | "Tool" | "Premium" | "Creator";
   status: string;
   uses: number;
   last_used_at: string;
@@ -63,7 +63,7 @@ type RegisteredCountsResponse = {
   error?: string;
 };
 
-type MemberFilter = "all" | "trial" | "members" | "tool" | "premium" | "creator" | "admin" | "affiliate";
+type MemberFilter = "all" | "trial" | "members" | "member" | "tool" | "premium" | "creator" | "admin" | "affiliate";
 
 const PAGE_SIZE = 10;
 const MEMBER_STATUSES = [
@@ -141,7 +141,7 @@ function phTime(value: string) {
 
 function payloadFromForm(form: HTMLFormElement) {
   const data = new FormData(form);
-  const tier = String(data.get("tier") || "Premium");
+  const tier = String(data.get("tier") || "Member");
   return {
     access_code: String(data.get("access_code") || "").trim(),
     gmail: String(data.get("gmail") || "").trim(),
@@ -156,7 +156,7 @@ function payloadFromForm(form: HTMLFormElement) {
 }
 
 function MemberFields({ member }: { member?: Member }) {
-  const editableTier = member ? baseTier(member) : "Premium";
+  const editableTier = member ? baseTier(member) : "Member";
   const originalStatus = member ? baseStatus(member).trim().toLowerCase() : "";
   const originalExpiry = formatLocalDate(member ? baseExpiry(member) : null);
   const temporaryOverlay = member
@@ -175,8 +175,8 @@ function MemberFields({ member }: { member?: Member }) {
       </label>
       <label className={styles.field}>
         <span>{temporaryOverlay ? "Base tier *" : "Tier *"}</span>
-        <select name="tier" defaultValue={editableTier}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>
-        <small>{temporaryOverlay ? "Temporary access is computed separately. This changes only the base membership tier." : "Admin has full access, unlimited uses/devices/Canvas slots, and no expiry."}</small>
+        <select name="tier" defaultValue={editableTier}><option value="Member">Member</option><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>
+        <small>{temporaryOverlay ? "Temporary access is computed separately. This changes only the base membership tier." : "Member has no tier-based resource access; grant individual resources from Access. Admin has full access and no expiry."}</small>
       </label>
       <label className={styles.field}>
         <span>{temporaryOverlay ? "Base status *" : "Status *"}</span>
@@ -268,6 +268,7 @@ export default function MemberManager() {
     all: members.length,
     trial: members.filter((m) => ["Google Trial", "Referral Trial"].includes(effectiveSource(m)) && isEffectivelyActive(m)).length,
     members: members.filter((m) => ["Premium", "Creator", "Admin"].includes(effectiveTier(m)) && !["Google Trial", "Referral Trial"].includes(effectiveSource(m))).length,
+    member: members.filter((m) => effectiveTier(m) === "Member").length,
     tool: members.filter((m) => effectiveTier(m) === "Tool").length,
     premium: members.filter((m) => effectiveTier(m) === "Premium").length,
     creator: members.filter((m) => effectiveTier(m) === "Creator").length,
@@ -284,6 +285,7 @@ export default function MemberManager() {
         filter === "all" ? true :
         filter === "trial" ? ["Google Trial", "Referral Trial"].includes(source) && isEffectivelyActive(member) :
         filter === "members" ? ["Premium", "Creator", "Admin"].includes(tier) && !["Google Trial", "Referral Trial"].includes(source) :
+        filter === "member" ? tier === "Member" :
         filter === "tool" ? tier === "Tool" :
         filter === "premium" ? tier === "Premium" :
         filter === "creator" ? tier === "Creator" :
@@ -383,6 +385,7 @@ export default function MemberManager() {
     { key: "all", label: "All" },
     { key: "trial", label: "Trial" },
     { key: "members", label: "Members" },
+    { key: "member", label: "Member" },
     { key: "tool", label: "Tool" },
     { key: "premium", label: "Premium" },
     { key: "creator", label: "Creator" },
