@@ -1,0 +1,240 @@
+.panel {
+  margin-top: 28px;
+  padding: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  background: rgba(16, 16, 18, 0.72);
+  backdrop-filter: blur(14px);
+}
+
+.heading,
+.subheading,
+.memberPicker,
+.grantItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.heading {
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.heading h3,
+.subheading h4 {
+  margin: 0;
+}
+
+.heading p {
+  margin: 6px 0 0;
+  color: rgba(255, 255, 255, 0.66);
+  max-width: 720px;
+}
+
+.kicker {
+  margin: 0 0 6px !important;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(230, 194, 112, 0.9) !important;
+}
+
+.refreshButton,
+.revokeButton,
+.grantButton {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.refreshButton,
+.revokeButton {
+  background: rgba(255, 255, 255, 0.05);
+  color: inherit;
+}
+
+.grantButton {
+  background: #f3d47d;
+  color: #111;
+  font-weight: 700;
+}
+
+.refreshButton:disabled,
+.revokeButton:disabled,
+.grantButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.successNotice,
+.errorNotice {
+  margin: 12px 0 18px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+}
+
+.successNotice {
+  background: rgba(73, 168, 94, 0.12);
+  border: 1px solid rgba(73, 168, 94, 0.35);
+}
+
+.errorNotice {
+  background: rgba(208, 72, 72, 0.12);
+  border: 1px solid rgba(208, 72, 72, 0.35);
+}
+
+.memberPicker {
+  padding: 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.memberPicker label,
+.grantForm > label {
+  display: grid;
+  gap: 7px;
+  min-width: min(100%, 320px);
+}
+
+.memberPicker label span,
+.grantForm label span,
+.expiryFieldset legend {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.memberPicker select,
+.grantForm select,
+.grantForm input[type="datetime-local"],
+.grantForm input[type="text"],
+.grantForm input:not([type]) {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: rgba(8, 8, 10, 0.8);
+  color: inherit;
+  font: inherit;
+}
+
+.memberSummary {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.memberSummary span,
+.grantItem span,
+.grantItem small {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 0.82rem;
+}
+
+.grantList,
+.grantForm {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.subheading {
+  margin-bottom: 12px;
+}
+
+.subheading span {
+  min-width: 30px;
+  text-align: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.grantItem {
+  align-items: flex-start;
+  padding: 14px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.grantItem:first-of-type {
+  border-top: 0;
+}
+
+.grantItem > div {
+  display: grid;
+  gap: 3px;
+}
+
+.empty {
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 0.9rem;
+}
+
+.grantForm {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.4fr) minmax(220px, 1fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.grantForm .subheading {
+  grid-column: 1 / -1;
+  margin-bottom: 0;
+}
+
+.expiryFieldset {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  border: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.expiryFieldset legend {
+  margin-bottom: 8px;
+}
+
+.expiryFieldset label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.notesField {
+  grid-column: 1 / -1;
+}
+
+.grantButton {
+  justify-self: start;
+}
+
+@media (max-width: 760px) {
+  .panel {
+    padding: 18px;
+  }
+
+  .heading,
+  .memberPicker,
+  .grantItem {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .memberSummary {
+    text-align: left;
+  }
+
+  .grantForm {
+    grid-template-columns: 1fr;
+  }
+
+  .grantForm .subheading,
+  .notesField {
+    grid-column: 1;
+  }
+}
