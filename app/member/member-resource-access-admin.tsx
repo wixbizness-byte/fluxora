@@ -6,8 +6,8 @@ import styles from "./member-resource-access-admin.module.css";
 type MemberOption = {
   id: string;
   gmail: string;
-  tier: "Tool" | "Premium" | "Creator" | "Admin";
-  base_tier?: "Tool" | "Premium" | "Creator";
+  tier: "Member" | "Tool" | "Premium" | "Creator" | "Admin";
+  base_tier?: "Member" | "Tool" | "Premium" | "Creator";
   status: string;
 };
 
@@ -66,6 +66,7 @@ export default function MemberResourceAccessAdmin() {
   const [customGptResources, setCustomGptResources] = useState<CustomGptResource[]>([]);
   const [resourceEntitlements, setResourceEntitlements] = useState<ResourceEntitlement[]>([]);
   const [memberId, setMemberId] = useState("");
+  const [memberQuery, setMemberQuery] = useState("");
   const [resourceId, setResourceId] = useState("");
   const [expiryMode, setExpiryMode] = useState<"permanent" | "custom">("permanent");
   const [expiresAt, setExpiresAt] = useState("");
@@ -93,7 +94,7 @@ export default function MemberResourceAccessAdmin() {
       setMembers(nextMembers);
       setCustomGptResources(nextResources);
       setResourceEntitlements(accessBody.resourceEntitlements || []);
-      setMemberId((current) => current || nextMembers[0]?.id || "");
+      setMemberId((current) => nextMembers.some((member) => member.id === current) ? current : "");
       setResourceId((current) => current || nextResources[0]?.id || "");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not load individual CustomGPT access.");
@@ -108,6 +109,14 @@ export default function MemberResourceAccessAdmin() {
     () => members.find((member) => member.id === memberId) || null,
     [memberId, members],
   );
+
+  const memberMatches = useMemo(() => {
+    const needle = memberQuery.trim().toLowerCase();
+    if (!needle) return [];
+    return members
+      .filter((member) => member.gmail.toLowerCase().includes(needle))
+      .slice(0, 10);
+  }, [memberQuery, members]);
 
   const selectedEntitlements = useMemo(
     () => resourceEntitlements.filter((entitlement) => entitlement.member_id === memberId),
@@ -195,16 +204,48 @@ export default function MemberResourceAccessAdmin() {
       {(notice || error) && <div className={error ? styles.errorNotice : styles.successNotice}>{error || notice}</div>}
 
       <div className={styles.memberPicker}>
-        <label>
-          <span>Member</span>
-          <select value={memberId} onChange={(event) => setMemberId(event.target.value)} disabled={loading || !members.length}>
-            {!members.length && <option value="">No members found</option>}
-            {members.map((member) => (
-              <option key={member.id} value={member.id}>{member.gmail} · {memberTier(member)}</option>
-            ))}
-          </select>
-        </label>
-        {selectedMember && <div className={styles.memberSummary}><strong>{selectedMember.gmail}</strong><span>Base access: {memberTier(selectedMember)} · {selectedMember.status}</span></div>}
+        <div className={styles.memberSearch}>
+          <label htmlFor="resource-member-search">Member Gmail</label>
+          <input
+            id="resource-member-search"
+            type="search"
+            value={memberQuery}
+            onChange={(event) => {
+              const nextQuery = event.target.value;
+              setMemberQuery(nextQuery);
+              if (selectedMember?.gmail !== nextQuery) setMemberId("");
+            }}
+            placeholder="Search Gmail..."
+            autoComplete="off"
+            disabled={loading || !members.length}
+            aria-controls="resource-member-search-results"
+            aria-expanded={Boolean(memberQuery.trim() && !selectedMember)}
+          />
+          {memberQuery.trim() && !selectedMember && (
+            <div className={styles.memberSearchResults} id="resource-member-search-results" role="listbox" aria-label="Matching members">
+              {memberMatches.map((member) => (
+                <button
+                  type="button"
+                  className={styles.memberSearchResult}
+                  key={member.id}
+                  role="option"
+                  aria-selected="false"
+                  onClick={() => {
+                    setMemberId(member.id);
+                    setMemberQuery(member.gmail);
+                  }}
+                >
+                  <strong>{member.gmail}</strong>
+                  <span>{memberTier(member)} · {member.status}</span>
+                </button>
+              ))}
+              {!memberMatches.length && <p className={styles.noMemberMatches}>No matching Gmail found.</p>}
+            </div>
+          )}
+        </div>
+        {selectedMember
+          ? <div className={styles.memberSummary}><strong>{selectedMember.gmail}</strong><span>Base access: {memberTier(selectedMember)} · {selectedMember.status}</span></div>
+          : <div className={styles.memberSummary}><strong>No member selected</strong><span>Search and select a Gmail to manage per-item access.</span></div>}
       </div>
 
       <div className={styles.grantList}>
@@ -225,7 +266,9 @@ export default function MemberResourceAccessAdmin() {
             </article>
           );
         })}
-        {!selectedEntitlements.length && <p className={styles.empty}>No individual CustomGPT access grants for this member.</p>}
+        {!memberId
+          ? <p className={styles.empty}>Select a member to view individual CustomGPT access.</p>
+          : !selectedEntitlements.length && <p className={styles.empty}>No individual CustomGPT access grants for this member.</p>}
       </div>
 
       <form className={styles.grantForm} onSubmit={grantAccess}>
