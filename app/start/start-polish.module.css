@@ -8,6 +8,13 @@
   font-family: var(--font-inter), Inter, Arial, sans-serif !important;
 }
 
+/* Keep the recommendation card wrapped to the displayed 16:9 artwork instead of stretching across the grid column. */
+.wrapper :global(article[class*="toolCard"]) {
+  width: min(100%, 747px);
+  justify-self: center;
+  align-self: start;
+}
+
 /* Show the complete recommended-tool artwork instead of cropping it to 190px. */
 .wrapper :global(article > div:first-child) {
   height: auto !important;
