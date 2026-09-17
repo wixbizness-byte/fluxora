@@ -20,21 +20,15 @@ type OptionRow = {
   description: string;
 };
 
-type ToolRow = {
+type CatalogTool = {
   id: string;
   slug: string;
   title: string;
   short_description: string | null;
   image_url: string | null;
   redirect_url: string;
-  access_level: "All" | "Premium" | "Creator";
-  tool_type: "Tool" | "CustomGPT" | "Workflow";
-  status: string;
-};
-
-type RecommendationRow = {
-  tool_id: string;
-  enabled: boolean;
+  access_level: string;
+  tool_type: string;
   guidance: string;
 };
 
@@ -49,15 +43,15 @@ type DeepSeekResult = {
   recommendation_reason?: unknown;
 };
 
+type RateLimitResult = {
+  allowed?: boolean;
+};
+
 type ResultPayload = ReturnType<typeof resultPayload>;
 
 type CachedResult = {
   expiresAt: number;
   value: ResultPayload;
-};
-
-type RateLimitResult = {
-  allowed?: boolean;
 };
 
 const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
@@ -133,19 +127,14 @@ function validSessionToken(value: string) {
 
 function requestIp(request: NextRequest) {
   const forwarded = request.headers.get("x-forwarded-for") || "";
-  const first = forwarded.split(",")[0]?.trim();
-  return first || request.headers.get("x-real-ip") || "unknown";
+  return forwarded.split(",")[0]?.trim() || request.headers.get("x-real-ip") || "unknown";
 }
 
 function hmac(value: string, secret: string) {
   return createHmac("sha256", secret).update(value).digest("hex");
 }
 
-function attachSessionCookie(
-  response: NextResponse,
-  token: string,
-  shouldSet: boolean,
-) {
+function attachSessionCookie(response: NextResponse, token: string, shouldSet: boolean) {
   if (shouldSet) {
     response.cookies.set({
       name: SESSION_COOKIE,
@@ -160,23 +149,16 @@ function attachSessionCookie(
   return response;
 }
 
-async function consumeRateLimit(
-  request: NextRequest,
-  sessionToken: string,
-) {
+async function consumeRateLimit(request: NextRequest, sessionToken: string) {
   const secret = process.env.START_RATE_LIMIT_SECRET || "";
   if (!secret) return { allowed: true };
 
-  const sessionHash = hmac(`session:${sessionToken}`, secret);
-  const ipHash = hmac(`ip:${requestIp(request)}`, secret);
-
   try {
     return await supabaseRpc<RateLimitResult>("consume_start_analysis_limits", {
-      p_session_hash: sessionHash,
-      p_ip_hash: ipHash,
+      p_session_hash: hmac(`session:${sessionToken}`, secret),
+      p_ip_hash: hmac(`ip:${requestIp(request)}`, secret),
     });
   } catch (error) {
-    // Do not take onboarding offline if only the limiter is unavailable.
     console.warn("start rate limiter unavailable", error);
     return { allowed: true };
   }
@@ -215,11 +197,9 @@ function normalizeAnswers(
       if (question.required && values.length === 0) {
         throw new Error(`Missing required answer: ${question.question_key}`);
       }
-
       if (question.max_selections && values.length > question.max_selections) {
         throw new Error(`Too many selections: ${question.question_key}`);
       }
-
       if (values.some((value) => !allowed.has(value))) {
         throw new Error(`Invalid answer: ${question.question_key}`);
       }
@@ -248,6 +228,7 @@ function semanticAnswers(
 ) {
   return questions.map((question) => {
     const raw = answers[question.question_key];
+
     if (question.question_type === "text") {
       return {
         id: question.question_key,
@@ -290,15 +271,12 @@ function tokenize(value: string) {
 function fallbackPick(
   answers: Record<string, string | string[]>,
   semantic: ReturnType<typeof semanticAnswers>,
-  tools: Array<ToolRow & { guidance: string }>,
+  tools: CatalogTool[],
 ) {
   const answerText = [
-    ...Object.values(answers).flatMap((value) =>
-      Array.isArray(value) ? value : [value],
-    ),
+    ...Object.values(answers).flatMap((value) => (Array.isArray(value) ? value : [value])),
     JSON.stringify(semantic),
   ].join(" ");
-
   const answerTokens = tokenize(answerText);
 
   const scored = tools.map((tool) => {
@@ -321,14 +299,12 @@ function fallbackPick(
     return { tool, score };
   });
 
-  scored.sort(
-    (a, b) => b.score - a.score || a.tool.title.localeCompare(b.tool.title),
-  );
+  scored.sort((a, b) => b.score - a.score || a.tool.title.localeCompare(b.tool.title));
   return scored[0]?.tool || tools[0];
 }
 
 function resultPayload(
-  tool: ToolRow & { guidance: string },
+  tool: CatalogTool,
   profileTitle: string,
   profileSummary: string,
   reason: string,
@@ -369,7 +345,7 @@ function hasFreeText(
 function cacheKey(
   answers: Record<string, string | string[]>,
   semantic: ReturnType<typeof semanticAnswers>,
-  tools: Array<ToolRow & { guidance: string }>,
+  tools: CatalogTool[],
   model: string,
 ) {
   return createHash("sha256")
@@ -380,8 +356,8 @@ function cacheKey(
         model,
         tools: tools.map((tool) => ({
           id: tool.id,
-          guidance: tool.guidance,
           title: tool.title,
+          guidance: tool.guidance,
         })),
       }),
     )
@@ -418,9 +394,7 @@ function setCached(key: string, value: ResultPayload) {
 
 export async function POST(request: NextRequest) {
   const existingToken = request.cookies.get(SESSION_COOKIE)?.value || "";
-  const sessionToken = validSessionToken(existingToken)
-    ? existingToken
-    : randomUUID();
+  const sessionToken = validSessionToken(existingToken) ? existingToken : randomUUID();
   const shouldSetCookie = sessionToken !== existingToken;
 
   try {
@@ -451,33 +425,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const [questions, options, recommendationRows, toolRows] = await Promise.all([
+    const [questions, options, allowedTools] = await Promise.all([
       supabaseGet<QuestionRow[]>(
         "start_questions?select=id,question_key,question,question_type,required,max_selections&is_active=eq.true&order=position.asc",
       ),
       supabaseGet<OptionRow[]>(
         "start_question_options?select=question_id,value,label,description&is_active=eq.true",
       ),
-      supabaseGet<RecommendationRow[]>(
-        "start_recommendable_tools?select=tool_id,enabled,guidance&enabled=eq.true",
-      ),
-      supabaseGet<ToolRow[]>(
-        "tools?select=id,slug,title,short_description,image_url,redirect_url,access_level,tool_type,status&status=eq.active",
-      ),
+      supabaseRpc<CatalogTool[]>("get_start_recommendation_catalog", {}),
     ]);
 
     const answers = normalizeAnswers(rawAnswers, questions, options);
     const semantic = semanticAnswers(answers, questions, options);
-    const recommendationById = new Map(
-      recommendationRows.map((row) => [row.tool_id, row]),
-    );
-
-    const allowedTools = toolRows
-      .filter((tool) => recommendationById.has(tool.id))
-      .map((tool) => ({
-        ...tool,
-        guidance: recommendationById.get(tool.id)?.guidance || "",
-      }));
 
     if (allowedTools.length === 0) {
       return attachSessionCookie(
@@ -493,10 +452,7 @@ export async function POST(request: NextRequest) {
     const fallbackTool = fallbackPick(answers, semantic, allowedTools);
     if (!fallbackTool) {
       return attachSessionCookie(
-        NextResponse.json(
-          { error: "No recommendation available." },
-          { status: 503 },
-        ),
+        NextResponse.json({ error: "No recommendation available." }, { status: 503 }),
         sessionToken,
         shouldSetCookie,
       );
@@ -505,15 +461,16 @@ export async function POST(request: NextRequest) {
     const apiKey = process.env.DEEPSEEK_API_KEY || "";
     const model = process.env.DEEPSEEK_MODEL || "deepseek-flash";
     const cacheable = !hasFreeText(answers, questions);
-    const key = cacheable
-      ? cacheKey(answers, semantic, allowedTools, model)
-      : "";
+    const key = cacheable ? cacheKey(answers, semantic, allowedTools, model) : "";
 
     if (key) {
       const cached = getCached(key);
       if (cached) {
-        const response = NextResponse.json({ ...cached, source: "cache" });
-        return attachSessionCookie(response, sessionToken, shouldSetCookie);
+        return attachSessionCookie(
+          NextResponse.json({ ...cached, source: "cache" }),
+          sessionToken,
+          shouldSetCookie,
+        );
       }
     }
 
@@ -527,11 +484,7 @@ export async function POST(request: NextRequest) {
         "fallback",
       );
       if (key) setCached(key, value);
-      return attachSessionCookie(
-        NextResponse.json(value),
-        sessionToken,
-        shouldSetCookie,
-      );
+      return attachSessionCookie(NextResponse.json(value), sessionToken, shouldSetCookie);
     }
 
     const allowedCatalog = allowedTools.map((tool) => ({
@@ -546,15 +499,15 @@ export async function POST(request: NextRequest) {
 
     const systemPrompt = [
       "You are Fluxora's onboarding router.",
-      "Return ONLY valid JSON.",
-      "Choose exactly one recommended_tool_id from the supplied available_recommendations array.",
+      "Return only one valid JSON object and no markdown.",
+      "Choose exactly one recommended_tool_id from available_recommendations.",
       "Never invent tools, IDs, URLs, access levels, or product names.",
-      "Use the supplied question text, selected answer labels/descriptions, and optional free text.",
-      "Identify the shortest useful starting point for this creator.",
-      "Keep profile_title under 60 characters.",
-      "Keep profile_summary under 260 characters.",
-      "Keep recommendation_reason under 320 characters.",
-      'JSON shape: {"profile_title":"...","profile_summary":"...","recommended_tool_id":"uuid-from-list","recommendation_reason":"..."}',
+      "Use the quiz wording, selected answer labels/descriptions, and optional free text.",
+      "Choose the shortest useful starting point for this creator.",
+      "profile_title must be under 60 characters.",
+      "profile_summary must be under 260 characters.",
+      "recommendation_reason must be under 320 characters.",
+      'JSON example: {"profile_title":"TikTok affiliate creator","profile_summary":"...","recommended_tool_id":"uuid-from-list","recommendation_reason":"..."}',
     ].join("\n");
 
     const controller = new AbortController();
@@ -580,26 +533,32 @@ export async function POST(request: NextRequest) {
             },
           ],
           response_format: { type: "json_object" },
-          reasoning_effort: "low",
+          reasoning_effort: "none",
           temperature: 0.2,
-          max_tokens: 500,
+          max_tokens: 1200,
         }),
         signal: controller.signal,
       });
 
       if (!response.ok) {
-        throw new Error(`DeepSeek failed (${response.status})`);
+        const detail = await response.text();
+        throw new Error(`DeepSeek failed (${response.status}): ${detail.slice(0, 240)}`);
       }
 
       const payload = await response.json();
-      const responseContent = payload?.choices?.[0]?.message?.content;
+      const choice = payload?.choices?.[0];
+      if (choice?.finish_reason === "length") {
+        throw new Error("DeepSeek JSON was truncated by the output token limit.");
+      }
+
+      const responseContent = choice?.message?.content;
       if (typeof responseContent !== "string" || !responseContent.trim()) {
         throw new Error("DeepSeek returned an empty response.");
       }
 
       const parsed = JSON.parse(responseContent) as DeepSeekResult;
-      const toolId = cleanString(parsed.recommended_tool_id, 80);
-      const selected = allowedTools.find((tool) => tool.id === toolId);
+      const selectedId = cleanString(parsed.recommended_tool_id, 80);
+      const selected = allowedTools.find((tool) => tool.id === selectedId);
 
       if (!selected) {
         throw new Error("DeepSeek returned a tool outside the allowlist.");
@@ -617,12 +576,7 @@ export async function POST(request: NextRequest) {
       );
 
       if (key) setCached(key, value);
-
-      return attachSessionCookie(
-        NextResponse.json(value),
-        sessionToken,
-        shouldSetCookie,
-      );
+      return attachSessionCookie(NextResponse.json(value), sessionToken, shouldSetCookie);
     } catch (error) {
       console.warn("start analyzer fallback", error);
 
@@ -636,18 +590,12 @@ export async function POST(request: NextRequest) {
       );
 
       if (key) setCached(key, value);
-
-      return attachSessionCookie(
-        NextResponse.json(value),
-        sessionToken,
-        shouldSetCookie,
-      );
+      return attachSessionCookie(NextResponse.json(value), sessionToken, shouldSetCookie);
     } finally {
       clearTimeout(timer);
     }
   } catch (error) {
-    const message =
-      error instanceof Error ? error.message : "Invalid onboarding request.";
+    const message = error instanceof Error ? error.message : "Invalid onboarding request.";
     const status =
       message.startsWith("Missing required") ||
       message.startsWith("Invalid answer") ||
@@ -659,10 +607,7 @@ export async function POST(request: NextRequest) {
     return attachSessionCookie(
       NextResponse.json(
         {
-          error:
-            status === 400
-              ? message
-              : "Unable to analyze onboarding answers.",
+          error: status === 400 ? message : "Unable to analyze onboarding answers.",
         },
         { status },
       ),
