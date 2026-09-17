@@ -6,6 +6,7 @@
   background: rgba(16, 16, 18, 0.92);
   color: #f8fafc;
   color-scheme: dark;
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
   backdrop-filter: blur(14px);
 }
 
@@ -27,6 +28,7 @@
 .heading h3,
 .subheading h4 {
   margin: 0;
+  font-family: var(--font-inter), Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
 .heading p {
@@ -96,21 +98,23 @@
   background: rgba(255, 255, 255, 0.035);
 }
 
-.memberPicker label,
-.grantForm > label {
+.memberSearch {
+  position: relative;
   display: grid;
   gap: 7px;
+  flex: 1 1 430px;
   min-width: min(100%, 320px);
+  max-width: 620px;
 }
 
-.memberPicker label span,
+.memberSearch > label,
 .grantForm label span,
 .expiryFieldset legend {
   font-size: 0.78rem;
   color: rgba(255, 255, 255, 0.64);
 }
 
-.memberPicker select,
+.memberSearch input,
 .grantForm select,
 .grantForm input[type="datetime-local"],
 .grantForm input[type="text"],
@@ -124,9 +128,73 @@
   font: inherit;
 }
 
+.memberSearch input:focus,
+.grantForm select:focus,
+.grantForm input:focus {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.82);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
+}
+
+.memberSearch input::placeholder,
 .grantForm input::placeholder {
   color: #94a3b8;
   opacity: 1;
+}
+
+.memberSearchResults {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 7px);
+  left: 0;
+  right: 0;
+  max-height: 270px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: #15171d;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+.memberSearchResult {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 11px;
+  background: transparent;
+  color: #f8fafc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.memberSearchResult:hover,
+.memberSearchResult:focus-visible {
+  background: rgba(255, 255, 255, 0.075);
+  outline: none;
+}
+
+.memberSearchResult strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.memberSearchResult span {
+  flex: 0 0 auto;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+}
+
+.noMemberMatches {
+  margin: 0;
+  padding: 10px 11px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.86rem;
 }
 
 .memberSummary {
@@ -193,6 +261,12 @@
   margin-bottom: 0;
 }
 
+.grantForm > label {
+  display: grid;
+  gap: 7px;
+  min-width: min(100%, 320px);
+}
+
 .expiryFieldset {
   display: flex;
   gap: 16px;
@@ -230,6 +304,11 @@
   .grantItem {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .memberSearch {
+    width: 100%;
+    max-width: none;
   }
 
   .memberSummary {
