@@ -1,0 +1,42 @@
+.wrapper {
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
+}
+
+.wrapper :global(h1),
+.wrapper :global(h2),
+.wrapper :global(h3) {
+  font-family: var(--font-inter), Inter, Arial, sans-serif !important;
+}
+
+/* Show the complete recommended-tool artwork instead of cropping it to 190px. */
+.wrapper :global(article > div:first-child) {
+  height: auto !important;
+  min-height: 190px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wrapper :global(article > div:first-child img) {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 420px;
+  object-fit: contain !important;
+  object-position: center;
+  background: #121722;
+}
+
+/* Results now keep only the Retake quiz action. */
+.wrapper :global(div[class*="resultActions"] > button:first-child) {
+  display: none !important;
+}
+
+@media (max-width: 640px) {
+  .wrapper :global(article > div:first-child img) {
+    max-height: 320px;
+  }
+
+  .wrapper :global(div[class*="resultActions"]) {
+    grid-template-columns: 1fr !important;
+  }
+}

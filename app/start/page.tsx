@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import StartGuide from "./start-guide";
+import polish from "./start-polish.module.css";
 
 export const metadata: Metadata = {
   title: "Start with Fluxora | Fluxora",
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function StartPage() {
-  return <StartGuide />;
+  return (
+    <div className={polish.wrapper}>
+      <StartGuide />
+    </div>
+  );
 }
