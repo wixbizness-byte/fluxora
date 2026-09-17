@@ -1,0 +1,137 @@
+name: Member zero-access tier UI implementation
+
+on:
+  push:
+    branches:
+      - member-zero-access-tier
+
+permissions:
+  contents: write
+
+jobs:
+  implement-and-verify:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Write Member tier UI contract
+        shell: bash
+        run: |
+          mkdir -p tests
+          cat > tests/member-zero-access-tier-ui-contract.test.mjs <<'EOF'
+          import test from "node:test";
+          import assert from "node:assert/strict";
+          import { readFileSync } from "node:fs";
+
+          const manager = readFileSync(new URL("../app/member/member-manager.tsx", import.meta.url), "utf8");
+
+          test("Member Manager exposes a zero-access Member tier by default", () => {
+            assert.match(manager, /tier:\s*[\s\S]*?[\"']Member[\"'][\s\S]*?[\"']Tool[\"'][\s\S]*?[\"']Premium[\"'][\s\S]*?[\"']Creator[\"']/);
+            assert.match(manager, /data\.get\([\"']tier[\"']\)\s*\|\|\s*[\"']Member[\"']/);
+            assert.match(manager, /member\s*\?\s*baseTier\(member\)\s*:\s*[\"']Member[\"']/);
+            assert.match(manager, /<option value=[\"']Member[\"']>Member<\/option>/);
+            assert.match(manager, /Member has no tier-based resource access/);
+            assert.match(manager, /member:\s*members\.filter\(\(m\) => effectiveTier\(m\) === [\"']Member[\"']\)/);
+            assert.match(manager, /filter === [\"']member[\"'] \? tier === [\"']Member[\"']/);
+            assert.match(manager, /\{ key: [\"']member[\"'], label: [\"']Member[\"'] \}/);
+          });
+          EOF
+
+      - name: Verify RED before implementation
+        shell: bash
+        run: |
+          if node --test tests/member-zero-access-tier-ui-contract.test.mjs; then
+            echo "Expected Member UI contract to fail before implementation, but it passed." >&2
+            exit 1
+          fi
+          echo "RED confirmed: Member tier is not exposed in the current UI."
+
+      - name: Implement Member tier UI
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+          const path = 'app/member/member-manager.tsx';
+          let source = fs.readFileSync(path, 'utf8');
+
+          function replaceOne(from, to) {
+            if (!source.includes(from)) throw new Error(`Expected UI text not found: ${from}`);
+            source = source.replace(from, to);
+          }
+
+          replaceOne(
+            '  tier: "Tool" | "Premium" | "Creator" | "Admin";',
+            '  tier: "Member" | "Tool" | "Premium" | "Creator" | "Admin";'
+          );
+          replaceOne(
+            '  base_tier?: "Tool" | "Premium" | "Creator";',
+            '  base_tier?: "Member" | "Tool" | "Premium" | "Creator";'
+          );
+          replaceOne(
+            '  effective_tier?: "Tool" | "Premium" | "Creator" | "Admin";',
+            '  effective_tier?: "Member" | "Tool" | "Premium" | "Creator" | "Admin";'
+          );
+          replaceOne(
+            '  tier: "Tool" | "Premium" | "Creator";',
+            '  tier: "Member" | "Tool" | "Premium" | "Creator";'
+          );
+          replaceOne(
+            'type MemberFilter = "all" | "trial" | "members" | "tool" | "premium" | "creator" | "admin" | "affiliate";',
+            'type MemberFilter = "all" | "trial" | "members" | "member" | "tool" | "premium" | "creator" | "admin" | "affiliate";'
+          );
+          replaceOne(
+            '  const tier = String(data.get("tier") || "Premium");',
+            '  const tier = String(data.get("tier") || "Member");'
+          );
+          replaceOne(
+            '  const editableTier = member ? baseTier(member) : "Premium";',
+            '  const editableTier = member ? baseTier(member) : "Member";'
+          );
+          replaceOne(
+            '<select name="tier" defaultValue={editableTier}><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>',
+            '<select name="tier" defaultValue={editableTier}><option value="Member">Member</option><option value="Tool">Tool</option><option value="Premium">Premium</option><option value="Creator">Creator</option><option value="Admin">Admin</option></select>'
+          );
+          replaceOne(
+            '<small>{temporaryOverlay ? "Temporary access is computed separately. This changes only the base membership tier." : "Admin has full access, unlimited uses/devices/Canvas slots, and no expiry."}</small>',
+            '<small>{temporaryOverlay ? "Temporary access is computed separately. This changes only the base membership tier." : "Member has no tier-based resource access; grant individual resources from Access. Admin has full access and no expiry."}</small>'
+          );
+          replaceOne(
+            '    members: members.filter((m) => ["Premium", "Creator", "Admin"].includes(effectiveTier(m)) && !["Google Trial", "Referral Trial"].includes(effectiveSource(m))).length,\n    tool:',
+            '    members: members.filter((m) => ["Premium", "Creator", "Admin"].includes(effectiveTier(m)) && !["Google Trial", "Referral Trial"].includes(effectiveSource(m))).length,\n    member: members.filter((m) => effectiveTier(m) === "Member").length,\n    tool:'
+          );
+          replaceOne(
+            '        filter === "members" ? ["Premium", "Creator", "Admin"].includes(tier) && !["Google Trial", "Referral Trial"].includes(source) :\n        filter === "tool" ? tier === "Tool" :',
+            '        filter === "members" ? ["Premium", "Creator", "Admin"].includes(tier) && !["Google Trial", "Referral Trial"].includes(source) :\n        filter === "member" ? tier === "Member" :\n        filter === "tool" ? tier === "Tool" :'
+          );
+          replaceOne(
+            '    { key: "members", label: "Members" },\n    { key: "tool", label: "Tool" },',
+            '    { key: "members", label: "Members" },\n    { key: "member", label: "Member" },\n    { key: "tool", label: "Tool" },'
+          );
+
+          fs.writeFileSync(path, source);
+          NODE
+
+      - name: Verify GREEN UI contract
+        run: node --test tests/member-zero-access-tier-ui-contract.test.mjs
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Production build
+        run: npm run build
+
+      - name: Commit verified UI
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add app/member/member-manager.tsx tests/member-zero-access-tier-ui-contract.test.mjs
+          git commit -m "feat: add Member tier to member manager"
+          git push
