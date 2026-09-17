@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
+// QA redeploy marker: 2026-09-17 preview env verification.
 export async function GET() {
   if (process.env.VERCEL_ENV !== "preview") {
     return new NextResponse("Not found", { status: 404 });
