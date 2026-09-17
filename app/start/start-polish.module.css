@@ -39,4 +39,18 @@
   .wrapper :global(div[class*="resultActions"]) {
     grid-template-columns: 1fr !important;
   }
+
+  /* Keep the landing CTAs compact instead of stretching across the full phone width. */
+  .wrapper :global(div[class*="introActions"]) {
+    width: auto !important;
+    justify-content: center !important;
+  }
+
+  .wrapper :global(div[class*="introActions"] > button),
+  .wrapper :global(div[class*="introActions"] > a) {
+    flex: 0 0 auto !important;
+    width: auto !important;
+    min-width: 132px;
+    padding-inline: 18px !important;
+  }
 }
