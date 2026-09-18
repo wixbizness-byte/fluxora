@@ -294,6 +294,100 @@
   justify-self: start;
 }
 
+
+.resourceSearch {
+  position: relative;
+  display: grid;
+  gap: 7px;
+  min-width: min(100%, 320px);
+}
+
+.resourceSearch > label {
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.64);
+}
+
+.resourceSearch input {
+  width: 100%;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #0f1117;
+  color: #f8fafc;
+  font: inherit;
+}
+
+.resourceSearch input:focus {
+  outline: none;
+  border-color: rgba(129, 140, 248, 0.82);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.14);
+}
+
+.resourceSearch input::placeholder {
+  color: #94a3b8;
+  opacity: 1;
+}
+
+.resourceSearchResults {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 7px);
+  left: 0;
+  right: 0;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: #15171d;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42);
+}
+
+.resourceSearchResult {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 11px;
+  background: transparent;
+  color: #f8fafc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.resourceSearchResult:hover,
+.resourceSearchResult:focus-visible {
+  background: rgba(255, 255, 255, 0.075);
+  outline: none;
+}
+
+.resourceSearchResult strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.resourceSearchResult span,
+.selectedResourceMeta {
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.78rem;
+}
+
+.resourceSearchResult span {
+  flex: 0 0 auto;
+  text-align: right;
+}
+
+.noResourceMatches {
+  margin: 0;
+  padding: 10px 11px;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 0.86rem;
+}
+
 @media (max-width: 760px) {
   .panel {
     padding: 18px;
