@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, FileText, Gift, UserRound, Wrench } from "lucide-react";
+import { ArrowUpRight, FileText, Gift, LogOut, UserRound, Wrench } from "lucide-react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import NextBestActionPanel from "./next-best-action-panel";
 import { useMemberSession, type MemberPortalResponse } from "./member-auth-gate";
@@ -181,6 +181,9 @@ export function MemberAccountHero() {
         <h2 id="member-account-heading">{displayName}</h2>
         {username ? <p className={styles.username}>@{username}</p> : null}
         {email ? <p className={styles.email}>{email}</p> : null}
+        <form className={styles.signOutForm} action="/prompts/logout?returnTo=/member" method="post">
+          <button className={styles.signOutButton} type="submit"><LogOut size={14} aria-hidden="true" />Log out</button>
+        </form>
       </div>
     </div>
 
