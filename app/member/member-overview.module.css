@@ -20,6 +20,10 @@
 .username, .email { margin: 4px 0 0; overflow-wrap: anywhere; font: 500 13px/1.45 var(--font-inter), Inter, Arial, sans-serif; }
 .username { color: var(--fluxora-color-brand); }
 .email { color: var(--fluxora-color-text-muted); }
+.signOutForm { margin: 10px 0 0; }
+.signOutButton { display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: 34px; padding: 0 10px; border: 1px solid var(--fluxora-color-border); border-radius: var(--fluxora-radius-md); color: var(--fluxora-color-text-secondary); background: var(--fluxora-color-surface); font: 650 12px/1 var(--font-inter), Inter, Arial, sans-serif; cursor: pointer; transition: transform 160ms ease, color 160ms ease, border-color 160ms ease, box-shadow 160ms ease; }
+.signOutButton:hover { transform: translateY(-1px); border-color: rgba(102, 88, 232, .28); color: var(--fluxora-color-brand); box-shadow: var(--fluxora-shadow-sm); }
+.signOutButton:focus-visible { outline: 2px solid var(--fluxora-color-brand); outline-offset: 2px; }
 
 .accountSummary { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 0; }
 .accountSummary > div { min-width: 0; padding: 12px; border: 1px solid rgba(102, 88, 232, .1); border-radius: var(--fluxora-radius-md); background: rgba(255, 255, 255, .72); }
@@ -95,6 +99,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .accountActions a, .destinationGrid a { transition: none; }
+  .signOutButton, .accountActions a, .destinationGrid a { transition: none; }
   .avatarSkeleton, .lineWide, .lineShort, .summarySkeleton, .metricLoading > span, .metricLoading > strong, .metricLoading > small { animation: none; }
 }
