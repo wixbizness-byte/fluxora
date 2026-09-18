@@ -18,13 +18,17 @@ export default function MemberAdmin() {
         <p>Manage members, referrals, access analytics, resource usage, and trial administration from one protected workspace.</p>
       </header>
       <MemberManager />
-      <MemberResourceAccessAdmin />
-      <div className={styles.analyticsGrid}>
+      <div id="member-access-admin" className={styles.shortcutTarget}>
+        <MemberResourceAccessAdmin />
+      </div>
+      <div id="tool-access-admin" className={`${styles.analyticsGrid} ${styles.shortcutTarget}`}>
         <ResourceUsagePortal />
         <ActiveAccessPortal />
       </div>
       <AffiliateAdmin />
-      <TrialAdmin />
+      <div id="custom-trial-links-admin" className={styles.shortcutTarget}>
+        <TrialAdmin />
+      </div>
       <ProgressionFeatureControls />
     </section>
   );
