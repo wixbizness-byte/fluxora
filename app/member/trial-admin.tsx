@@ -1,144 +1,252 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 import styles from "./trial-admin.module.css";
 
-type Trial = {
-  gmail: string;
-  member_id: string;
-  claimed_at: string;
-  expires_at: string;
-  active: boolean;
-  member_status: string;
-  tier: string | null;
-  access_code: string | null;
-  resettable: boolean;
+type Resource = {
+  id: string;
+  slug: string;
+  title: string;
+  access_level: "All" | "Premium" | "Creator";
+  tool_type: "Tool" | "CustomGPT" | "Workflow";
+  status: string;
 };
 
-type TrialResponse = {
-  adminEmail?: string;
-  summary?: { total: number; active: number; expired: number };
-  trials?: Trial[];
-  resetCount?: number;
+type Campaign = {
+  id: string;
+  slug: string;
+  name: string;
+  resource_id: string;
+  duration_minutes: number;
+  max_claims: number | null;
+  starts_at: string | null;
+  ends_at: string | null;
+  enabled: boolean;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  resource: Resource | null;
+  claims: { total: number; active: number };
+};
+
+type Payload = {
+  campaigns?: Campaign[];
+  resources?: Resource[];
   message?: string;
   error?: string;
 };
 
-function formatPht(value: string) {
+type DurationUnit = "minutes" | "hours" | "days";
+
+function formatPht(value: string | null) {
+  if (!value) return "No limit";
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "—";
   return new Intl.DateTimeFormat("en-PH", {
     timeZone: "Asia/Manila",
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(date) + " PHT";
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(date);
 }
 
-function displayTrialCode(value: string | null) {
+function formatDuration(minutes: number) {
+  if (minutes % 1440 === 0) {
+    const value = minutes / 1440;
+    return `${value} day${value === 1 ? "" : "s"}`;
+  }
+  if (minutes % 60 === 0) {
+    const value = minutes / 60;
+    return `${value} hour${value === 1 ? "" : "s"}`;
+  }
+  return `${minutes} minute${minutes === 1 ? "" : "s"}`;
+}
+
+function durationParts(minutes: number): { value: string; unit: DurationUnit } {
+  if (minutes % 1440 === 0) return { value: String(minutes / 1440), unit: "days" };
+  if (minutes % 60 === 0) return { value: String(minutes / 60), unit: "hours" };
+  return { value: String(minutes), unit: "minutes" };
+}
+
+function durationMinutes(value: string, unit: DurationUnit) {
+  const number = Number(value);
+  if (!Number.isInteger(number) || number <= 0) throw new Error("Duration must be a positive whole number.");
+  const multiplier = unit === "days" ? 1440 : unit === "hours" ? 60 : 1;
+  return number * multiplier;
+}
+
+function manilaInput(value: string | null) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "Asia/Manila",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value || "";
+  return `${get("year")}-${get("month")}-${get("day")}T${get("hour")}:${get("minute")}`;
+}
+
+function manilaIso(value: string) {
   if (!value) return null;
-  return /^expired-[0-9a-f]{32}$/i.test(value) ? "Recycled" : value;
+  const date = new Date(`${value}:00+08:00`);
+  if (Number.isNaN(date.getTime())) throw new Error("Enter a valid Philippine-time date.");
+  return date.toISOString();
 }
 
 export default function TrialAdmin() {
-  const [trials, setTrials] = useState<Trial[]>([]);
-  const [summary, setSummary] = useState({ total: 0, active: 0, expired: 0 });
-  const [query, setQuery] = useState("");
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [resources, setResources] = useState<Resource[]>([]);
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [resourceId, setResourceId] = useState("");
+  const [durationValue, setDurationValue] = useState("48");
+  const [durationUnit, setDurationUnit] = useState<DurationUnit>("hours");
+  const [maxClaims, setMaxClaims] = useState("");
+  const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
+  const [editingId, setEditingId] = useState("");
   const [loading, setLoading] = useState(true);
-  const [unauthorized, setUnauthorized] = useState(false);
   const [busy, setBusy] = useState("");
+  const [unauthorized, setUnauthorized] = useState(false);
   const [notice, setNotice] = useState("");
   const [error, setError] = useState("");
 
   async function load() {
     setLoading(true);
-    const response = await fetch("/prompts/api/trials", { cache: "no-store", credentials: "include" });
-    const body = (await response.json().catch(() => ({}))) as TrialResponse;
-    if (response.status === 401 || response.status === 403) {
-      setUnauthorized(true);
+    try {
+      const response = await fetch("/prompts/api/trial-campaigns", {
+        cache: "no-store",
+        credentials: "include",
+      });
+      const body = (await response.json().catch(() => ({}))) as Payload;
+      if (response.status === 401 || response.status === 403) {
+        setUnauthorized(true);
+        return;
+      }
+      if (!response.ok) throw new Error(body.error || "Could not load custom trial campaigns.");
+      setUnauthorized(false);
+      setCampaigns(body.campaigns || []);
+      setResources(body.resources || []);
+      setResourceId((current) => current || body.resources?.[0]?.id || "");
+      setError("");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not load custom trial campaigns.");
+    } finally {
       setLoading(false);
-      return;
     }
-    if (!response.ok) {
-      setError(body.error || "Could not load Google trial claims.");
-      setLoading(false);
-      return;
-    }
-    setUnauthorized(false);
-    setTrials(body.trials || []);
-    setSummary(body.summary || { total: 0, active: 0, expired: 0 });
-    setError("");
-    setLoading(false);
   }
 
   useEffect(() => {
-    load().catch((cause) => {
-      setError(cause instanceof Error ? cause.message : "Could not load Google trial claims.");
-      setLoading(false);
-    });
+    void load();
   }, []);
 
-  const filtered = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    if (!needle) return trials;
-    return trials.filter((trial) => [trial.gmail, trial.member_status, trial.tier || "", displayTrialCode(trial.access_code) || ""].some((value) => value.toLowerCase().includes(needle)));
-  }, [query, trials]);
+  const summary = useMemo(() => ({
+    total: campaigns.length,
+    enabled: campaigns.filter((campaign) => campaign.enabled).length,
+    claims: campaigns.reduce((sum, campaign) => sum + Number(campaign.claims?.total || 0), 0),
+  }), [campaigns]);
 
-  const resettableExpired = useMemo(
-    () => trials.filter((trial) => !trial.active && trial.resettable).length,
-    [trials],
-  );
-
-  async function resetTrial(trial: Trial) {
-    const confirmed = window.confirm(
-      `Release the free trial for ${trial.gmail}?\n\nThis does NOT start a new timer. It makes this Google account eligible to claim a fresh 48-hour trial whenever they choose.`
-    );
-    if (!confirmed) return;
-
-    setBusy(trial.gmail);
-    setNotice("");
-    setError("");
-    const response = await fetch("/prompts/api/trials", {
-      method: "DELETE",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ gmail: trial.gmail }),
-    });
-    const body = (await response.json().catch(() => ({}))) as TrialResponse;
-    if (!response.ok) setError(body.error || "Could not reset trial.");
-    else {
-      setNotice(body.message || "Trial released.");
-      await load();
-    }
-    setBusy("");
+  function clearForm() {
+    setName("");
+    setSlug("");
+    setResourceId(resources[0]?.id || "");
+    setDurationValue("48");
+    setDurationUnit("hours");
+    setMaxClaims("");
+    setStartsAt("");
+    setEndsAt("");
+    setEditingId("");
   }
 
-  async function resetAllInactive() {
-    if (!resettableExpired) return;
-    const confirmed = window.confirm(
-      `Release all ${resettableExpired} eligible inactive/expired Google trial accounts?\n\nThis does NOT start new timers or grant fresh credits now. It only makes those Gmail accounts eligible to claim a fresh 48-hour trial whenever they choose. Paid, upgraded, and referral-protected accounts remain protected.`
-    );
-    if (!confirmed) return;
+  function editCampaign(campaign: Campaign) {
+    const duration = durationParts(campaign.duration_minutes);
+    setEditingId(campaign.id);
+    setName(campaign.name);
+    setSlug(campaign.slug);
+    setResourceId(campaign.resource_id);
+    setDurationValue(duration.value);
+    setDurationUnit(duration.unit);
+    setMaxClaims(campaign.max_claims ? String(campaign.max_claims) : "");
+    setStartsAt(manilaInput(campaign.starts_at));
+    setEndsAt(manilaInput(campaign.ends_at));
+    document.getElementById("custom-trial-form")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
-    setBusy("__all__");
+  async function saveCampaign(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setBusy(editingId ? `edit-${editingId}` : "create");
     setNotice("");
     setError("");
-    const response = await fetch("/prompts/api/trials", {
-      method: "DELETE",
-      credentials: "include",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "reset_inactive" }),
-    });
-    const body = (await response.json().catch(() => ({}))) as TrialResponse;
-    if (!response.ok) setError(body.error || "Could not reset inactive trials.");
-    else {
-      setNotice(body.message || "Inactive trials released for reclaim.");
+
+    try {
+      const payload = {
+        ...(editingId ? { id: editingId, action: "update" } : {}),
+        name: name.trim(),
+        slug: slug.trim().toLowerCase(),
+        resource_id: resourceId,
+        duration_minutes: durationMinutes(durationValue, durationUnit),
+        max_claims: maxClaims.trim() ? Number(maxClaims) : null,
+        starts_at: manilaIso(startsAt),
+        ends_at: manilaIso(endsAt),
+      };
+      const response = await fetch("/prompts/api/trial-campaigns", {
+        method: editingId ? "PATCH" : "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const body = (await response.json().catch(() => ({}))) as Payload;
+      if (!response.ok) throw new Error(body.error || "Could not save trial campaign.");
+      setNotice(body.message || (editingId ? "Trial campaign updated." : "Trial link created."));
+      clearForm();
       await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not save trial campaign.");
+    } finally {
+      setBusy("");
     }
-    setBusy("");
+  }
+
+  async function toggleCampaign(campaign: Campaign) {
+    setBusy(`toggle-${campaign.id}`);
+    setNotice("");
+    setError("");
+    try {
+      const response = await fetch("/prompts/api/trial-campaigns", {
+        method: "PATCH",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: campaign.id,
+          action: "set_enabled",
+          enabled: !campaign.enabled,
+        }),
+      });
+      const body = (await response.json().catch(() => ({}))) as Payload;
+      if (!response.ok) throw new Error(body.error || "Could not update trial campaign.");
+      setNotice(body.message || "Trial campaign updated.");
+      await load();
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not update trial campaign.");
+    } finally {
+      setBusy("");
+    }
+  }
+
+  async function copyLink(campaign: Campaign) {
+    const url = `${window.location.origin}/trial/${campaign.slug}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setNotice(`Copied ${url}`);
+      setError("");
+    } catch {
+      setError("Could not copy the trial link. Copy it manually from the campaign card.");
+    }
   }
 
   if (unauthorized) return null;
@@ -147,19 +255,13 @@ export default function TrialAdmin() {
     <section className={styles.panel}>
       <div className={styles.heading}>
         <div>
-          <p>Free access analytics</p>
-          <h2>Google Trial Claims</h2>
-          <span>Every Google account that claims a 48-hour trial is recorded here. Resetting only restores reclaim eligibility; the timer starts when the user claims again.</span>
+          <p>Resource-specific access</p>
+          <h2>Custom Trial Links</h2>
+          <span>Create one-time trial links for a specific Tool, GPT, or Workflow. These trials never change the member&apos;s normal tier.</span>
         </div>
         <div className={styles.headingActions}>
-          <strong>{summary.total}</strong>
-          <button
-            className={styles.resetAllButton}
-            type="button"
-            disabled={!resettableExpired || busy === "__all__"}
-            onClick={resetAllInactive}
-          >
-            {busy === "__all__" ? "Resetting…" : "Reset all inactive"}
+          <button type="button" onClick={() => void load()} disabled={loading || Boolean(busy)}>
+            {loading ? "Loading…" : "Refresh"}
           </button>
         </div>
       </div>
@@ -167,56 +269,120 @@ export default function TrialAdmin() {
       {(notice || error) && <div className={error ? styles.error : styles.notice}>{error || notice}</div>}
 
       <div className={styles.summaryGrid}>
-        <article><span>Total claims</span><strong>{summary.total}</strong></article>
-        <article><span>Active now</span><strong>{summary.active}</strong></article>
-        <article><span>Expired</span><strong>{summary.expired}</strong></article>
+        <article><span>Campaigns</span><strong>{summary.total}</strong></article>
+        <article><span>Enabled</span><strong>{summary.enabled}</strong></article>
+        <article><span>Total claims</span><strong>{summary.claims}</strong></article>
       </div>
 
-      <div className={styles.searchRow}>
-        <label>
-          <span>Search trials</span>
-          <input value={query} onChange={(event) => setQuery(event.target.value)} type="search" placeholder="Search Gmail, status, tier, or code..." />
-        </label>
-        {query && <button type="button" onClick={() => setQuery("")}>Clear</button>}
-      </div>
-
-      {loading ? <div className={styles.empty}>Loading free trials…</div> : (
-        <div className={styles.list}>
-          {filtered.map((trial) => {
-            const code = displayTrialCode(trial.access_code);
-            return (
-              <article className={styles.row} key={trial.gmail}>
-                <div className={styles.identity}>
-                  <strong>{trial.gmail}</strong>
-                  <span>Claimed {formatPht(trial.claimed_at)}</span>
-                </div>
-
-                <div className={styles.timeBlock}>
-                  <span>Expires</span>
-                  <strong>{formatPht(trial.expires_at)}</strong>
-                </div>
-
-                <div className={styles.meta}>
-                  <b className={trial.active ? styles.active : styles.expired}>{trial.active ? "Active" : "Expired"}</b>
-                  <span>{trial.tier || "Trial"}</span>
-                  {code && <code title={code === "Recycled" ? "Previous trial code has been recycled" : undefined}>{code}</code>}
-                </div>
-
-                <button
-                  className={styles.resetButton}
-                  type="button"
-                  disabled={!trial.resettable || busy === trial.gmail || busy === "__all__"}
-                  onClick={() => resetTrial(trial)}
-                  title={trial.resettable ? "Allow this Google account to claim another free trial" : "This claim is linked to a non-trial member and cannot be reset here"}
-                >
-                  {busy === trial.gmail ? "Resetting…" : trial.resettable ? "Reset trial" : "Protected"}
-                </button>
-              </article>
-            );
-          })}
-          {!filtered.length && !error && <div className={styles.empty}>{query ? "No trial claims match your search." : "No Google trials claimed yet."}</div>}
+      <form className={styles.form} id="custom-trial-form" onSubmit={saveCampaign}>
+        <div className={styles.formHeading}>
+          <div>
+            <p>{editingId ? "Edit campaign" : "New campaign"}</p>
+            <h3>{editingId ? "Update trial link" : "Create Trial Link"}</h3>
+          </div>
+          {editingId ? <button type="button" className={styles.ghostButton} onClick={clearForm}>Cancel edit</button> : null}
         </div>
-      )}
+
+        <div className={styles.formGrid}>
+          <label>
+            <span>Trial name</span>
+            <input value={name} onChange={(event) => setName(event.target.value)} placeholder="AI Drama September Trial" required maxLength={120} />
+          </label>
+          <label>
+            <span>Trial URL slug</span>
+            <input value={slug} onChange={(event) => setSlug(event.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ""))} placeholder="ai-drama-sept" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
+            <small>fluxora.wiki/trial/{slug || "your-link"}</small>
+          </label>
+          <label className={styles.wide}>
+            <span>Give access to</span>
+            <select value={resourceId} onChange={(event) => setResourceId(event.target.value)} required>
+              <option value="" disabled>Select a resource</option>
+              {resources.map((resource) => (
+                <option key={resource.id} value={resource.id}>
+                  {resource.title} · {resource.tool_type} · {resource.access_level}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            <span>Duration</span>
+            <div className={styles.inlineFields}>
+              <input type="number" min="1" value={durationValue} onChange={(event) => setDurationValue(event.target.value)} required />
+              <select value={durationUnit} onChange={(event) => setDurationUnit(event.target.value as DurationUnit)}>
+                <option value="minutes">Minutes</option>
+                <option value="hours">Hours</option>
+                <option value="days">Days</option>
+              </select>
+            </div>
+          </label>
+          <label>
+            <span>Maximum claims</span>
+            <input type="number" min="1" value={maxClaims} onChange={(event) => setMaxClaims(event.target.value)} placeholder="Unlimited" />
+          </label>
+          <label>
+            <span>Campaign starts (PHT)</span>
+            <input type="datetime-local" value={startsAt} onChange={(event) => setStartsAt(event.target.value)} />
+          </label>
+          <label>
+            <span>Campaign ends (PHT)</span>
+            <input type="datetime-local" value={endsAt} onChange={(event) => setEndsAt(event.target.value)} />
+          </label>
+        </div>
+
+        <div className={styles.formActions}>
+          <button className={styles.primaryButton} type="submit" disabled={Boolean(busy) || !resourceId}>
+            {busy === "create" || busy === `edit-${editingId}` ? "Saving…" : editingId ? "Save changes" : "Create Trial Link"}
+          </button>
+        </div>
+      </form>
+
+      <div className={styles.listHeading}>
+        <div>
+          <p>Campaign library</p>
+          <h3>Trial links</h3>
+        </div>
+        <span>{campaigns.length}</span>
+      </div>
+
+      <div className={styles.list}>
+        {campaigns.map((campaign) => {
+          const url = `https://fluxora.wiki/trial/${campaign.slug}`;
+          return (
+            <article className={styles.row} key={campaign.id}>
+              <div className={styles.identity}>
+                <strong>{campaign.name}</strong>
+                <code>{url}</code>
+                <span>{campaign.resource?.title || "Unavailable resource"} · {campaign.resource?.tool_type || "Resource"} · {formatDuration(campaign.duration_minutes)}</span>
+              </div>
+              <div className={styles.metrics}>
+                <span>Claims</span>
+                <strong>{campaign.claims?.total || 0}{campaign.max_claims ? ` / ${campaign.max_claims}` : ""}</strong>
+                <small>{campaign.claims?.active || 0} active now</small>
+              </div>
+              <div className={styles.window}>
+                <span>{campaign.starts_at ? `Starts ${formatPht(campaign.starts_at)}` : "Starts immediately"}</span>
+                <span>{campaign.ends_at ? `Ends ${formatPht(campaign.ends_at)}` : "No campaign end"}</span>
+              </div>
+              <div className={styles.meta}>
+                <b className={campaign.enabled ? styles.active : styles.expired}>{campaign.enabled ? "ACTIVE" : "DISABLED"}</b>
+              </div>
+              <div className={styles.rowActions}>
+                <button type="button" onClick={() => void copyLink(campaign)}>Copy Link</button>
+                <button type="button" onClick={() => editCampaign(campaign)} disabled={Boolean(busy)}>Edit</button>
+                <button
+                  type="button"
+                  className={campaign.enabled ? styles.dangerButton : styles.enableButton}
+                  onClick={() => void toggleCampaign(campaign)}
+                  disabled={Boolean(busy)}
+                >
+                  {busy === `toggle-${campaign.id}` ? "Saving…" : campaign.enabled ? "Disable" : "Enable"}
+                </button>
+              </div>
+            </article>
+          );
+        })}
+        {!loading && !campaigns.length ? <div className={styles.empty}>No custom trial links yet. Create the first campaign above.</div> : null}
+      </div>
     </section>
   );
 }
