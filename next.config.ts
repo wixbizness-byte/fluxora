@@ -40,6 +40,10 @@ const nextConfig: NextConfig = {
         destination: `${TOOLS_ORIGIN}/tools/trial`,
       },
       {
+        source: "/trial/:path*",
+        destination: `${TOOLS_ORIGIN}/tools/trial/:path*`,
+      },
+      {
         source: "/legacy",
         destination: `${TOOLS_ORIGIN}/tools/legacy`,
       },
