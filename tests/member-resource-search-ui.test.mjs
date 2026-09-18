@@ -22,3 +22,14 @@ test("per-item access panel uses the site Inter font explicitly", () => {
   assert.match(css, /\.panel\s*\{[\s\S]*?font-family:\s*var\(--font-inter\)/);
   assert.match(css, /\.heading h3,[\s\S]*?font-family:\s*var\(--font-inter\)/);
 });
+
+
+test("GPT resource picker is searchable and supports Workflow-backed GPT resources", () => {
+  assert.match(panel, /tool_type:\s*"CustomGPT"\s*\|\s*"Workflow"/);
+  assert.match(panel, /resourceQuery/);
+  assert.match(panel, /placeholder="Search GPT or workflow/);
+  assert.match(panel, /resource\.title/);
+  assert.match(panel, /resource\.slug/);
+  assert.match(panel, /setResourceId\(resource\.id\)/);
+  assert.match(panel, /setResourceQuery\(resource\.title\)/);
+});
