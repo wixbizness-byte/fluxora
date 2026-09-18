@@ -37,21 +37,9 @@ type Member = {
   canvas_limit?: number | null;
 };
 
-type Activity = {
-  member_id: string;
-  access_code: string;
-  gmail: string;
-  tier: "Member" | "Tool" | "Premium" | "Creator";
-  status: string;
-  uses: number;
-  last_used_at: string;
-  canvas_devices: number;
-};
-
 type ApiResponse = {
   members?: Member[];
   member?: Member;
-  activity?: Activity[];
   activityTimezone?: string;
   adminEmail?: string;
   message?: string;
@@ -126,17 +114,6 @@ function hasCreatorPreview(member: Member) {
   if (!member.creator_preview_expires_at) return false;
   const expiry = new Date(member.creator_preview_expires_at).getTime();
   return Number.isFinite(expiry) && expiry > Date.now();
-}
-
-function phTime(value: string) {
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-  return new Intl.DateTimeFormat("en-PH", {
-    timeZone: "Asia/Manila",
-    hour: "numeric",
-    minute: "2-digit",
-    hour12: true,
-  }).format(date);
 }
 
 function payloadFromForm(form: HTMLFormElement) {
@@ -219,7 +196,6 @@ function MemberFields({ member }: { member?: Member }) {
 
 export default function MemberManager() {
   const [members, setMembers] = useState<Member[]>([]);
-  const [activity, setActivity] = useState<Activity[]>([]);
   const [adminEmail, setAdminEmail] = useState("");
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<MemberFilter>("all");
@@ -253,7 +229,6 @@ export default function MemberManager() {
         ...member,
         registered_device_count: counts[member.id] || 0,
       })));
-      setActivity(body.activity || []);
       setAdminEmail(body.adminEmail || "");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not load members.");
@@ -364,11 +339,8 @@ export default function MemberManager() {
 
   async function copyCode(code: string) { await navigator.clipboard.writeText(code); setNotice("Access code copied."); }
 
-  function focusActivity(item: Activity) {
-    const isTrial = item.status.toLowerCase() === "google_trial";
-    setFilter("all");
-    setQuery(isTrial ? item.access_code : item.gmail);
-    window.scrollTo({ top: 180, behavior: "smooth" });
+  function scrollToAdminSection(id: string) {
+    document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" });
   }
 
   if (loading) return <div className={styles.page}><section className={styles.centerCard}><p>Loading members…</p></section></div>;
@@ -443,20 +415,11 @@ export default function MemberManager() {
         {pageCount > 1 && <nav className={styles.pagination} aria-label="Member pages">{Array.from({ length: pageCount }, (_, index) => index + 1).map((number) => <button key={number} type="button" className={number === safePage ? styles.pageActive : ""} onClick={() => setPage(number)}>{number}</button>)}</nav>}
       </section>
 
-      <aside className={layout.activityRail}>
-        <div className={layout.activityHeading}><p className={styles.kicker}>Since 12:00 AM PH</p><h2>Active access today</h2></div>
-        <div className={layout.activityList}>
-          {activity.map((item) => {
-            const isTrial = item.status.toLowerCase() === "google_trial";
-            return <button type="button" key={item.member_id} className={layout.activityItem} onClick={() => focusActivity(item)}>
-              <span className={layout.activityCode}>{isTrial ? item.access_code : item.gmail}</span>
-              <strong>{item.uses} {item.uses === 1 ? "use" : "uses"}</strong>
-              <small>{isTrial ? "Trial" : item.tier} • Last {phTime(item.last_used_at)}</small>
-            </button>;
-          })}
-          {!activity.length && <p className={layout.activityEmpty}>No successful code authorizations yet today.</p>}
-        </div>
-      </aside>
+      <nav className={layout.shortcutRail} aria-label="Admin section shortcuts">
+        <button type="button" onClick={() => scrollToAdminSection("member-access-admin")}>Member Access</button>
+        <button type="button" onClick={() => scrollToAdminSection("tool-access-admin")}>Tool Access</button>
+        <button type="button" onClick={() => scrollToAdminSection("custom-trial-links-admin")}>Custom Trial Links</button>
+      </nav>
     </div>
   </div>;
 }
