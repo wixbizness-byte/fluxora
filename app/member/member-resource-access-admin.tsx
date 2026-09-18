@@ -16,7 +16,7 @@ type CustomGptResource = {
   slug: string;
   title: string;
   access_level: "Premium" | "Creator";
-  tool_type: "CustomGPT";
+  tool_type: "CustomGPT" | "Workflow";
   status: string;
 };
 
@@ -68,6 +68,7 @@ export default function MemberResourceAccessAdmin() {
   const [memberId, setMemberId] = useState("");
   const [memberQuery, setMemberQuery] = useState("");
   const [resourceId, setResourceId] = useState("");
+  const [resourceQuery, setResourceQuery] = useState("");
   const [expiryMode, setExpiryMode] = useState<"permanent" | "custom">("permanent");
   const [expiresAt, setExpiresAt] = useState("");
   const [notes, setNotes] = useState("");
@@ -95,7 +96,7 @@ export default function MemberResourceAccessAdmin() {
       setCustomGptResources(nextResources);
       setResourceEntitlements(accessBody.resourceEntitlements || []);
       setMemberId((current) => nextMembers.some((member) => member.id === current) ? current : "");
-      setResourceId((current) => current || nextResources[0]?.id || "");
+      setResourceId((current) => nextResources.some((resource) => resource.id === current) ? current : "");
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : "Could not load individual CustomGPT access.");
     } finally {
@@ -109,6 +110,20 @@ export default function MemberResourceAccessAdmin() {
     () => members.find((member) => member.id === memberId) || null,
     [memberId, members],
   );
+  const selectedResource = useMemo(
+    () => customGptResources.find((resource) => resource.id === resourceId) || null,
+    [resourceId, customGptResources],
+  );
+
+  const resourceMatches = useMemo(() => {
+    const needle = resourceQuery.trim().toLowerCase();
+    if (!needle) return [];
+    return customGptResources
+      .filter((resource) => [resource.title, resource.slug, resource.access_level, resource.tool_type]
+        .some((value) => value.toLowerCase().includes(needle)))
+      .slice(0, 10);
+  }, [resourceQuery, customGptResources]);
+
 
   const memberMatches = useMemo(() => {
     const needle = memberQuery.trim().toLowerCase();
@@ -273,17 +288,54 @@ export default function MemberResourceAccessAdmin() {
 
       <form className={styles.grantForm} onSubmit={grantAccess}>
         <div className={styles.subheading}><h4>Grant access</h4></div>
-        <label>
-          <span>CustomGPT</span>
-          <select value={resourceId} onChange={(event) => setResourceId(event.target.value)} required disabled={!customGptResources.length}>
-            {!customGptResources.length && <option value="">No active Premium/Creator CustomGPTs</option>}
-            {customGptResources.map((resource) => (
-              <option key={resource.id} value={resource.id}>
-                {resource.title} · {resource.access_level}{activeResourceIds.has(resource.id) ? " · Already active" : ""}
-              </option>
-            ))}
-          </select>
-        </label>
+        <div className={styles.resourceSearch}>
+          <label htmlFor="resource-access-search">GPT / Workflow</label>
+          <input
+            id="resource-access-search"
+            type="search"
+            value={resourceQuery}
+            onChange={(event) => {
+              const nextQuery = event.target.value;
+              setResourceQuery(nextQuery);
+              if (selectedResource?.title !== nextQuery) setResourceId("");
+            }}
+            placeholder="Search GPT or workflow..."
+            autoComplete="off"
+            disabled={!customGptResources.length}
+            aria-controls="resource-access-search-results"
+            aria-expanded={Boolean(resourceQuery.trim() && !selectedResource)}
+          />
+          {resourceQuery.trim() && !selectedResource && (
+            <div className={styles.resourceSearchResults} id="resource-access-search-results" role="listbox" aria-label="Matching GPT resources">
+              {resourceMatches.map((resource) => (
+                <button
+                  type="button"
+                  className={styles.resourceSearchResult}
+                  key={resource.id}
+                  role="option"
+                  aria-selected="false"
+                  onClick={() => {
+                    setResourceId(resource.id);
+                    setResourceQuery(resource.title);
+                  }}
+                >
+                  <strong>{resource.title}</strong>
+                  <span>
+                    {resource.tool_type} · {resource.access_level}
+                    {activeResourceIds.has(resource.id) ? " · Already active" : ""}
+                  </span>
+                </button>
+              ))}
+              {!resourceMatches.length && <p className={styles.noResourceMatches}>No matching GPT or workflow found.</p>}
+            </div>
+          )}
+          {selectedResource && (
+            <span className={styles.selectedResourceMeta}>
+              {selectedResource.tool_type} · {selectedResource.access_level}
+              {activeResourceIds.has(selectedResource.id) ? " · Already active" : ""}
+            </span>
+          )}
+        </div>
 
         <fieldset className={styles.expiryFieldset}>
           <legend>Expiry</legend>
