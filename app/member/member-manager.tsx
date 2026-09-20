@@ -93,6 +93,12 @@ function effectiveTier(member: Member) {
   return member.effective_tier || member.tier;
 }
 
+function adminGroupingTier(member: Member) {
+  const tier = effectiveTier(member);
+  if (tier === "Tool" && !isEffectivelyActive(member)) return "Member" as const;
+  return tier;
+}
+
 function effectiveSource(member: Member) {
   if (member.effective_source) return member.effective_source;
   if (member.status.toLowerCase() === "google_trial") return member.trial_type === "referral_trial" ? "Referral Trial" : "Google Trial";
@@ -243,11 +249,11 @@ export default function MemberManager() {
     all: members.length,
     trial: members.filter((m) => ["Google Trial", "Referral Trial"].includes(effectiveSource(m)) && isEffectivelyActive(m)).length,
     members: members.filter((m) => ["Premium", "Creator", "Admin"].includes(effectiveTier(m)) && !["Google Trial", "Referral Trial"].includes(effectiveSource(m))).length,
-    member: members.filter((m) => effectiveTier(m) === "Member").length,
-    tool: members.filter((m) => effectiveTier(m) === "Tool").length,
-    premium: members.filter((m) => effectiveTier(m) === "Premium").length,
-    creator: members.filter((m) => effectiveTier(m) === "Creator").length,
-    admin: members.filter((m) => effectiveTier(m) === "Admin").length,
+    member: members.filter((m) => adminGroupingTier(m) === "Member").length,
+    tool: members.filter((m) => adminGroupingTier(m) === "Tool").length,
+    premium: members.filter((m) => adminGroupingTier(m) === "Premium").length,
+    creator: members.filter((m) => adminGroupingTier(m) === "Creator").length,
+    admin: members.filter((m) => adminGroupingTier(m) === "Admin").length,
     affiliate: members.filter((m) => m.is_affiliate).length,
   }), [members]);
 
@@ -255,7 +261,8 @@ export default function MemberManager() {
     const needle = query.trim().toLowerCase();
     return members.filter((member) => {
       const source = effectiveSource(member);
-      const tier = effectiveTier(member);
+      const effectiveMemberTier = effectiveTier(member);
+      const tier = adminGroupingTier(member);
       const matchesFilter =
         filter === "all" ? true :
         filter === "trial" ? ["Google Trial", "Referral Trial"].includes(source) && isEffectivelyActive(member) :
@@ -272,6 +279,7 @@ export default function MemberManager() {
         member.gmail,
         member.access_code,
         tier,
+        effectiveMemberTier,
         source,
         member.effective_label || "",
         baseStatus(member),
@@ -394,13 +402,14 @@ export default function MemberManager() {
           const isRevealed = revealed.has(member.id);
           const activeLike = isEffectivelyActive(member);
           const source = effectiveSource(member);
-          const tier = effectiveTier(member);
+          const effectiveMemberTier = effectiveTier(member);
+          const tier = adminGroupingTier(member);
           const memberBaseStatus = baseStatus(member);
           const memberBaseTier = baseTier(member);
           const effectiveExpiry = member.effective_expires_at !== undefined ? member.effective_expires_at : member.expires_at;
           const temporaryOverlay = ["Premium Promotion", "Referral Trial", "Google Trial", "Creator Preview"].includes(source);
           return <article className={styles.item} key={member.id}>
-            <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{tier}{source !== `${tier} Membership` && source !== "Inactive" ? ` • ${source}` : ""}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{activeLike ? "ACTIVE" : memberBaseStatus.toUpperCase()}</span></div>
+            <div className={styles.itemTop}><div className={styles.identity}><strong>{member.gmail}</strong><span>{tier}{tier === "Member" && effectiveMemberTier === "Tool" ? " • Expired Tool" : source !== `${effectiveMemberTier} Membership` && source !== "Inactive" ? ` • ${source}` : ""}{member.is_affiliate ? " • Affiliate" : ""}</span></div><span className={`${styles.status} ${activeLike ? styles.active : styles.inactive}`}>{activeLike ? "ACTIVE" : memberBaseStatus.toUpperCase()}</span></div>
             <div className={styles.secretRow}><div><span className={styles.secretLabel}>Access code</span><button type="button" className={styles.secretButton} onClick={() => toggleReveal(member.id)} aria-expanded={isRevealed}>{isRevealed ? member.access_code : "••••••••••"}</button></div>{isRevealed && <button type="button" className={styles.copyButton} onClick={() => copyCode(member.access_code)}>Copy</button>}</div>
             <div className={styles.metaRow}><span>Uses: {member.use_count ?? 0}{tier === "Admin" ? " / unlimited" : member.max_uses ? ` / ${member.max_uses}` : " / unlimited"}</span><span>Registered devices: {member.registered_device_count ?? 0} / {tier === "Admin" ? "unlimited" : (member.max_devices ?? (memberBaseTier === "Tool" ? 2 : 5))}</span><span>Canvas: {member.canvas_count ?? 0} / {tier === "Admin" ? "unlimited" : (member.canvas_limit ?? "—")}</span><span>Access: {source}{activeLike ? ` · ${effectiveExpiry ? `Expires ${displayDate(effectiveExpiry)}` : "No expiry"}` : ""}</span>{temporaryOverlay && <span>Base: {memberBaseTier} · {memberBaseStatus}</span>}</div>
             {member.notes && <p className={styles.notes}>{temporaryOverlay ? `Base note: ${member.notes}` : member.notes}</p>}
