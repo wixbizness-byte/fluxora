@@ -13,6 +13,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Fluxora — Create. Ideate. Generate.",
   description: "Curated AI tools, practical workflows, and ready-to-use GPTs designed to move ideas into action.",
+  icons: { icon: "/icon.svg" },
 };
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
