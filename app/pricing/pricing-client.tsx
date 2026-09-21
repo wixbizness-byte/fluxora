@@ -88,7 +88,7 @@ function resourceAllowed(resource: PricingResource, tier: PlanTier) {
 }
 
 function categoryLabel(category: PricingResource["tool_type"]) {
-  if (category === "CustomGPT") return "CustomGPTs";
+  if (category === "CustomGPT") return "Custom GPTs";
   if (category === "Workflow") return "Workflows";
   return "Tools";
 }
