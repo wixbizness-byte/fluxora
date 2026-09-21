@@ -51,9 +51,28 @@ function categoryOrder(tier: PlanTier): PricingResource["tool_type"][] {
 }
 
 function priceLabel(plan: AccessPlan) {
-  const fallbackPrices: Record<string, number> = { tool: 249, premium: 599, creator: 1999 };
+  const fallbackPrices: Record<string, number> = { tool: 100, premium: 999, creator: 1999 };
   return `₱${Number(plan.price_php ?? fallbackPrices[plan.id] ?? 0).toLocaleString("en-PH")}`;
 }
+
+const exactPlanCopy = {
+  premium: {
+    title: "Premium",
+    badge: "Starter",
+    description: "Everything you need to start creating with AI.",
+    price: "₱999",
+    features: ["Prompts", "Tools", "Custom GPTs", "Courses", "Web Access"],
+    button: "Get Premium",
+  },
+  creator: {
+    title: "Creator",
+    badge: "Endgame",
+    description: "The full vault, from idea to finished result.",
+    price: "₱1,999",
+    features: ["Prompts+", "Tools+", "Custom GPTs+", "Courses+", "Web Access+", "Workflows", "Secret Methods"],
+    button: "Get Creator",
+  },
+} as const;
 
 export default function PricingClient() {
   const [accessPlans, setAccessPlans] = useState<AccessPlan[]>(fallbackAccessPlans);
@@ -160,9 +179,11 @@ export default function PricingClient() {
             <section className={styles.planGrid} aria-label="Fluxora access plans">
               {primaryPlans.map((plan) => {
                 const tier = planTier(plan);
+                if (tier !== "Premium" && tier !== "Creator") return null;
+
                 const isCreator = tier === "Creator";
+                const copy = exactPlanCopy[plan.id as "premium" | "creator"];
                 const checkoutEnabled = plan.checkout_enabled !== false;
-                const features = planFeatures(plan);
 
                 return (
                   <article
@@ -170,14 +191,14 @@ export default function PricingClient() {
                     key={plan.id}
                   >
                     <div className={styles.planHead}>
-                      <h2>{planTabLabel(plan)}</h2>
-                      <span className={styles.planBadge}>{plan.badge || `${planTabLabel(plan)} access`}</span>
+                      <h2>{copy.title}</h2>
+                      <span className={styles.planBadge}>{copy.badge}</span>
                     </div>
 
-                    {plan.show_description !== false && plan.description ? <p className={styles.planDescription}>{plan.description}</p> : null}
+                    <p className={styles.planDescription}>{copy.description}</p>
 
                     <div className={styles.priceBlock}>
-                      <strong>{priceLabel(plan)}</strong>
+                      <strong>{copy.price}</strong>
                       <span>once</span>
                     </div>
                     <p className={styles.priceNote}>Paid once. No renewals.</p>
@@ -191,24 +212,22 @@ export default function PricingClient() {
                       </div>
                     ) : null}
 
-                    {features.length ? (
-                      <ul className={styles.featureList}>
-                        {features.map((feature) => {
-                          const creatorOnly = isCreator && (feature.toLowerCase().includes("workflow") || feature.toLowerCase().includes("secret method"));
-                          return (
-                            <li key={feature}>
-                              <Check size={16} aria-hidden="true" />
-                              <span>{feature}</span>
-                              {creatorOnly ? <em className={styles.creatorOnlyPill}>Creator only</em> : null}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    ) : null}
+                    <ul className={styles.featureList}>
+                      {copy.features.map((feature) => {
+                        const creatorOnly = isCreator && (feature === "Workflows" || feature === "Secret Methods");
+                        return (
+                          <li key={feature}>
+                            <Check size={16} aria-hidden="true" />
+                            <span>{feature}</span>
+                            {creatorOnly ? <em className={styles.creatorOnlyPill}>Creator only</em> : null}
+                          </li>
+                        );
+                      })}
+                    </ul>
 
                     {checkoutEnabled ? (
                       <a className={isCreator ? styles.creatorButton : styles.premiumButton} href={`/checkout?plan=${encodeURIComponent(plan.id)}`}>
-                        Get {planTabLabel(plan)}
+                        {copy.button}
                       </a>
                     ) : <span className={styles.disabledButton}>Checkout unavailable</span>}
                   </article>
@@ -222,12 +241,12 @@ export default function PricingClient() {
               <div className={styles.toolStripInfo}>
                 <div>
                   <h2 id="tool-plan-heading">Tools only</h2>
-                  {toolPlan.show_description !== false && toolPlan.description ? <p>{toolPlan.description}</p> : null}
+                  <p>Just the Fluxora tools catalog, billed monthly.</p>
                 </div>
               </div>
               <div className={styles.toolStripPrice}>
-                <strong>{priceLabel(toolPlan)}</strong>
-                <span>once</span>
+                <strong>₱100</strong>
+                <span>/month</span>
               </div>
               {toolPlan.checkout_enabled !== false ? (
                 <a className={styles.toolButton} href={`/checkout?plan=${encodeURIComponent(toolPlan.id)}`}>Get Tools only</a>

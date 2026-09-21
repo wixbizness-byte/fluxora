@@ -65,7 +65,7 @@
   background: transparent;
 }
 
-.shell { width: min(100% - 40px, 1080px); margin-inline: auto; }
+.shell { width: min(100% - 40px, 1032px); margin-inline: auto; }
 
 .intro {
   max-width: 760px;
@@ -118,7 +118,7 @@
 
 .planCard {
   min-width: 0;
-  min-height: 628px;
+  height: 628px;
   display: flex;
   flex-direction: column;
   padding: 30px 26px 26px;
@@ -175,7 +175,6 @@
 }
 
 .planDescription {
-  min-height: 48px;
   margin: 12px 0 0;
   color: #c7cedb;
   white-space: pre-line;
@@ -528,7 +527,7 @@
   .intro { margin-bottom: 30px; }
   .intro h1 { font-size: clamp(2.25rem, 10.8vw, 3.15rem); }
   .planGrid { grid-template-columns: 1fr; gap: 14px; }
-  .planCard { padding: 24px 20px 22px; border-radius: 18px; }
+  .planCard { height: auto; min-height: 0; padding: 24px 20px 22px; border-radius: 18px; }
   .planDescription { min-height: 0; }
   .planActions { grid-template-columns: 1fr; }
   .toolStrip { grid-template-columns: 1fr; gap: 15px; padding: 18px 19px; border-radius: 16px; }

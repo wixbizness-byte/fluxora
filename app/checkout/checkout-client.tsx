@@ -24,9 +24,9 @@ type CheckoutClientProps = {
 };
 
 function fallbackPrice(planId: string | undefined) {
-  if (planId === "tool") return 249;
+  if (planId === "tool") return 100;
   if (planId === "creator") return 1999;
-  return 599;
+  return 999;
 }
 
 function planDisplayName(plan: CheckoutPlan | undefined) {
