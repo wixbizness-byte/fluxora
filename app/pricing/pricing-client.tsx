@@ -141,14 +141,6 @@ export default function PricingClient() {
     triggerRef.current?.focus();
   }
 
-  function countsForPlan(plan: AccessPlan) {
-    const tier = planTier(plan);
-    const resources = pricingResources.filter((resource) => resourceAllowed(resource, tier));
-    return categoryOrder(tier)
-      .map((type) => ({ type, count: resources.filter((resource) => resource.tool_type === type).length }))
-      .filter((entry) => entry.count > 0);
-  }
-
   return (
     <div className={`${styles.pricingPage} fluxora-theme`} data-home-theme="gold">
       <SiteHeader
@@ -169,52 +161,56 @@ export default function PricingClient() {
               {primaryPlans.map((plan) => {
                 const tier = planTier(plan);
                 const isCreator = tier === "Creator";
-                const selected = selectedPlan?.id === plan.id;
                 const checkoutEnabled = plan.checkout_enabled !== false;
-                const counts = countsForPlan(plan);
+                const features = planFeatures(plan);
 
                 return (
                   <article
-                    className={[
-                      styles.planCard,
-                      isCreator ? styles.creatorPlan : styles.premiumPlan,
-                      selected ? styles.planCardSelected : "",
-                    ].filter(Boolean).join(" ")}
+                    className={[styles.planCard, isCreator ? styles.creatorPlan : styles.premiumPlan].join(" ")}
                     key={plan.id}
                   >
                     <div className={styles.planHead}>
-                      <div>
-                        <span className={styles.planBadge}>{plan.badge || `${planTabLabel(plan)} access`}</span>
-                        <h2>{planTabLabel(plan)}</h2>
-                      </div>
-                      <span className={styles.planTierLabel}>{isCreator ? "Full vault" : "Core access"}</span>
+                      <h2>{planTabLabel(plan)}</h2>
+                      <span className={styles.planBadge}>{plan.badge || `${planTabLabel(plan)} access`}</span>
                     </div>
 
                     {plan.show_description !== false && plan.description ? <p className={styles.planDescription}>{plan.description}</p> : null}
 
                     <div className={styles.priceBlock}>
                       <strong>{priceLabel(plan)}</strong>
-                      <span>one-time access</span>
+                      <span>once</span>
                     </div>
+                    <p className={styles.priceNote}>Paid once. No renewals.</p>
 
-                    {counts.length ? <div className={styles.countList}>{counts.map(({ type, count }) => <span key={type}><b>{count}</b> {categoryLabel(type)}</span>)}</div> : null}
+                    <div className={styles.planDivider} aria-hidden="true" />
 
-                    {planFeatures(plan).length ? (
+                    {isCreator ? (
+                      <div className={styles.creatorLead}>
+                        <span aria-hidden="true">+</span>
+                        <strong>Everything in Premium, expanded</strong>
+                      </div>
+                    ) : null}
+
+                    {features.length ? (
                       <ul className={styles.featureList}>
-                        {planFeatures(plan).map((feature) => <li key={feature}><Check size={16} aria-hidden="true" /><span>{feature}</span></li>)}
+                        {features.map((feature) => {
+                          const creatorOnly = isCreator && (feature.toLowerCase().includes("workflow") || feature.toLowerCase().includes("secret method"));
+                          return (
+                            <li key={feature}>
+                              <Check size={16} aria-hidden="true" />
+                              <span>{feature}</span>
+                              {creatorOnly ? <em className={styles.creatorOnlyPill}>Creator only</em> : null}
+                            </li>
+                          );
+                        })}
                       </ul>
                     ) : null}
 
-                    <div className={styles.planActions}>
-                      {checkoutEnabled ? (
-                        <a className={isCreator ? styles.creatorButton : styles.primaryButton} href={`/checkout?plan=${encodeURIComponent(plan.id)}`}>
-                          Buy access <ArrowRight size={16} aria-hidden="true" />
-                        </a>
-                      ) : <span className={styles.disabledButton}>Checkout unavailable</span>}
-                      <button className={styles.secondaryButton} type="button" onClick={() => choosePlan(plan.id, true)}>
-                        View included resources
-                      </button>
-                    </div>
+                    {checkoutEnabled ? (
+                      <a className={isCreator ? styles.creatorButton : styles.premiumButton} href={`/checkout?plan=${encodeURIComponent(plan.id)}`}>
+                        Get {planTabLabel(plan)}
+                      </a>
+                    ) : <span className={styles.disabledButton}>Checkout unavailable</span>}
                   </article>
                 );
               })}
@@ -222,24 +218,20 @@ export default function PricingClient() {
           ) : null}
 
           {toolPlan ? (
-            <aside className={`${styles.toolStrip} ${selectedPlan?.id === toolPlan.id ? styles.toolStripSelected : ""}`} aria-labelledby="tool-plan-heading">
+            <aside className={styles.toolStrip} aria-labelledby="tool-plan-heading">
               <div className={styles.toolStripInfo}>
-                <span className={styles.planBadge}>{toolPlan.badge || "Tools"}</span>
                 <div>
-                  <h2 id="tool-plan-heading">{planTabLabel(toolPlan)}</h2>
+                  <h2 id="tool-plan-heading">Tools only</h2>
                   {toolPlan.show_description !== false && toolPlan.description ? <p>{toolPlan.description}</p> : null}
                 </div>
               </div>
               <div className={styles.toolStripPrice}>
                 <strong>{priceLabel(toolPlan)}</strong>
-                <span>one-time</span>
+                <span>once</span>
               </div>
-              <div className={styles.toolStripActions}>
-                {toolPlan.checkout_enabled !== false ? (
-                  <a className={styles.primaryButton} href={`/checkout?plan=${encodeURIComponent(toolPlan.id)}`}>Buy access <ArrowRight size={16} aria-hidden="true" /></a>
-                ) : <span className={styles.disabledButton}>Checkout unavailable</span>}
-                <button className={styles.secondaryButton} type="button" onClick={() => choosePlan(toolPlan.id, true)}>View inclusions</button>
-              </div>
+              {toolPlan.checkout_enabled !== false ? (
+                <a className={styles.toolButton} href={`/checkout?plan=${encodeURIComponent(toolPlan.id)}`}>Get Tools only</a>
+              ) : <span className={styles.disabledButton}>Checkout unavailable</span>}
             </aside>
           ) : null}
 
