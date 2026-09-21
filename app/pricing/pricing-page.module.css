@@ -587,6 +587,7 @@
   grid-column: 1 / -1;
   border-top: 1px solid rgba(148,163,184,.16);
   margin-top: 2px;
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
 }
 
 .toolDetails summary {
@@ -617,8 +618,8 @@
 .toolDetailsGrid h3 {
   margin: 0 0 8px;
   color: #f3f5fb;
-  font-size: 14px;
-  font-weight: 650;
+  font: 650 14px/1.25 var(--font-inter), Inter, Arial, sans-serif;
+  letter-spacing: -.01em;
 }
 
 .toolDetailsGrid ul {
@@ -634,6 +635,7 @@
   align-items: flex-start;
   gap: 8px;
   color: #c9cfdb;
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
   font-size: 14px;
 }
 
@@ -649,11 +651,13 @@
 .toolDetailsGrid p {
   margin: 0 0 8px;
   color: #c9cfdb;
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
   font-size: 14px;
 }
 
 .toolDetailsGrid a {
   color: #b5a3ff;
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
   font-size: 14px;
   font-weight: 600;
   text-decoration: none;
