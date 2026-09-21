@@ -36,7 +36,14 @@ function normalizePlanIdentifier(value: string | string[] | undefined) {
   if (!candidate) return "";
 
   const normalized = candidate.trim().toLowerCase();
-  return /^[a-z0-9][a-z0-9_-]{0,63}$/.test(normalized) ? normalized : "";
+  if (!/^[a-z0-9][a-z0-9_-]{0,63}$/.test(normalized)) return "";
+  return normalized === "tools-monthly" ? "tool" : normalized;
+}
+
+function normalizeInstallments(value: string | string[] | undefined): 1 | 2 | 3 {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  const parsed = Number(candidate || 1);
+  return parsed === 2 || parsed === 3 ? parsed : 1;
 }
 
 function validCheckoutPlans(plans: AccessPlan[]) {
@@ -77,6 +84,7 @@ async function loadCheckoutData() {
 export default async function CheckoutPage({ searchParams }: CheckoutPageProps) {
   const [params, checkoutData] = await Promise.all([searchParams, loadCheckoutData()]);
   const requestedPlanId = normalizePlanIdentifier(params.plan);
+  const requestedInstallments = normalizeInstallments(params.installments);
   const requestedPlan = checkoutData.plans.find(
     (plan) => plan.id.toLowerCase() === requestedPlanId,
   );
@@ -104,6 +112,7 @@ export default async function CheckoutPage({ searchParams }: CheckoutPageProps) 
             initialPayment={checkoutData.payment}
             initialPlanId={initialPlanId}
             requestedPlanId={requestedPlanId}
+            initialInstallments={requestedInstallments}
           />
         </PageContainer>
       </main>

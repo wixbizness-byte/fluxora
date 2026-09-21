@@ -109,6 +109,88 @@
   line-height: 1.65;
 }
 
+.paymentChoice {
+  width: 100%;
+  margin: 36px auto 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.paymentChoice legend {
+  margin-bottom: 10px;
+  padding: 0;
+  color: #c9cfdb;
+  font-size: 15px;
+  font-weight: 600;
+  text-shadow: 0 0 24px rgba(9,12,18,.9);
+}
+
+.paymentSegments {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  padding: 5px;
+  border: 1px solid rgba(148,163,184,.16);
+  border-radius: 16px;
+  background: rgba(12,16,25,.82);
+  box-shadow: 0 14px 36px rgba(0,0,0,.3);
+  backdrop-filter: blur(12px);
+}
+
+.paymentSegment,
+.paymentSegmentActive {
+  position: relative;
+  min-width: 132px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: #c9cfdb;
+  cursor: pointer;
+}
+
+.paymentSegmentActive {
+  border-color: rgba(255,204,87,.42);
+  color: #ffe0a0;
+  background: linear-gradient(145deg, rgba(255,204,87,.22), rgba(255,204,87,.08));
+}
+
+.paymentSegment input,
+.paymentSegmentActive input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+}
+
+.paymentSegment > span,
+.paymentSegmentActive > span {
+  display: block;
+  padding: 11px 18px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 650;
+}
+
+.paymentSegment small,
+.paymentSegmentActive small {
+  display: block;
+  margin-top: 1px;
+  color: #95a0b4;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.paymentSegmentActive small { color: #d9c28b; }
+.paymentSegment:hover { color: #fff; }
+.paymentSegment input:focus-visible + span,
+.paymentSegmentActive input:focus-visible + span {
+  outline: 2px solid var(--fluxora-color-brand);
+  outline-offset: 1px;
+  border-radius: 10px;
+}
+
 .planGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -118,7 +200,7 @@
 
 .planCard {
   min-width: 0;
-  height: 628px;
+  min-height: 628px;
   display: flex;
   flex-direction: column;
   padding: 30px 26px 26px;
@@ -182,6 +264,10 @@
   line-height: 1.55;
 }
 
+.priceArea {
+  min-height: 104px;
+}
+
 .priceBlock {
   display: flex;
   align-items: baseline;
@@ -216,6 +302,74 @@
   height: 1px;
   margin: 22px 0 21px;
   background: rgba(148, 163, 184, .18);
+}
+
+
+.paymentSchedule {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0 0 22px;
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(148,163,184,.16);
+  list-style: none;
+}
+
+.paymentSchedule li {
+  position: relative;
+  padding-top: 18px;
+}
+
+.paymentSchedule li::before {
+  position: absolute;
+  top: 3px;
+  left: 0;
+  width: 10px;
+  height: 10px;
+  border: 2px solid #3a4560;
+  border-radius: 50%;
+  background: #0f1520;
+  content: "";
+}
+
+.paymentSchedule li:first-child::before {
+  border-color: #ffcc57;
+  background: #ffcc57;
+  box-shadow: 0 0 0 4px rgba(255,204,87,.16);
+}
+
+.paymentSchedule li:not(:last-child)::after {
+  position: absolute;
+  top: 7px;
+  left: 16px;
+  right: 4px;
+  height: 2px;
+  border-radius: 2px;
+  background: #2a3243;
+  content: "";
+}
+
+.paymentSchedule b {
+  display: block;
+  color: #f3f5fb;
+  font-size: 16px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.paymentSchedule span {
+  display: block;
+  color: #95a0b4;
+  font-size: 13px;
+}
+
+.paymentSchedule li:first-child span { color: #ffe0a0; }
+
+.planFine {
+  margin: 12px 0 0;
+  color: #95a0b4;
+  font-size: 13px;
+  text-align: center;
 }
 
 .creatorLead {
@@ -415,6 +569,125 @@
 
 .toolStrip .toolButton { min-width: 154px; width: auto; min-height: 46px; }
 
+
+.toolStripInfo small {
+  display: block;
+  margin-top: 6px;
+  color: #95a0b4;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.toolStripInfo small b {
+  color: #ffe0a0;
+  font-weight: 600;
+}
+
+.toolDetails {
+  grid-column: 1 / -1;
+  border-top: 1px solid rgba(148,163,184,.16);
+  margin-top: 2px;
+}
+
+.toolDetails summary {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 0 2px;
+  color: #c9cfdb;
+  font-size: 15px;
+  font-weight: 600;
+  list-style: none;
+  cursor: pointer;
+}
+
+.toolDetails summary::-webkit-details-marker { display: none; }
+.toolDetails summary:hover { color: #fff; }
+.toolDetails summary svg { color: #b5a3ff; transition: transform .18s ease; }
+.toolDetails[open] summary svg { transform: rotate(180deg); }
+
+.toolDetailsGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  padding: 16px 0 4px;
+}
+
+.toolDetailsGrid h3 {
+  margin: 0 0 8px;
+  color: #f3f5fb;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.toolDetailsGrid ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.toolDetailsGrid li {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  color: #c9cfdb;
+  font-size: 14px;
+}
+
+.toolDetailsGrid li svg {
+  flex: 0 0 15px;
+  margin-top: 3px;
+  color: #b5a3ff;
+}
+
+.toolExcluded li { color: #95a0b4; }
+.toolExcluded li svg { color: #5d677b; }
+
+.toolDetailsGrid p {
+  margin: 0 0 8px;
+  color: #c9cfdb;
+  font-size: 14px;
+}
+
+.toolDetailsGrid a {
+  color: #b5a3ff;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.toolDetailsGrid a:hover { text-decoration: underline; }
+
+.installmentTerms {
+  max-width: 760px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 22px auto 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(148,163,184,.16);
+  border-radius: 14px;
+  color: #c9cfdb;
+  background: rgba(14,19,28,.8);
+  font-size: 15px;
+  line-height: 1.55;
+  backdrop-filter: blur(10px);
+}
+
+.installmentTerms svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #ffcc57;
+}
+
+.installmentTerms b {
+  color: #f3f5fb;
+  font-weight: 650;
+}
+
 .resourcesSection { scroll-margin-top: 86px; margin-top: 94px; }
 .sectionIntro { max-width: 720px; }
 .sectionIntro h2 { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.08; }
@@ -522,12 +795,19 @@
 }
 
 @media (max-width: 760px) {
+  .paymentSegments { width: 100%; }
+  .paymentSegment,
+  .paymentSegmentActive { min-width: 0; }
+  .paymentSegment > span,
+  .paymentSegmentActive > span { padding: 10px 6px; }
+  .paymentSchedule { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .toolDetailsGrid { grid-template-columns: 1fr; gap: 16px; }
   .main { padding: 48px 0 84px; }
   .shell { width: min(100% - 28px, 1080px); }
   .intro { margin-bottom: 30px; }
   .intro h1 { font-size: clamp(2.25rem, 10.8vw, 3.15rem); }
   .planGrid { grid-template-columns: 1fr; gap: 14px; }
-  .planCard { height: auto; min-height: 0; padding: 24px 20px 22px; border-radius: 18px; }
+  .planCard { min-height: 0; padding: 24px 20px 22px; border-radius: 18px; }
   .planDescription { min-height: 0; }
   .planActions { grid-template-columns: 1fr; }
   .toolStrip { grid-template-columns: 1fr; gap: 15px; padding: 18px 19px; border-radius: 16px; }
