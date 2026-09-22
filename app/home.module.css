@@ -32,9 +32,9 @@
         radial-gradient(circle at 18% 0%, rgba(119,184,255,.06), transparent 22%),
         #090c12;
     }
-.hero { position: relative; overflow: hidden; }
-.heroFrame { position: relative; min-height: 500px; overflow: hidden; isolation: isolate; padding-top: 104px; padding-bottom: 88px; }
-.heroContent { position: relative; z-index: 3; width: min(720px,72%); padding-top: 28px; }
+.hero { position: relative; min-height: calc(100vh - 64px); min-height: calc(100svh - 64px); overflow: hidden; }
+.heroFrame { position: relative; min-height: calc(100vh - 64px); min-height: calc(100svh - 64px); display: flex; align-items: center; overflow: hidden; isolation: isolate; padding-top: clamp(48px, 7vh, 76px); padding-bottom: clamp(48px, 7vh, 76px); }
+.heroContent { position: relative; z-index: 3; width: min(720px,72%); padding-top: 0; }
 .heroContent h1 { max-width: 620px; margin: 0; color: var(--fluxora-color-text); font: 700 clamp(44px,5.6vw,64px)/1.02 var(--font-inter), Inter, Arial, sans-serif; letter-spacing: -.048em; }
 .heroContent > p { max-width: 590px; margin: 24px 0 0; color: var(--fluxora-color-text-secondary); font: 400 17px/1.68 var(--font-inter), Inter, Arial, sans-serif; }
 .heroActions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; }
@@ -110,7 +110,7 @@
     }
 .heroContent > p { color: #e2e6ee; }
 @media (max-width: 980px) {
-.heroFrame { min-height: 470px; padding-top: 78px; padding-bottom: 70px; }
+.heroFrame { min-height: calc(100vh - 64px); min-height: calc(100svh - 64px); padding-top: 56px; padding-bottom: 56px; }
 .heroContent { width: min(680px,78%); }
 .outputGalleryImageButton { width: 136px; min-width: 136px; }
 .destinationGrid { grid-template-columns: repeat(2,minmax(0,1fr)); }
@@ -118,7 +118,7 @@
 .toolPreviewPrimary { grid-column: 1 / -1; }
 }
 @media (max-width: 720px) {
-.heroFrame { min-height: 430px; padding-top: 68px; padding-bottom: 190px; }
+.heroFrame { min-height: calc(100vh - 64px); min-height: calc(100svh - 64px); padding-top: 48px; padding-bottom: 48px; }
 .heroContent { width: 100%; max-width: none; padding-top: 0; }
 .heroContent h1 { font-size: clamp(40px,11vw,54px); }
 .heroContent > p { max-width: 520px; font-size: 16px; }
