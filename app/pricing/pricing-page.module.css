@@ -692,6 +692,33 @@
   font-weight: 650;
 }
 
+.installmentRestriction {
+  max-width: 760px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 10px auto 0;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 204, 87, .38);
+  border-radius: 14px;
+  color: #eadfbe;
+  background: rgba(255, 204, 87, .085);
+  font-size: 14px;
+  line-height: 1.55;
+  backdrop-filter: blur(10px);
+}
+
+.installmentRestriction svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: #ffcc57;
+}
+
+.installmentRestriction b {
+  color: #ffe0a0;
+  font-weight: 700;
+}
+
 .resourcesSection { scroll-margin-top: 86px; margin-top: 94px; }
 .sectionIntro { max-width: 720px; }
 .sectionIntro h2 { font-size: clamp(2rem, 4vw, 3rem); line-height: 1.08; }
