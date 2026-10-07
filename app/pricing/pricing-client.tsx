@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowRight, CalendarDays, Check, ChevronDown, Layers, X } from "lucide-react";
+import { AlertTriangle, ArrowRight, CalendarDays, Check, ChevronDown, Layers, X } from "lucide-react";
 import { type KeyboardEvent, useEffect, useMemo, useRef, useState } from "react";
 import { SiteFooter } from "../components/fluxora/site-footer";
 import { SiteHeader } from "../components/fluxora/site-header";
@@ -61,7 +61,7 @@ const toolsOnlyCopy = {
 
 const exactFaqs = [
   ["What is the difference between Premium and Creator?", "Premium includes prompts, tools, Custom GPTs, courses, and web access. Creator expands all of those and adds Workflows and Secret Methods."],
-  ["How do installments work?", "Pick 2 or 3 months before checkout. Your first payment unlocks full access right away, and the next payments are due every 30 days. The total is the same as paying in full."],
+  ["How do installments work?", "Pick 2 or 3 months before checkout. Your first payment unlocks access right away, and the next payments are due every 30 days. The total is the same as paying in full. Creator members on installments cannot access Magnific workflows until the Creator plan is paid in full."],
   ["What happens if I miss a payment?", "Your access pauses until the missed payment is settled. Nothing is deleted, and access returns as soon as you pay."],
   ["Can I start with Premium and upgrade later?", "Yes. Pay the difference between Premium and Creator to upgrade. Message us in the community to arrange it."],
   ["Is this a subscription?", "Premium and Creator are one-time purchases. Installments only split that one price into smaller payments. Tools only is the one monthly plan."],
@@ -395,8 +395,15 @@ export default function PricingClient() {
 
           <p className={styles.installmentTerms}>
             <CalendarDays size={18} aria-hidden="true" />
-            <span><b>How installments work:</b> your first payment unlocks full access right away. The next payments are due every 30 days. If a payment is missed, access pauses until it&apos;s settled.</span>
+            <span><b>How installments work:</b> your first payment unlocks access right away. The next payments are due every 30 days. If a payment is missed, access pauses until it&apos;s settled.</span>
           </p>
+
+          {payments > 1 ? (
+            <p className={styles.installmentRestriction}>
+              <AlertTriangle size={18} aria-hidden="true" />
+              <span><b>Creator installment notice:</b> Magnific workflows are not available until your Creator plan has been paid in full.</span>
+            </p>
+          ) : null}
 
           {selectedPlan ? (
             <section className={styles.resourcesSection} ref={resourcesRef} aria-labelledby="resources-heading">
