@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, CheckCircle2, Copy, ExternalLink, Smartphone } from "lucide-react";
+import { AlertTriangle, Check, CheckCircle2, Copy, ExternalLink, Smartphone } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button, Card } from "../components/fluxora";
 import {
@@ -188,6 +188,12 @@ export default function CheckoutClient({
                     ))}
                   </ol>
                   <p className={styles.billingNote}>Total {peso(totalAmount)}. Payments are {INTERVAL_DAYS} days apart with no added fees.</p>
+                  {selected?.id === "creator" ? (
+                    <p className={styles.installmentRestriction}>
+                      <AlertTriangle size={14} aria-hidden="true" />{" "}
+                      <strong>Creator installment notice:</strong> Magnific workflows stay locked until the Creator plan is paid in full.
+                    </p>
+                  ) : null}
                 </>
               ) : null}
             </div>
