@@ -1,15 +1,52 @@
-.page {
+.page:global(.fluxora-theme) {
+  --fluxora-color-brand: #b5a3ff;
+  --fluxora-color-brand-hover: #d0c3ff;
+  --fluxora-color-brand-soft: #241e39;
+  --fluxora-color-canvas: #090c12;
+  --fluxora-color-surface: #121722;
+  --fluxora-color-surface-muted: #1b2230;
+  --fluxora-color-text: #f3f5fb;
+  --fluxora-color-text-secondary: #c9cfdb;
+  --fluxora-color-text-muted: #95a0b4;
+  --fluxora-color-border: #2a3243;
+  --fluxora-color-border-strong: #3a4560;
+  --fluxora-shadow-sm: 0 2px 6px rgba(0,0,0,.2), 0 6px 16px rgba(0,0,0,.14);
+  --fluxora-shadow-md: 0 8px 28px rgba(0,0,0,.28), 0 2px 8px rgba(0,0,0,.2);
+  --fluxora-shadow-lg: 0 18px 48px rgba(0,0,0,.44), 0 8px 20px rgba(0,0,0,.26);
   min-height: 100vh;
   color: var(--fluxora-color-text);
-  background: var(--fluxora-color-canvas);
+  color-scheme: dark;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(118,92,221,.12), transparent 34rem),
+    radial-gradient(circle at 78% 38%, rgba(255,204,87,.045), transparent 30rem),
+    linear-gradient(180deg, #0b0e17 0%, #090c12 60%, #0c0f17 100%);
   font-family: var(--font-inter), Inter, Arial, sans-serif;
+}
+
+.page :global(footer) {
+  position: relative;
+}
+
+.installmentRestriction {
+  margin-top: 14px;
+  padding: 13px 14px;
+  border: 1px solid rgba(255, 204, 87, .36);
+  border-radius: var(--fluxora-radius-lg);
+  color: #eadfbe;
+  background: rgba(255, 204, 87, .08);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.installmentRestriction strong {
+  color: #ffe0a0;
 }
 
 .main {
   min-height: calc(100vh - 128px);
   padding: 0 0 var(--fluxora-space-16);
   color: var(--fluxora-color-text);
-  background: var(--fluxora-color-canvas);
+  background: transparent;
   overflow: visible;
 }
 
