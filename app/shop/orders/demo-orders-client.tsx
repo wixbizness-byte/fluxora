@@ -69,7 +69,7 @@ export default function DemoOrdersClient() {
       <LockKeyhole size={25} color="#e2bf7a" />
       <h2>Sign in to view your purchases</h2>
       <p style={{ color: "#b1b1b0" }}>Your orders and delivery links are private to your Fluxora Google account.</p>
-      <a href={"/prompts/member-login?returnTo=" + encodeURIComponent("/shop/orders") + "&auto=1"}
+      <a href="/api/shop/auth/start"
         style={{ color: "#e6bc6b", textDecoration: "underline" }}>Continue with Google</a>
     </div>
   );
