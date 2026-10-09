@@ -57,7 +57,7 @@ export default function DemoCheckoutClient({ enabled }: { enabled: boolean }) {
       </a>
       {error && <p role="alert" style={{ color: "#f0a4a4", fontSize: 13, marginTop: 15 }}>
         {error}
-        {loginRequired ? <> <a href={"/prompts/member-login?returnTo=" + encodeURIComponent("/shop/demo") + "&auto=1"}
+        {loginRequired ? <> <a href="/api/shop/auth/start"
           style={{ textDecoration: "underline" }}>Sign in with Google</a></> : null}
       </p>}
     </div>
