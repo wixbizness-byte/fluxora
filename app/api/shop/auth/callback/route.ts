@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 function bounce(status: string) {
-  const response = NextResponse.redirect("/shop/demo?auth=" + status, 303);
+  const response = NextResponse.redirect("https://fluxora-git-feature-warzone-shop-catalog-d54ba5-meimei-digitals.vercel.app/shop/demo?auth=" + status, 303);
   response.cookies.delete(SHOP_STATE_COOKIE);
   response.headers.set("Cache-Control", "no-store");
   response.headers.set("Referrer-Policy", "no-referrer");
