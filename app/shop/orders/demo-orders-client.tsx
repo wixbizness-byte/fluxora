@@ -1,0 +1,131 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { CheckCircle2, Clock3, Copy, LockKeyhole, RefreshCcw } from "lucide-react";
+
+type Order = {
+  id: string;
+  product_title: string;
+  amount_centavos: number;
+  currency: string;
+  status: "awaiting_checkout" | "awaiting_payment" | "checkout_failed" | "demo_delivered";
+  demo_activation_link: string | null;
+  created_at: string;
+  paid_at: string | null;
+};
+
+function statusLabel(status: Order["status"]) {
+  if (status === "demo_delivered") return "Demo delivered";
+  if (status === "awaiting_payment") return "Waiting for test payment";
+  if (status === "checkout_failed") return "Checkout not started";
+  return "Preparing checkout";
+}
+
+export default function DemoOrdersClient() {
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [state, setState] = useState<"loading" | "ready" | "signed_out" | "error">("loading");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [copied, setCopied] = useState<string | null>(null);
+
+  useEffect(() => {
+    setSelectedId(new URLSearchParams(window.location.search).get("order"));
+    let mounted = true;
+
+    const refresh = async () => {
+      try {
+        const result = await fetch("/api/shop/orders", { credentials: "include", cache: "no-store" });
+        if (!mounted) return;
+        if (result.status === 401) {
+          setState("signed_out");
+          return;
+        }
+        if (!result.ok) throw new Error("Unable to load demo orders");
+        const data = await result.json();
+        if (!mounted) return;
+        setOrders(Array.isArray(data.orders) ? data.orders : []);
+        setState("ready");
+      } catch {
+        if (mounted) setState((current) => current === "ready" ? "ready" : "error");
+      }
+    };
+
+    void refresh();
+    const interval = window.setInterval(() => void refresh(), 10000);
+    return () => { mounted = false; window.clearInterval(interval); };
+  }, []);
+
+  async function copyLink(id: string, link: string) {
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(id);
+    } catch {
+      setCopied(null);
+    }
+  }
+
+  if (state === "loading") return <p role="status">Checking your Fluxora account and demo orders...</p>;
+  if (state === "signed_out") return (
+    <div style={{ padding: 28, border: "1px solid #494134", borderRadius: 14 }}>
+      <LockKeyhole size={25} color="#e2bf7a" />
+      <h2>Sign in to view your purchases</h2>
+      <p style={{ color: "#b1b1b0" }}>Your orders and delivery links are private to your Fluxora Google account.</p>
+      <a href={"/prompts/member-login?returnTo=" + encodeURIComponent("/shop/orders") + "&auto=1"}
+        style={{ color: "#e6bc6b", textDecoration: "underline" }}>Continue with Google</a>
+    </div>
+  );
+  if (state === "error") return <p role="alert">Unable to load your demo orders right now. Please try again later.</p>;
+
+  const shown = selectedId
+    ? [...orders].sort((a, b) => Number(b.id === selectedId) - Number(a.id === selectedId))
+    : orders;
+
+  if (shown.length === 0) return (
+    <div style={{ padding: 28, border: "1px solid #494134", borderRadius: 14 }}>
+      <h2>No demo orders yet</h2>
+      <p style={{ color: "#b1b1b0" }}>Start a test transaction to preview activation-link delivery.</p>
+      <a style={{ color: "#e2bc6b", textDecoration: "underline" }} href="/shop/demo">Try sandbox checkout</a>
+    </div>
+  );
+
+  return <div style={{ display: "grid", gap: 18 }}>
+    <p style={{ color: "#a5a4a2", fontSize: 13, display: "flex", alignItems: "center", gap: 10 }}>
+      <RefreshCcw size={15} /> Status refreshes automatically every 10 seconds.
+    </p>
+    {shown.map((order) => (
+      <article key={order.id} style={{
+        background: "#17191b", border: "1px solid " + (order.id === selectedId ? "#a1844d" : "#3d3a35"),
+        borderRadius: 16, padding: 24,
+      }}>
+        <div style={{ display: "flex", alignItems: "flex-start", flexWrap: "wrap", gap: 12, justifyContent: "space-between" }}>
+          <div>
+            <p style={{ fontSize: 10, letterSpacing: "0.12em", color: "#dbb778", textTransform: "uppercase", margin: 0 }}>Test-only order</p>
+            <h2 style={{ fontSize: 20, fontWeight: 650, margin: "10px 0" }}>{order.product_title}</h2>
+            <p style={{ fontSize: 12, color: "#a9a7a3", margin: 0 }}>
+              {new Date(order.created_at).toLocaleString("en-PH")}
+            </p>
+          </div>
+          <span style={{ color: order.status === "demo_delivered" ? "#97d2a6" : "#e3ba76", display: "flex", alignItems: "center", gap: 7, fontSize: 12 }}>
+            {order.status === "demo_delivered" ? <CheckCircle2 size={17} /> : <Clock3 size={17} />}
+            {statusLabel(order.status)}
+          </span>
+        </div>
+        <p style={{ fontSize: 11, color: "#818181", wordBreak: "break-all" }}>Order {order.id}</p>
+        {order.demo_activation_link ? (
+          <div style={{ border: "1px solid #454034", borderRadius: 10, padding: 16, marginTop: 18, background: "#20211f" }}>
+            <strong style={{ color: "#e4bc6c", fontSize: 13 }}>Example delivery link (INVALID)</strong>
+            <p style={{ fontSize: 12, wordBreak: "break-all", color: "#ddd3bd" }}>{order.demo_activation_link}</p>
+            <button type="button" onClick={() => copyLink(order.id, order.demo_activation_link!)}
+              style={{ border: "1px solid #a18a61", background: "transparent", borderRadius: 8, padding: "9px 13px", color: "#e3be75", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 7 }}>
+              <Copy size={14} /> {copied === order.id ? "Copied" : "Copy demo link"}
+            </button>
+            <p style={{ fontSize: 11, color: "#ac9d8a", lineHeight: 1.7 }}>
+              This example.com link does not activate Google AI Pro or any real subscription.
+            </p>
+          </div>
+        ) : <p style={{ color: "#aaa7a3", fontSize: 13, marginTop: 20 }}>
+          A fake activation link will appear here only after PayMongo confirms a successful test payment.
+        </p>}
+      </article>
+    ))}
+  </div>;
+}
