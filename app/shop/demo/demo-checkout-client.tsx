@@ -39,8 +39,9 @@ export default function DemoCheckoutClient({ enabled }: { enabled: boolean }) {
       </div>
       <h2 style={{ margin: "17px 0 10px", fontSize: 27, fontWeight: 650 }}>₱100.00 <small style={{ color: "#bab6ae", fontSize: 13, fontWeight: 400 }}>test transaction</small></h2>
       <p style={{ color: "#b9b7b3", fontSize: 13, lineHeight: 1.7 }}>
-        Demo Google AI Pro 18-months listing. The delivery link is a fake example.com URL
-        and cannot activate any subscription.
+        Demo Google AI Pro 18-months listing. This checkout accepts only PayMongo
+        test-card payments. No real card or QR Ph payment is needed. The delivered
+        example.com URL cannot activate any subscription.
       </p>
       <button type="button" onClick={start} disabled={!enabled || busy}
         style={{
@@ -49,9 +50,13 @@ export default function DemoCheckoutClient({ enabled }: { enabled: boolean }) {
           border: 0, borderRadius: 9, background: enabled ? "#dfb665" : "#55524a",
           color: "#15120e", fontWeight: 750, marginTop: 24,
         }}>
-        {busy ? "Opening sandbox..." : enabled ? "Pay with PayMongo (test)" : "Sandbox setup pending"}
+        {busy ? "Opening sandbox..." : enabled ? "Open PayMongo test-card checkout" : "Sandbox setup pending"}
         {!busy && enabled ? <ArrowUpRight size={17} /> : null}
       </button>
+      <p style={{ color: "#d8c9a9", fontSize: 12, lineHeight: 1.6, marginTop: 16 }}>
+        Test card: <strong>4343 4343 4343 4345</strong> · any future expiry date · any
+        3-digit CVC. Never enter real card details.
+      </p>
       <a style={{ display: "block", marginTop: 18, fontSize: 13, color: "#dfbc76" }} href="/shop/orders">
         View my demo orders
       </a>
