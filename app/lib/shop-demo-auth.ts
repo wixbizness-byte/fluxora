@@ -12,8 +12,9 @@ export function sandboxConfigured() {
 export async function verifiedMember(request: NextRequest) {
   const cookie = request.headers.get("cookie");
   if (!cookie) return null;
-  const portal = new URL("/prompts/api/member-portal", request.nextUrl.origin);
-  const response = await fetch(portal, { headers: { Cookie: cookie }, cache: "no-store" });
+  const safeOrigin = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "http://localhost:3000";
+  const portal = new URL("/prompts/api/member-portal", safeOrigin);
+  const response = await fetch(portal, { headers: { Cookie: cookie }, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(8000) });
   if (!response.ok) return null;
   const account = await response.json();
   const email = typeof account.email === "string" ? account.email.trim().toLowerCase() : "";
