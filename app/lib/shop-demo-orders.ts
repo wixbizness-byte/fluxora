@@ -17,7 +17,7 @@ export type DemoOrder = {
 const FIELDS = "id,buyer_email,product_title,amount_centavos,currency,status,checkout_session_id,payment_id,demo_activation_link,created_at,paid_at";
 
 async function db(path: string, method = "GET", body?: Record<string, unknown>): Promise<DemoOrder[]> {
-  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\\/+$/, "");
+  const base = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(new RegExp("/+$"), "");
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!base || !key) throw new Error("Shop database not configured");
   const response = await fetch(base + "/rest/v1/shop_demo_orders" + path, {
