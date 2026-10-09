@@ -53,6 +53,12 @@ export default async function ShopPage() {
           </section>
 
           <div className={styles.separator} aria-hidden="true" />
+          {process.env.VERCEL_ENV !== "production" ? (
+            <p style={{ paddingTop: 28, fontSize: 13, color: "#d4b77d" }}>
+              Testing storefront delivery? <a href="/shop/demo" style={{ textDecoration: "underline" }}>Open demo checkout</a>
+              {" · "}<a href="/shop/orders" style={{ textDecoration: "underline" }}>My demo orders</a>
+            </p>
+          ) : null}
           <div id="shop-collection">
             <ShopCatalogView catalog={catalog} />
           </div>
