@@ -44,7 +44,9 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = JSON.parse(raw);
-    const event = body?.data;
+    // PayMongo event envelopes place the event type in data.attributes.type.
+    // The newer Hosted Checkout payload also supports a direct data.type format.
+    const event = body?.data?.attributes?.type ? body.data.attributes : body?.data;
     if (event?.type !== "checkout_session.payment.paid") {
       return NextResponse.json({ received: true });
     }
