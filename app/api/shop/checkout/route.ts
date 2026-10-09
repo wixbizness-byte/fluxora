@@ -40,7 +40,8 @@ export async function POST(request: NextRequest) {
               currency: "PHP",
               quantity: 1,
             }],
-            payment_method_types: ["qrph"],
+            // Cards allow a simulated payment without producing a payable QR Ph code.
+            payment_method_types: ["card"],
             success_url: redirect,
             cancel_url: redirect,
             reference_number: order.id,
