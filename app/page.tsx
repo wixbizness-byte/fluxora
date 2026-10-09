@@ -40,6 +40,7 @@ export default async function HomePage() {
         links={[
           { href: "/prompts", label: "Prompts", target: "_blank" },
           { href: "/tools", label: "Tools", target: "_blank" },
+          { href: "/shop", label: "Shop" },
         ]}
         cta={{ href: "/start", label: "Start with Fluxora" }}
       />
