@@ -26,6 +26,8 @@ export default function DemoOrdersClient() {
   const [state, setState] = useState<"loading" | "ready" | "signed_out" | "error">("loading");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [copied, setCopied] = useState<string | null>(null);
+  const [checking, setChecking] = useState<string | null>(null);
+  const [verifyMessage, setVerifyMessage] = useState<Record<string, string>>({});
 
   useEffect(() => {
     setSelectedId(new URLSearchParams(window.location.search).get("order"));
@@ -53,6 +55,41 @@ export default function DemoOrdersClient() {
     const interval = window.setInterval(() => void refresh(), 10000);
     return () => { mounted = false; window.clearInterval(interval); };
   }, []);
+
+  async function verifyPayment(id: string) {
+    if (checking) return;
+    setChecking(id);
+    setVerifyMessage((current) => ({ ...current, [id]: "" }));
+    try {
+      const result = await fetch("/api/shop/reconcile", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+        cache: "no-store",
+      });
+      const data = await result.json();
+      if (result.status === 401) {
+        setState("signed_out");
+        return;
+      }
+      if (!result.ok) throw new Error(data.error || "Payment verification unavailable.");
+      if (data.verified && data.order?.status === "demo_delivered") {
+        setOrders((current) => current.map((order) => order.id === id ? data.order : order));
+        setVerifyMessage((current) => ({ ...current, [id]: "Payment verified by PayMongo." }));
+      } else {
+        setVerifyMessage((current) => ({
+          ...current, [id]: "PayMongo has not confirmed a paid test transaction for this order.",
+        }));
+      }
+    } catch (error) {
+      setVerifyMessage((current) => ({
+        ...current, [id]: error instanceof Error ? error.message : "Verification failed.",
+      }));
+    } finally {
+      setChecking(null);
+    }
+  }
 
   async function copyLink(id: string, link: string) {
     try {
@@ -122,9 +159,25 @@ export default function DemoOrdersClient() {
               This example.com link does not activate Google AI Pro or any real subscription.
             </p>
           </div>
-        ) : <p style={{ color: "#aaa7a3", fontSize: 13, marginTop: 20 }}>
-          A fake activation link will appear here only after PayMongo confirms a successful test payment.
-        </p>}
+        ) : <div style={{ marginTop: 20 }}>
+          <p style={{ color: "#aaa7a3", fontSize: 13 }}>
+            A fake activation link will appear only after PayMongo confirms a successful test payment.
+          </p>
+          {order.status === "awaiting_payment" ? (
+            <button type="button" disabled={checking !== null} onClick={() => void verifyPayment(order.id)}
+              style={{
+                marginTop: 12, padding: "10px 16px", borderRadius: 8, cursor: checking ? "wait" : "pointer",
+                border: "1px solid #b6975b", background: "transparent", color: "#e5bd79", fontWeight: 600,
+              }}>
+              {checking === order.id ? "Checking PayMongo..." : "Verify test payment"}
+            </button>
+          ) : null}
+          {verifyMessage[order.id] ? (
+            <p role="status" style={{ fontSize: 12, color: "#d9c8a8", marginTop: 12 }}>
+              {verifyMessage[order.id]}
+            </p>
+          ) : null}
+        </div>}
       </article>
     ))}
   </div>;
