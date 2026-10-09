@@ -20,8 +20,8 @@ export async function POST(request: NextRequest) {
     const order = await createDemoOrder(member.email);
     orderId = order.id;
 
-    const host = process.env.VERCEL_URL;
-    const origin = host ? "https://" + host : "http://localhost:3000";
+    // Use a stable preview hostname so buyer login cookies survive the PayMongo return.
+    const origin = "https://fluxora-git-feature-warzone-shop-catalog-d54ba5-meimei-digitals.vercel.app";
     const redirect = origin + "/shop/orders?order=" + encodeURIComponent(order.id);
     const key = process.env.PAYMONGO_TEST_SECRET_KEY!;
     const upstream = await fetch("https://api.paymongo.com/v2/checkout_sessions", {
