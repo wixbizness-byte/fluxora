@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { CheckCircle2, Clock3, Copy, LockKeyhole, RefreshCcw } from "lucide-react";
 
 type Order = {
@@ -28,17 +28,32 @@ export default function DemoOrdersClient() {
   const [copied, setCopied] = useState<string | null>(null);
   const [checking, setChecking] = useState<string | null>(null);
   const [verifyMessage, setVerifyMessage] = useState<Record<string, string>>({});
+  const [lastCheckedAt, setLastCheckedAt] = useState<Date | null>(null);
+  const [pollingError, setPollingError] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const activeRefresh = useRef(false);
+  const refreshOrdersRef = useRef<() => Promise<void>>(async () => {});
+
 
   useEffect(() => {
     setSelectedId(new URLSearchParams(window.location.search).get("order"));
     let mounted = true;
 
     const refresh = async () => {
+      // Avoid overlapping checks on slow connections; browsers throttle hidden-tab timers.
+      if (activeRefresh.current) return;
+      activeRefresh.current = true;
+      if (mounted) setRefreshing(true);
       try {
-        const result = await fetch("/api/shop/orders", { credentials: "include", cache: "no-store" });
+        const result = await fetch("/api/shop/orders", {
+          credentials: "include",
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         if (!mounted) return;
         if (result.status === 401) {
           setState("signed_out");
+          setPollingError(false);
           return;
         }
         if (!result.ok) throw new Error("Unable to load demo orders");
@@ -46,14 +61,34 @@ export default function DemoOrdersClient() {
         if (!mounted) return;
         setOrders(Array.isArray(data.orders) ? data.orders : []);
         setState("ready");
+        setPollingError(false);
+        setLastCheckedAt(new Date());
       } catch {
-        if (mounted) setState((current) => current === "ready" ? "ready" : "error");
+        if (mounted) {
+          setPollingError(true);
+          setState((current) => current === "ready" ? "ready" : "error");
+        }
+      } finally {
+        activeRefresh.current = false;
+        if (mounted) setRefreshing(false);
       }
     };
 
+    refreshOrdersRef.current = refresh;
     void refresh();
-    const interval = window.setInterval(() => void refresh(), 10000);
-    return () => { mounted = false; window.clearInterval(interval); };
+
+    const refreshIfVisible = () => {
+      if (document.visibilityState === "visible") void refresh();
+    };
+    window.addEventListener("focus", refreshIfVisible);
+    document.addEventListener("visibilitychange", refreshIfVisible);
+    const interval = window.setInterval(refreshIfVisible, 10000);
+    return () => {
+      mounted = false;
+      window.clearInterval(interval);
+      window.removeEventListener("focus", refreshIfVisible);
+      document.removeEventListener("visibilitychange", refreshIfVisible);
+    };
   }, []);
 
   async function verifyPayment(id: string) {
@@ -125,9 +160,19 @@ export default function DemoOrdersClient() {
   );
 
   return <div style={{ display: "grid", gap: 18 }}>
-    <p style={{ color: "#a5a4a2", fontSize: 13, display: "flex", alignItems: "center", gap: 10 }}>
-      <RefreshCcw size={15} /> Status refreshes automatically every 10 seconds.
-    </p>
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 12 }}>
+      <p role="status" aria-live="polite" style={{ color: "#a5a4a2", fontSize: 13, margin: 0, display: "flex", alignItems: "center", gap: 8 }}>
+        <RefreshCcw size={15} /> Status checks every 10 seconds while this tab is visible.
+        {lastCheckedAt ? " Last checked at " + lastCheckedAt.toLocaleTimeString("en-PH") + "." : ""}
+      </p>
+      <button type="button" disabled={refreshing} onClick={() => void refreshOrdersRef.current()}
+        style={{ color: "#e3be75", border: "1px solid #716344", borderRadius: 8, padding: "7px 10px", background: "transparent", cursor: refreshing ? "wait" : "pointer" }}>
+        {refreshing ? "Checking..." : "Refresh status"}
+      </button>
+      {pollingError ? <p role="alert" style={{ fontSize: 12, color: "#f0a4a4", margin: 0 }}>
+        Last update failed. Tap Refresh status to retry.
+      </p> : null}
+    </div>
     {shown.map((order) => (
       <article key={order.id} style={{
         background: "#17191b", border: "1px solid " + (order.id === selectedId ? "#a1844d" : "#3d3a35"),
