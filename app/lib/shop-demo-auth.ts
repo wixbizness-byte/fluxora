@@ -24,7 +24,7 @@ export async function verifiedMember(request: NextRequest) {
     if (!account || typeof account !== "object" || Array.isArray(account)) return null;
     const user = account as Record<string, unknown>;
     const email = typeof user.email === "string" ? user.email.trim().toLowerCase() : "";
-    if (email.length > 320 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return null;
+    if (email.length > 320 || email.includes(" ") || email.indexOf("@") < 1 || email.lastIndexOf(".") < email.indexOf("@") + 2) return null;
     if (!["admin", "member", "free"].includes(String(user.role))) return null;
     return { email, role: String(user.role) };
   } catch {
