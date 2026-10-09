@@ -11,16 +11,25 @@ export function sandboxConfigured() {
 
 export async function verifiedMember(request: NextRequest) {
   const cookie = request.headers.get("cookie");
-  if (!cookie) return null;
-  const safeOrigin = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "http://localhost:3000";
-  const portal = new URL("/prompts/api/member-portal", safeOrigin);
-  const response = await fetch(portal, { headers: { Cookie: cookie }, cache: "no-store", redirect: "error", signal: AbortSignal.timeout(8000) });
-  if (!response.ok) return null;
-  const account = await response.json();
-  const email = typeof account.email === "string" ? account.email.trim().toLowerCase() : "";
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return null;
-  if (!["admin", "member", "free"].includes(account.role)) return null;
-  return { email, role: account.role as string };
+  if (!cookie || cookie.length > 12000) return null;
+  try {
+    const safeOrigin = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : "http://localhost:3000";
+    const portal = new URL("/prompts/api/member-portal", safeOrigin);
+    const response = await fetch(portal, {
+      headers: { Cookie: cookie, Accept: "application/json" },
+      cache: "no-store", redirect: "error", signal: AbortSignal.timeout(8000),
+    });
+    if (!response.ok) return null;
+    const account: unknown = await response.json();
+    if (!account || typeof account !== "object" || Array.isArray(account)) return null;
+    const user = account as Record<string, unknown>;
+    const email = typeof user.email === "string" ? user.email.trim().toLowerCase() : "";
+    if (email.length > 320 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) return null;
+    if (!["admin", "member", "free"].includes(String(user.role))) return null;
+    return { email, role: String(user.role) };
+  } catch {
+    return null;
+  }
 }
 
 export function testerAllowed(role: string, email: string) {
