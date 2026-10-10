@@ -35,7 +35,7 @@ export function shopLiveReady(): boolean {
 
 type Row = Record<string, unknown>;
 
-export async function shopDb<T extends Row>(
+export async function shopDb<T>(
   table: string, query: string, method: "GET" | "POST" | "PATCH" = "GET",
   body?: Row,
 ): Promise<T[]> {
