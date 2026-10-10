@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState, type ChangeEvent } from "react";
-import { getSession, queryOne, queryRows, insertRow, updateRow, deleteRow, uploadPublicFile } from "../../lib/supabase";
+import { getSession, queryOne, queryRows, insertRow, updateRow, deleteRow } from "../../lib/supabase";
+import { uploadHomepageMedia } from "../../lib/homepage-media-upload";
 import styles from "./shop-manager.module.css";
 
 type Card = {
@@ -133,17 +134,23 @@ export default function ShopManager() {
       return;
     }
     setBusy(card.id);
-    setNotice("Uploading cover image...");
+    setNotice("Uploading cover image to Cloudflare R2...");
     try {
-      const objectKey = "cards/" + crypto.randomUUID() + "." + types[file.type];
-      const uploaded = await uploadPublicFile("shop-product-covers", objectKey, file);
-      if (uploaded.error || !uploaded.data) throw new Error(uploaded.error?.message || "Image upload failed.");
+      // Reuse Fluxora's existing signed R2 upload pipeline, which verifies
+      // site-admin identity server-side. "tools" is the current authorized
+      // media namespace supported by the shared Cloudflare Worker.
+      const session = await getSession();
+      if (!session?.access_token) throw new Error("Your admin session has expired. Sign in again.");
+      const imageUrl = await uploadHomepageMedia(file, "tools", session.access_token);
+      if (!imageUrl.startsWith("https://media.fluxora.wiki/homepage/tools/")) {
+        throw new Error("R2 returned an unexpected media URL.");
+      }
       const saved = await updateRow<Card>("shop_catalog_cards", card.id, {
-        image_url: uploaded.data,
+        image_url: imageUrl,
         updated_at: new Date().toISOString(),
       });
-      if (saved.error || !saved.data) throw new Error(saved.error?.message || "Image uploaded but could not be attached to the card.");
-      edit(card.id, { image_url: uploaded.data });
+      if (saved.error || !saved.data) throw new Error(saved.error?.message || "Image uploaded to R2 but could not be attached to the card.");
+      edit(card.id, { image_url: imageUrl });
       setNotice(card.is_published
         ? "New cover uploaded. The public shop now displays the updated image."
         : "Cover uploaded. Publish this draft when ready.");
