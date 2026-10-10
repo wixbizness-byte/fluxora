@@ -35,7 +35,7 @@ function validateCard(card: Card, publish = false) {
   if (card.description.length > 3000) return "Description cannot exceed 3,000 characters.";
   if (card.category_label.trim().length < 1 || card.category_label.length > 32) return "Category label must be 1–32 characters.";
   if (card.status_label.trim().length < 1 || card.status_label.length > 32) return "Status label must be 1–32 characters.";
-  if (publish && !card.image_url) return "Upload a cover image before publishing.";
+  // Published cards can use the accessible text cover until an R2 image is uploaded.
   if (card.image_url && (!card.image_url.startsWith("https://") || card.image_url.length > 2048)) return "Image URL must start with https://.";
   return "";
 }
@@ -179,7 +179,7 @@ export default function ShopManager() {
       <div>
         <span className={styles.eyebrow}>Fluxora Shop</span>
         <h1 id="shop-manager-title">Product card manager</h1>
-        <p>Create image-first product cards with the same format as /tools. Upload a 16:9 cover, edit the badges and title, and publish without redeploying the website.</p>
+        <p>Create image-first product cards with the same format as /tools. Upload a 16:9 cover to R2, edit the badges and title, and publish without redeploying the website. Cards without images show a text cover.</p>
       </div>
       <a className={styles.headerLink} href="/shop" target="_blank" rel="noopener noreferrer">Preview public shop ↗</a>
     </div>
