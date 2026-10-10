@@ -5,7 +5,8 @@ import { ArrowUpRight, ImageOff, Search, Sparkles } from "lucide-react";
 import type { ShopCard } from "../lib/shop-public-cards";
 import styles from "./shop-cards.module.css";
 
-export default function ShopCardGrid({ cards }: { cards: ShopCard[] }) {
+export default function ShopCardGrid({ cards, unavailableIds = [] }: { cards: ShopCard[]; unavailableIds?: string[] }) {
+  const unavailable = new Set(unavailableIds);
   const [query, setQuery] = useState("");
   const visible = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
@@ -45,7 +46,9 @@ export default function ShopCardGrid({ cards }: { cards: ShopCard[] }) {
               <div className={styles.cardContent}>
                 <div className={styles.badges}>
                   <span className={styles.badge}>{card.category_label}</span>
-                  <span className={`${styles.badge} ${/available|in stock/i.test(card.status_label) ? styles.badgeStatus : styles.badgeUpcoming}`}>{card.status_label}</span>
+                  <span className={`${styles.badge} ${unavailable.has(card.id) ? styles.badgeUpcoming : (/available|in stock/i.test(card.status_label) ? styles.badgeStatus : styles.badgeUpcoming)}`}>
+                    {unavailable.has(card.id) ? "Unavailable" : card.status_label}
+                  </span>
                 </div>
                 <h2 className={styles.title}>{card.title}</h2>
                 <a className={styles.action} href={`/shop/${encodeURIComponent(card.slug)}`}>
