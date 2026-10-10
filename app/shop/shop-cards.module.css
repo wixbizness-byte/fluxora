@@ -41,3 +41,5 @@
 .notice { background: #131b23; border: 1px solid #354052; padding: 15px 18px; color: #b8c3d1; border-radius: 10px; margin-top: 25px; font-size: 13px; line-height: 1.7; }
 @media (max-width: 960px) { .grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .detailLayout { gap: 24px; } }
 @media (max-width: 640px) { .main { padding: 0 16px 72px; } .hero { padding-top: 48px; } .grid { grid-template-columns: 1fr; gap: 16px; } .detailLayout { grid-template-columns: 1fr; } .card { max-width: 500px; } }
+
+.badgeUpcoming { border-color: rgba(222,169,86,.26); color:#eac786; background:rgba(121,76,25,.20); }
