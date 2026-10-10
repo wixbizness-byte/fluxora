@@ -63,3 +63,12 @@
 @media (max-width: 640px) { .main { padding: 0 16px 72px; } .hero { padding-top: 48px; } .grid { grid-template-columns: 1fr; gap: 16px; } .detailLayout { grid-template-columns: 1fr; } .card { max-width: 500px; } }
 
 .badgeUpcoming { border-color: rgba(222,169,86,.26); color:#eac786; background:rgba(121,76,25,.20); }
+
+/* Override the legacy global Fraunces h1/h2 rule with native Fluxora Inter. */
+.page :global(h1),
+.page :global(h2) {
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
+  font-weight: 750;
+}
+.page .hero h1 { font-family: var(--font-inter), Inter, Arial, sans-serif; font-weight: 800; }
+.page .title, .page .detailTitle { font-family: var(--font-inter), Inter, Arial, sans-serif; font-weight: 750; }
