@@ -4,7 +4,7 @@ import { shopDb } from "./shop-server";
 export type SupplierPricePolicy = {
   product_id: string;
   supplier_service_id: string;
-  max_supplier_price: number | null;
+  max_supplier_price: number | string | null;
 };
 
 export type SupplierAvailability = "available" | "unavailable";
@@ -69,8 +69,8 @@ export function assessSupplierAvailability(
 ): SupplierAvailability {
   // An unset ceiling or an API failure ALWAYS blocks payment and fulfillment.
   if (!policy || !policy.supplier_service_id ||
-      typeof policy.max_supplier_price !== "number" ||
-      !Number.isFinite(policy.max_supplier_price) || policy.max_supplier_price <= 0 ||
+      !(typeof policy.max_supplier_price === "number" || typeof policy.max_supplier_price === "string") ||
+      !Number.isFinite(Number(policy.max_supplier_price)) || Number(policy.max_supplier_price) <= 0 ||
       !products) return "unavailable";
 
   const item = products.find(p => p && p.service_id === policy.supplier_service_id);
@@ -86,7 +86,7 @@ export function assessSupplierAvailability(
   }
 
   const cost = currentUnitCost(item);
-  return cost !== null && cost <= policy.max_supplier_price ? "available" : "unavailable";
+  return cost !== null && cost <= Number(policy.max_supplier_price) ? "available" : "unavailable";
 }
 
 export async function privateProductPolicy(productId: string) {
