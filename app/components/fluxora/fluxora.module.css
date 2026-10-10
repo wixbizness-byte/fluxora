@@ -79,3 +79,21 @@
 :global([data-home-theme="gold"]) .card { border: 1px solid rgba(136,149,182,.24); border-radius: var(--fluxora-radius-lg); background: rgba(18,23,34,.98); box-shadow: 0 5px 0 rgba(43,38,67,.1), 0 13px 28px rgba(43,38,67,.07); }
 :global([data-home-theme="gold"]) .siteFooter { border-top: 1px solid var(--fluxora-color-border); background: rgba(10,13,21,.94); }
 @media (max-width: 720px) { :global([data-home-theme="gold"]) .headerNav { background: rgba(18,23,34,.98); } }
+
+/* Shop's dark header uses the same native Fluxora Inter lettering and
+   the white rounded logo tile shown in the Fluxora tools navigation. */
+:global([data-shop-theme="true"]) .brandMark {
+  width: 29px;
+  height: 29px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #fff;
+  object-fit: contain;
+}
+:global([data-shop-theme="true"]) .brandLabel,
+:global([data-shop-theme="true"]) .headerLink,
+:global([data-shop-theme="true"]) .button,
+:global([data-shop-theme="true"]) .footerLink,
+:global([data-shop-theme="true"]) .footerMeta {
+  font-family: var(--font-inter), Inter, Arial, sans-serif;
+}
