@@ -57,6 +57,7 @@ export default function ShopManager() {
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
   const [instructions, setInstructions] = useState<Record<string,string>>({});
+  const [supplierCeilings, setSupplierCeilings] = useState<Record<string,string>>({});
 
   useEffect(() => {
     let canceled = false;
@@ -80,7 +81,11 @@ export default function ShopManager() {
           });
           if (privateData.ok) {
             const payload = await privateData.json();
-            if (!canceled) setInstructions(current => ({...current,[card.id]:payload.instructions||""}));
+            if (!canceled) {
+              setInstructions(current => ({...current,[card.id]:payload.instructions||""}));
+              setSupplierCeilings(current => ({...current,[card.id]:
+                payload.max_supplier_price === null ? "" : String(payload.max_supplier_price)}));
+            }
           }
         }
         setNotice("Shop cards loaded. Unpublished drafts are visible only to admins.");
@@ -155,6 +160,11 @@ export default function ShopManager() {
   async function saveInstructions(card: Card) {
     setBusy(card.id);
     try {
+      const raw = (supplierCeilings[card.id]||"").trim();
+      const ceiling = raw === "" ? null : Number(raw);
+      if (raw !== "" && (!Number.isFinite(ceiling) || ceiling === null || ceiling <= 0 || ceiling > 100000000)) {
+        throw new Error("Enter a valid maximum supplier cost, or leave it blank to block ordering.");
+      }
       const session = await getSession();
       if (!session) throw new Error("Admin session expired.");
       const res = await fetch("/api/shop/admin/config",{
@@ -162,11 +172,11 @@ export default function ShopManager() {
           Authorization:"Bearer "+session.access_token,
           "Content-Type":"application/json",
         },
-        body:JSON.stringify({product_id:card.id,instructions:instructions[card.id]||""}),
+        body:JSON.stringify({product_id:card.id,instructions:instructions[card.id]||"",max_supplier_price:ceiling}),
       });
       const response = await res.json();
       if (!res.ok) throw new Error(response.error || "Unable to save instructions.");
-      setNotice("Post-payment instructions saved.");
+      setNotice("Private purchase settings saved.");
     } catch(error) {
       setNotice(error instanceof Error?error.message:"Unable to save instructions.");
     } finally { setBusy(""); }
@@ -318,8 +328,15 @@ export default function ShopManager() {
               onChange={(e) => setInstructions(current => ({...current,[card.id]:e.target.value}))}
               placeholder="Write delivery and activation instructions" />
           </label>
+          <label className={styles.label}>Maximum supplier cost (supplier API price units)
+            <input className={styles.field} type="number" min="0.000001" max="100000000"
+              step="0.000001" value={supplierCeilings[card.id]||""}
+              placeholder="Required before orders can open"
+              onChange={(e) => setSupplierCeilings(current => ({...current,[card.id]:e.target.value}))} />
+            <small>Private. Fluxora marks the product Unavailable if supplier cost is higher, stock is absent, or the price check fails. The supplier's currency has not been confirmed; do not enter a PHP amount unless its API uses PHP.</small>
+          </label>
           <button type="button" className={styles.secondary} disabled={busy!==""}
-            onClick={() => void saveInstructions(card)}>Save delivery instructions</button>
+            onClick={() => void saveInstructions(card)}>Save private purchasing settings</button>
           <label className={styles.label} style={{flexDirection:"row",alignItems:"center"}}>
             <input type="checkbox" checked={card.checkout_enabled}
               onChange={(e)=>edit(card.id,{checkout_enabled:e.target.checked})} />
