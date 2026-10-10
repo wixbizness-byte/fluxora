@@ -2,6 +2,8 @@ import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { hashBuyer, SHOP_BUYER_COOKIE, shopDb, shopLiveReady, patchServerOrder, type ShopOrder } from "../../../lib/shop-server";
 
+import { availableForPurchase } from "../../../lib/shop-supplier-availability";
+
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
@@ -43,6 +45,10 @@ export async function POST(request: NextRequest) {
     const config = privateProducts[0];
     if (!config?.supplier_service_id || !config.delivery_instructions.trim()) {
       return error("Ordering is not yet available.", 409);
+    }
+
+    if (!(await availableForPurchase(product.id))) {
+      return error("This product is currently unavailable.", 409);
     }
 
     const existing = request.cookies.get(SHOP_BUYER_COOKIE)?.value || "";
