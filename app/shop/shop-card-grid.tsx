@@ -41,7 +41,7 @@ export default function ShopCardGrid({ cards }: { cards: ShopCard[] }) {
               <div className={styles.cardContent}>
                 <div className={styles.badges}>
                   <span className={styles.badge}>{card.category_label}</span>
-                  <span className={`${styles.badge} ${styles.badgeStatus}`}>{card.status_label}</span>
+                  <span className={`${styles.badge} ${/available|in stock/i.test(card.status_label) ? styles.badgeStatus : styles.badgeUpcoming}`}>{card.status_label}</span>
                 </div>
                 <h2 className={styles.title}>{card.title}</h2>
                 <a className={styles.action} href={`/shop/${encodeURIComponent(card.slug)}`}>
