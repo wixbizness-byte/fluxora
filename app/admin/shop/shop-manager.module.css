@@ -29,3 +29,10 @@
 .message { padding:18px; color:#d4d7e3; border:1px solid #39435a; border-radius:12px; font-size:14px; line-height:1.7; }
 @media(max-width:930px) { .list { grid-template-columns:1fr; } }
 @media(max-width:650px) { .panel { padding:15px; } .newForm { grid-template-columns:1fr; } .inlineFields { grid-template-columns:1fr; } }
+
+.livePreview { padding: 0 4px 14px; display:flex; flex-direction:column; align-items:flex-start; gap:8px; }
+.previewBadges { display:flex; gap:6px; flex-wrap:wrap; margin:0; }
+.previewBadges span { color:#aeb4c8; background:#202638; border:1px solid #344054; border-radius:99px; font-size:11px; font-weight:740; padding:3px 9px; }
+.previewBadges .previewStatus { background:rgba(30,101,75,.24); border-color:#355c52; color:#8bd5b1; }
+.livePreview strong { font-size:18px; font-weight:750; letter-spacing:-.03em; color:#f7f7fc; }
+.livePreview small { font-weight:780; color:#c4b0fe; letter-spacing:.02em; font-size:11px; }
