@@ -1,9 +1,29 @@
-.page {
+/* Dark shop theme. Overrides legacy red main/body gradients only inside /shop. */
+.page:global(.fluxora-theme) {
+  --fluxora-color-brand: #b5a3ff;
+  --fluxora-color-brand-hover: #d0c3ff;
+  --fluxora-color-brand-soft: #241e39;
+  --fluxora-color-canvas: #0b0e16;
+  --fluxora-color-surface: #121722;
+  --fluxora-color-surface-muted: #1b2230;
+  --fluxora-color-text: #f3f5fb;
+  --fluxora-color-text-secondary: #c1c7d4;
+  --fluxora-color-text-muted: #9aa5ba;
+  --fluxora-color-border: #2a3243;
+  --fluxora-color-border-strong: #414d65;
+  --fluxora-color-success: #4bd99b;
+  --fluxora-color-warning: #f2ba64;
+  --fluxora-color-danger: #ff7b86;
+  --fluxora-color-info: #73afff;
   min-height: 100vh;
   color: #ecebf6;
-  background: radial-gradient(circle at 48% -13%, rgba(73, 62, 123, .23), transparent 42%), #090b12;
+  color-scheme: dark;
+  background: #0b0e16;
 }
-.main { padding: 0 24px 100px; }
+.page .main {
+  padding: 0 24px 100px;
+  background: #0b0e16;
+}
 .shell { max-width: 1192px; margin: 0 auto; }
 .hero { padding: 76px 0 37px; }
 .eyebrow { display: block; margin: 0 0 12px; color: #a899e5; font-weight: 750; letter-spacing: .16em; text-transform: uppercase; font-size: 11px; }

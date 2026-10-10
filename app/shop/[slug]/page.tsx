@@ -29,7 +29,7 @@ export default async function ShopProductPage({ params }: PageProps) {
   if (!card) notFound();
 
   return (
-    <div className={`fluxora-theme ${styles.page}`}>
+    <div className={`fluxora-theme ${styles.page}`} data-home-theme="gold">
       <SiteHeader links={NAV} cta={{ href: "/shop", label: "Back to shop" }} />
       <main className={styles.main}>
         <div className={styles.shell}>
