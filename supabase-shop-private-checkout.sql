@@ -21,7 +21,7 @@ alter table public.shop_catalog_cards add column if not exists checkout_enabled 
 alter table public.shop_catalog_cards add constraint shop_card_terms_length
   check (length(terms_text) <= 15000);
 update public.shop_catalog_cards set
-  terms_text = '', description='', status_label='',
+  terms_text = '', description='', status_label='Coming Soon',
   checkout_enabled=false, price_centavos=null
 where slug='google-ai-pro-18-months';
 
