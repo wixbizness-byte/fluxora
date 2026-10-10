@@ -63,16 +63,16 @@ export async function POST(request: NextRequest) {
       p.attributes?.amount===order.price_centavos);
     if (!paid) return new Response("Payment not verified",{status:409});
 
-    if (order.status === "delivered" || order.status === "needs_review" ||
+    if (order.status === "delivered" || order.status === "test_paid" || order.status === "needs_review" ||
         order.status === "fulfilling" || order.status === "paid") {
       return NextResponse.json({ received: true });
     }
     if (order.status !== "awaiting_payment") return new Response("Order not ready",{status:409});
     const updated = await patchServerOrder(id, {
-      status: "paid", paymongo_payment_id: paid.id, paid_at: new Date().toISOString(),
+      status: mode === "test" ? "test_paid" : "paid", paymongo_payment_id: paid.id, paid_at: new Date().toISOString(),
     }, "awaiting_payment");
     if (!updated) return NextResponse.json({ received: true });
-    await fulfillPaidOrder(id);
+    if (mode === "live") await fulfillPaidOrder(id);
     return NextResponse.json({ received: true });
   } catch {
     return new Response("Unable to verify payment",{status:500});
