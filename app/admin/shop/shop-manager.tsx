@@ -328,12 +328,12 @@ export default function ShopManager() {
               onChange={(e) => setInstructions(current => ({...current,[card.id]:e.target.value}))}
               placeholder="Write delivery and activation instructions" />
           </label>
-          <label className={styles.label}>Maximum supplier cost (supplier API price units)
+          <label className={styles.label}>Maximum supplier cost (USD)
             <input className={styles.field} type="number" min="0.000001" max="100000000"
               step="0.000001" value={supplierCeilings[card.id]||""}
               placeholder="Required before orders can open"
               onChange={(e) => setSupplierCeilings(current => ({...current,[card.id]:e.target.value}))} />
-            <small>Private. Fluxora marks the product Unavailable if supplier cost is higher, stock is absent, or the price check fails. The supplier's currency has not been confirmed; do not enter a PHP amount unless its API uses PHP.</small>
+            <small>Private. Fluxora marks the product Unavailable if supplier cost is higher, stock is absent, or the price check fails. Configure a supplier-cost ceiling in USD, separate from your PHP selling price.</small>
           </label>
           <button type="button" className={styles.secondary} disabled={busy!==""}
             onClick={() => void saveInstructions(card)}>Save private purchasing settings</button>
