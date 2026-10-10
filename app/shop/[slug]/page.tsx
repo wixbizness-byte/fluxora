@@ -5,6 +5,7 @@ import { SiteFooter, SiteHeader } from "../../components/fluxora";
 import { loadPublishedShopCard } from "../../lib/shop-public-cards";
 import OrderButton from "./order-button";
 import { availableForPurchase } from "../../lib/shop-supplier-availability";
+import { shopPaymentMode } from "../../lib/shop-server";
 import styles from "../shop-cards.module.css";
 
 export const dynamic = "force-dynamic";
@@ -28,14 +29,10 @@ export default async function ShopProductPage({ params }: PageProps) {
   const card = await loadPublishedShopCard(slug);
   if (!card) notFound();
 
-  const salesReady = process.env.SHOP_LIVE_SALES_ENABLED === "true" &&
-    process.env.PAYMONGO_LIVE_SECRET_KEY?.startsWith("sk_live_") &&
-    Boolean(process.env.PAYMONGO_LIVE_WEBHOOK_SECRET) &&
-    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
-    Boolean(process.env.WARZONE_API_KEY);
-
-  const supplierAvailable = card.checkout_enabled ? await availableForPurchase(card.id) : false;
-  const orderEnabled = Boolean(salesReady && card.checkout_enabled && supplierAvailable &&
+  const paymentMode = shopPaymentMode();
+  const canOrder = paymentMode === "test" || card.checkout_enabled;
+  const supplierAvailable = canOrder ? await availableForPurchase(card.id) : false;
+  const orderEnabled = Boolean(paymentMode !== "off" && canOrder && supplierAvailable &&
     card.price_centavos && card.terms_text.trim());
 
   return (
@@ -73,6 +70,7 @@ export default async function ShopProductPage({ params }: PageProps) {
                 </p>
               ) : null}
               <OrderButton slug={card.slug} enabled={orderEnabled} />
+              {paymentMode === "test" ? <p style={{fontSize:12,color:"#bdb5d1",marginTop:12}}>PayMongo test mode — no real funds or activation links.</p> : null}
             </div>
           </article>
         </div>
