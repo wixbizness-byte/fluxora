@@ -23,9 +23,9 @@ export async function GET(request: NextRequest) {
     await authorized(request);
     const id=request.nextUrl.searchParams.get("product_id")||"";
     if (!UUID.test(id)) return noStore({error:"Invalid product."},400);
-    const rows=await shopDb<{delivery_instructions:string}>(
-      "shop_private_products","?select=delivery_instructions&product_id=eq."+encodeURIComponent(id)+"&limit=1");
-    return noStore({instructions:rows[0]?.delivery_instructions||""});
+    const rows=await shopDb<{delivery_instructions:string;max_supplier_price:number|null}>(
+      "shop_private_products","?select=delivery_instructions,max_supplier_price&product_id=eq."+encodeURIComponent(id)+"&limit=1");
+    return noStore({instructions:rows[0]?.delivery_instructions||"",max_supplier_price:rows[0]?.max_supplier_price??null});
   } catch {
     return noStore({error:"Admin configuration unavailable."},403);
   }
@@ -36,16 +36,22 @@ export async function PUT(request: NextRequest) {
     await authorized(request);
     const data: unknown=await request.json();
     if (!data || typeof data!=="object") return noStore({error:"Invalid request."},400);
-    const {product_id,instructions} = data as {product_id:unknown;instructions:unknown};
+    const {product_id,instructions,max_supplier_price} = data as {
+      product_id:unknown;instructions:unknown;max_supplier_price:unknown
+    };
     if (typeof product_id!=="string" || !UUID.test(product_id) ||
-        typeof instructions!=="string" || instructions.length>10000) {
+        typeof instructions!=="string" || instructions.length>10000 ||
+        (max_supplier_price !== null &&
+          (typeof max_supplier_price !== "number" || !Number.isFinite(max_supplier_price) ||
+           max_supplier_price <= 0 || max_supplier_price > 100000000))) {
       return noStore({error:"Invalid instructions."},400);
     }
     const rows=await shopDb<{delivery_instructions:string}>(
       "shop_private_products","?product_id=eq."+encodeURIComponent(product_id),
-      "PATCH",{delivery_instructions:instructions,updated_at:new Date().toISOString()});
+      "PATCH",{delivery_instructions:instructions,max_supplier_price,
+        updated_at:new Date().toISOString()});
     if(!rows[0]) return noStore({error:"Private product mapping unavailable."},404);
-    return noStore({instructions:rows[0].delivery_instructions});
+    return noStore({instructions:rows[0].delivery_instructions,max_supplier_price:rows[0].max_supplier_price});
   } catch {
     return noStore({error:"Unable to save instructions."},403);
   }
