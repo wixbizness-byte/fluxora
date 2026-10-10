@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { SiteFooter, SiteHeader } from "../components/fluxora";
 import { loadPublishedShopCards } from "../lib/shop-public-cards";
+import { unavailablePublishedCardIds } from "../lib/shop-supplier-availability";
 import ShopCardGrid from "./shop-card-grid";
 import styles from "./shop-cards.module.css";
 
@@ -20,6 +21,8 @@ const NAV = [
 
 export default async function ShopPage() {
   const catalog = await loadPublishedShopCards();
+  const unavailableIds = catalog.status === "ready" ?
+    await unavailablePublishedCardIds(catalog.cards) : [];
 
   return (
     <div className={`fluxora-theme ${styles.page}`} data-home-theme="gold" data-shop-theme="true">
@@ -40,7 +43,7 @@ export default async function ShopPage() {
               <p>Please check back shortly.</p>
             </div>
           ) : (
-            <ShopCardGrid cards={catalog.cards} />
+            <ShopCardGrid cards={catalog.cards} unavailableIds={unavailableIds} />
           )}
           <p className={styles.disclaimer}>
             Listings are informational previews only. No checkout or automatic supplier fulfillment
