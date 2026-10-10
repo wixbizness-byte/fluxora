@@ -36,3 +36,6 @@
 .previewBadges .previewStatus { background:rgba(30,101,75,.24); border-color:#355c52; color:#8bd5b1; }
 .livePreview strong { font-size:18px; font-weight:750; letter-spacing:-.03em; color:#f7f7fc; }
 .livePreview small { font-weight:780; color:#c4b0fe; letter-spacing:.02em; font-size:11px; }
+
+.eyebrow { color:#b4a5f1; font-size:11px; letter-spacing:.15em; font-weight:780; text-transform:uppercase; }
+.previewBadges .previewSoon { background:rgba(121,76,25,.20); border-color:rgba(222,169,86,.28); color:#eac786; }
