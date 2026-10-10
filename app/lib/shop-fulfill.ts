@@ -1,5 +1,6 @@
 import "server-only";
 import { getServerOrder, patchServerOrder, shopDb } from "./shop-server";
+import { availableForPurchase } from "./shop-supplier-availability";
 
 type SupplierReply = {
   success?: unknown;
@@ -25,6 +26,10 @@ export async function fulfillPaidOrder(orderId: string): Promise<"delivered" | "
     const serviceId = privateRows[0]?.supplier_service_id;
     if (!serviceId || !/^S_[A-Za-z0-9_-]{1,50}$/.test(serviceId)) {
       await patchServerOrder(orderId,{status:"needs_review"},"fulfilling");
+      return "review";
+    }
+    if (!(await availableForPurchase(claimed.product_id))) {
+      await patchServerOrder(orderId, {status:"needs_review"}, "fulfilling");
       return "review";
     }
     const key = process.env.WARZONE_API_KEY;
