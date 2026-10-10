@@ -6,6 +6,7 @@ const ADMIN_LINKS = [
   { href: "/admin", label: "Content" },
   { href: "/admin/accounts", label: "Accounts" },
   { href: "/admin/start", label: "Start" },
+  { href: "/admin/shop", label: "Shop" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/member", label: "Member" },
 ];
