@@ -1,6 +1,6 @@
 import { randomBytes } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { hashBuyer, SHOP_BUYER_COOKIE, shopDb, shopLiveReady, patchServerOrder, type ShopOrder } from "../../../lib/shop-server";
+import { hashBuyer, SHOP_BUYER_COOKIE, shopDb, shopPaymentMode, patchServerOrder, type ShopOrder } from "../../../lib/shop-server";
 
 import { availableForPurchase } from "../../../lib/shop-supplier-availability";
 
@@ -12,8 +12,10 @@ const error = (message: string, status: number) =>
   NextResponse.json({ error: message }, { status, headers: { "Cache-Control": "no-store" } });
 
 export async function POST(request: NextRequest) {
-  if (!shopLiveReady()) return error("Ordering is not yet available.", 503);
-  if (request.headers.get("origin") !== ORIGIN) return error("Invalid request origin.", 403);
+  const mode = shopPaymentMode();
+  if (mode === "off") return error("Ordering is not yet available.", 503);
+  const origin = mode === "test" ? request.nextUrl.origin : ORIGIN;
+  if (request.headers.get("origin") !== origin) return error("Invalid request origin.", 403);
 
   let data: unknown;
   try {
@@ -36,7 +38,7 @@ export async function POST(request: NextRequest) {
       "?select=id,title,terms_text,price_centavos,checkout_enabled,is_published" +
       "&slug=eq." + encodeURIComponent(slug) + "&limit=1");
     const product = cards[0];
-    if (!product?.is_published || !product.checkout_enabled ||
+    if (!product?.is_published || (mode !== "test" && !product.checkout_enabled) ||
         !product.price_centavos || !product.terms_text.trim()) return error("Ordering is not yet available.", 409);
 
     const privateProducts = await shopDb<{supplier_service_id:string;delivery_instructions:string}>(
@@ -65,8 +67,8 @@ export async function POST(request: NextRequest) {
     if (!order) throw new Error("Order create failure");
     orderId = order.id;
 
-    const credential = process.env.PAYMONGO_LIVE_SECRET_KEY!;
-    const returnUrl = ORIGIN + "/shop/orders?order=" + encodeURIComponent(order.id);
+    const credential = mode === "test" ? process.env.PAYMONGO_TEST_SECRET_KEY! : process.env.PAYMONGO_LIVE_SECRET_KEY!;
+    const returnUrl = origin + "/shop/orders?order=" + encodeURIComponent(order.id);
     const upstream = await fetch("https://api.paymongo.com/v2/checkout_sessions", {
       method: "POST",
       headers: {
@@ -77,9 +79,9 @@ export async function POST(request: NextRequest) {
         line_items: [{ name: product.title, amount: product.price_centavos, currency: "PHP", quantity: 1 }],
         payment_method_types: ["card", "gcash", "paymaya"],
         success_url: returnUrl,
-        cancel_url: ORIGIN + "/shop/" + encodeURIComponent(slug),
+        cancel_url: origin + "/shop/" + encodeURIComponent(slug),
         reference_number: order.id,
-        metadata: { order_id: order.id, fluxora_shop: "true" },
+        metadata: { order_id: order.id, fluxora_shop: "true", checkout_mode: mode },
         send_email_receipt: false,
       } } }),
       cache: "no-store", signal: AbortSignal.timeout(12000),
