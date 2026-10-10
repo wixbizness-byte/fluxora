@@ -10,7 +10,7 @@ export type ShopOrder = {
   delivery_instructions_snapshot: string;
   price_centavos: number;
   currency: "PHP";
-  status: "created" | "awaiting_payment" | "checkout_failed" | "paid" | "fulfilling" | "delivered" | "needs_review";
+  status: "created" | "awaiting_payment" | "checkout_failed" | "paid" | "fulfilling" | "delivered" | "needs_review" | "test_paid";
   paymongo_session_id: string | null;
   paymongo_payment_id: string | null;
   supplier_order_id: string | null;
@@ -23,6 +23,16 @@ export const SHOP_BUYER_COOKIE = "__Host-fluxora-shop-buyer";
 
 export function hashBuyer(token: string): string {
   return createHash("sha256").update(token).digest("hex");
+}
+
+export function shopPaymentMode(): "test" | "live" | "off" {
+  // Test transactions can never purchase from a supplier.
+  if (process.env.SHOP_PAYMENT_MODE === "test" &&
+      process.env.PAYMONGO_TEST_SECRET_KEY?.startsWith("sk_test_") &&
+      process.env.PAYMONGO_TEST_WEBHOOK_SECRET &&
+      process.env.SUPABASE_SERVICE_ROLE_KEY) return "test";
+  if (shopLiveReady()) return "live";
+  return "off";
 }
 
 export function shopLiveReady(): boolean {
