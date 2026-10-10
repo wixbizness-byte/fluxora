@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { ReactNode } from "react";
 import AdminClient from "./admin-client";
 import { getSession, isSupabaseConfigured, type SupabaseSession } from "../lib/supabase";
 import styles from "./admin.module.css";
@@ -63,7 +64,7 @@ async function consumeGoogleOAuthRedirect(): Promise<{ session: SupabaseSession 
   return { session, error: "" };
 }
 
-export default function GoogleAdminGate() {
+export default function GoogleAdminGate({ children }: { children?: ReactNode }) {
   const [ready, setReady] = useState(false);
   const [hasSession, setHasSession] = useState(false);
   const [error, setError] = useState("");
@@ -130,7 +131,7 @@ export default function GoogleAdminGate() {
   }
 
   if (hasSession) {
-    return <AdminClient />;
+    return children ?? <AdminClient />;
   }
 
   return (
