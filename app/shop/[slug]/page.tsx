@@ -41,7 +41,7 @@ export default async function ShopProductPage({ params }: PageProps) {
             <div>
               <div className={styles.badges}>
                 <span className={styles.badge}>{card.category_label}</span>
-                <span className={`${styles.badge} ${styles.badgeStatus}`}>{card.status_label}</span>
+                <span className={`${styles.badge} ${/available|in stock/i.test(card.status_label) ? styles.badgeStatus : styles.badgeUpcoming}`}>{card.status_label}</span>
               </div>
               <h1 className={styles.detailTitle}>{card.title}</h1>
               <div className={styles.detailText}>{card.description || "More details will be available soon."}</div>
