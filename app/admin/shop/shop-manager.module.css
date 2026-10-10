@@ -39,3 +39,9 @@
 
 .eyebrow { color:#b4a5f1; font-size:11px; letter-spacing:.15em; font-weight:780; text-transform:uppercase; }
 .previewBadges .previewSoon { background:rgba(121,76,25,.20); border-color:rgba(222,169,86,.28); color:#eac786; }
+
+.privateSettings { display:flex; flex-direction:column; gap:12px; padding:15px; border:1px solid #40496a; border-radius:11px; background:#161e2e; }
+.privateSettingsTitle { font-size:14px; font-weight:800; color:#e8e9fc; }
+.privateSettingsNote { font-size:12px; line-height:1.6; color:#a9b7cb; margin:0; }
+.privateSettings .textarea { min-height:125px; }
+.privateSettings .secondary { align-self:flex-start; }

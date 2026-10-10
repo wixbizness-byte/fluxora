@@ -4,6 +4,7 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { getSession, queryOne, queryRows, insertRow, updateRow, deleteRow } from "../../lib/supabase";
 import { uploadHomepageMedia } from "../../lib/homepage-media-upload";
 import styles from "./shop-manager.module.css";
+import ShopPrivateSettings from "./shop-private-settings";
 
 type Card = {
   id: string;
@@ -15,6 +16,8 @@ type Card = {
   status_label: string;
   sort_order: number;
   is_published: boolean;
+  price_centavos: number | null;
+  terms_text: string;
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -33,6 +36,8 @@ function validateCard(card: Card, publish = false) {
   if (card.title.trim().length < 2 || card.title.length > 160) return "Title must be 2–160 characters.";
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(card.slug) || card.slug.length > 100) return "Slug must use lowercase letters, digits, and hyphens.";
   if (card.description.length > 3000) return "Description cannot exceed 3,000 characters.";
+  if (card.terms_text.length > 15000) return "Terms cannot exceed 15,000 characters.";
+  if (card.price_centavos !== null && (!Number.isInteger(card.price_centavos) || card.price_centavos < 100 || card.price_centavos > 100000000)) return "Enter a valid retail price (₱1–₱1,000,000).";
   if (card.category_label.trim().length < 1 || card.category_label.length > 32) return "Category label must be 1–32 characters.";
   if (card.status_label.trim().length < 1 || card.status_label.length > 32) return "Status label must be 1–32 characters.";
   // Published cards can use the accessible text cover until an R2 image is uploaded.
@@ -61,7 +66,7 @@ export default function ShopManager() {
         if (canceled) return;
         setAuthorized(true);
         const result = await queryRows<Card>("shop_catalog_cards",
-          "select=id,slug,title,description,image_url,category_label,status_label,sort_order,is_published&order=sort_order.asc,created_at.desc", true);
+          "select=id,slug,title,description,image_url,category_label,status_label,sort_order,is_published,price_centavos,terms_text&order=sort_order.asc,created_at.desc", true);
         if (result.error) throw new Error(result.error.message);
         if (canceled) return;
         setCards(result.data || []);
@@ -90,6 +95,8 @@ export default function ShopManager() {
       status_label: "Coming Soon",
       sort_order: 100,
       is_published: false,
+      price_centavos: null,
+      terms_text: "",
     };
     const error = validateCard({ ...newCard, id: "" });
     if (error) { setNotice(error); return; }
@@ -119,6 +126,8 @@ export default function ShopManager() {
         status_label: card.status_label.trim(),
         sort_order: card.sort_order,
         is_published: publish,
+        price_centavos: card.price_centavos,
+        terms_text: card.terms_text,
         updated_at: new Date().toISOString(),
       });
       if (saved.error || !saved.data) throw new Error(saved.error?.message || "Unable to save card.");
@@ -255,6 +264,20 @@ export default function ShopManager() {
             <textarea className={styles.textarea} value={card.description} maxLength={3000}
               onChange={(e) => edit(card.id, { description: e.target.value })} />
           </label>
+          <label className={styles.label}>Retail price (PHP)
+            <input className={styles.field} type="number" min="1" max="1000000" step="0.01"
+              value={card.price_centavos === null ? "" : (card.price_centavos / 100).toFixed(2)}
+              placeholder="Enter selling price"
+              onChange={(e) => edit(card.id, {
+                price_centavos: e.target.value ? Math.round(Number(e.target.value) * 100) : null,
+              })} />
+          </label>
+          <label className={styles.label}>Terms and Conditions (shown before ordering)
+            <textarea className={styles.textarea} rows={8} maxLength={15000}
+              value={card.terms_text} placeholder="Write your terms and conditions here"
+              onChange={(e) => edit(card.id, { terms_text: e.target.value })} />
+          </label>
+          <ShopPrivateSettings productId={card.id} disabled={busy !== ""} />
           <label className={styles.label}>Display order
             <input className={styles.field} type="number" min="0" max="100000" value={card.sort_order}
               onChange={(e) => edit(card.id, { sort_order: Number(e.target.value) || 0 })} />
