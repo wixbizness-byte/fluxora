@@ -9,8 +9,9 @@ export type ShopCard = {
   category_label: string;
   status_label: string;
   sort_order: number;
-  supplier_service_id: string | null;
-  supplier_url: string | null;
+  terms_text: string;
+  price_centavos: number | null;
+  checkout_enabled: boolean;
 };
 
 export type PublishedShopCards = {
@@ -18,7 +19,7 @@ export type PublishedShopCards = {
   status: "ready" | "unavailable";
 };
 
-const FIELDS = "id,slug,title,description,image_url,category_label,status_label,sort_order,supplier_service_id,supplier_url";
+const FIELDS = "id,slug,title,description,image_url,category_label,status_label,sort_order,terms_text,price_centavos,checkout_enabled";
 
 async function fetchShopCards(query: string): Promise<ShopCard[] | null> {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.replace(/\/$/, "");
@@ -40,8 +41,9 @@ async function fetchShopCards(query: string): Promise<ShopCard[] | null> {
       typeof row.id === "string" && typeof row.slug === "string" &&
       typeof row.title === "string" && typeof row.description === "string" &&
       typeof row.category_label === "string" && typeof row.status_label === "string" &&
-      (row.supplier_service_id === null || typeof row.supplier_service_id === "string") &&
-      (row.supplier_url === null || row.supplier_url === "https://t.me/WarzoneShopbot") &&
+      typeof row.terms_text === "string" &&
+      (row.price_centavos === null || (typeof row.price_centavos === "number" && Number.isInteger(row.price_centavos))) &&
+      typeof row.checkout_enabled === "boolean" &&
       (row.image_url === null || (typeof row.image_url === "string" && row.image_url.startsWith("https://")))
     );
   } catch {
