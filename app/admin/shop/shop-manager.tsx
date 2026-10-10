@@ -207,7 +207,7 @@ export default function ShopManager() {
         <div className={styles.livePreview}>
           <div className={styles.previewBadges}>
             <span>{card.category_label || "Product"}</span>
-            <span className={styles.previewStatus}>{card.status_label || "Coming Soon"}</span>
+            <span className={/available|in stock/i.test(card.status_label) ? styles.previewStatus : styles.previewSoon}>{card.status_label || "Coming Soon"}</span>
           </div>
           <strong>{card.title}</strong>
           <small>↗ VIEW DETAILS</small>
