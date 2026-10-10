@@ -4,6 +4,7 @@ import { ArrowLeft, Sparkles } from "lucide-react";
 import { SiteFooter, SiteHeader } from "../../components/fluxora";
 import { loadPublishedShopCard } from "../../lib/shop-public-cards";
 import OrderButton from "./order-button";
+import { availableForPurchase } from "../../lib/shop-supplier-availability";
 import styles from "../shop-cards.module.css";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,8 @@ export default async function ShopProductPage({ params }: PageProps) {
     Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY) &&
     Boolean(process.env.WARZONE_API_KEY);
 
-  const orderEnabled = Boolean(salesReady && card.checkout_enabled &&
+  const supplierAvailable = card.checkout_enabled ? await availableForPurchase(card.id) : false;
+  const orderEnabled = Boolean(salesReady && card.checkout_enabled && supplierAvailable &&
     card.price_centavos && card.terms_text.trim());
 
   return (
@@ -64,6 +66,11 @@ export default async function ShopProductPage({ params }: PageProps) {
                   <h2 style={{fontSize:18,marginBottom:11}}>Terms and conditions</h2>
                   <div className={styles.detailText}>{card.terms_text}</div>
                 </section>
+              ) : null}
+              {card.checkout_enabled && !supplierAvailable ? (
+                <p role="status" style={{color:"#e8b975",fontWeight:800,marginTop:24}}>
+                  Unavailable
+                </p>
               ) : null}
               <OrderButton slug={card.slug} enabled={orderEnabled} />
             </div>
