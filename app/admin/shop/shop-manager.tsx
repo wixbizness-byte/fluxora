@@ -15,6 +15,9 @@ type Card = {
   status_label: string;
   sort_order: number;
   is_published: boolean;
+  price_centavos: number | null;
+  terms_text: string;
+  checkout_enabled: boolean;
 };
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -33,6 +36,11 @@ function validateCard(card: Card, publish = false) {
   if (card.title.trim().length < 2 || card.title.length > 160) return "Title must be 2–160 characters.";
   if (!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(card.slug) || card.slug.length > 100) return "Slug must use lowercase letters, digits, and hyphens.";
   if (card.description.length > 3000) return "Description cannot exceed 3,000 characters.";
+  if (card.terms_text.length > 15000) return "Terms cannot exceed 15,000 characters.";
+  if (card.price_centavos !== null && (!Number.isInteger(card.price_centavos) || card.price_centavos < 100)) return "Enter a valid retail price.";
+  if (card.checkout_enabled && (!card.price_centavos || !card.terms_text.trim())) {
+    return "Add the retail price and terms before enabling orders.";
+  }
   if (card.category_label.trim().length < 1 || card.category_label.length > 32) return "Category label must be 1–32 characters.";
   if (card.status_label.trim().length < 1 || card.status_label.length > 32) return "Status label must be 1–32 characters.";
   // Published cards can use the accessible text cover until an R2 image is uploaded.
@@ -48,6 +56,7 @@ export default function ShopManager() {
   const [slug, setSlug] = useState("");
   const [busy, setBusy] = useState("");
   const [notice, setNotice] = useState("");
+  const [instructions, setInstructions] = useState<Record<string,string>>({});
 
   useEffect(() => {
     let canceled = false;
@@ -61,10 +70,19 @@ export default function ShopManager() {
         if (canceled) return;
         setAuthorized(true);
         const result = await queryRows<Card>("shop_catalog_cards",
-          "select=id,slug,title,description,image_url,category_label,status_label,sort_order,is_published&order=sort_order.asc,created_at.desc", true);
+          "select=id,slug,title,description,image_url,category_label,status_label,sort_order,is_published,price_centavos,terms_text,checkout_enabled&order=sort_order.asc,created_at.desc", true);
         if (result.error) throw new Error(result.error.message);
         if (canceled) return;
         setCards(result.data || []);
+        for (const card of result.data || []) {
+          const privateData = await fetch("/api/shop/admin/config?product_id=" + encodeURIComponent(card.id),{
+            headers:{Authorization:"Bearer "+session.access_token},cache:"no-store",
+          });
+          if (privateData.ok) {
+            const payload = await privateData.json();
+            if (!canceled) setInstructions(current => ({...current,[card.id]:payload.instructions||""}));
+          }
+        }
         setNotice("Shop cards loaded. Unpublished drafts are visible only to admins.");
       } catch (error) {
         if (!canceled) setNotice(error instanceof Error ? error.message : "Unable to load shop manager.");
@@ -90,6 +108,9 @@ export default function ShopManager() {
       status_label: "Coming Soon",
       sort_order: 100,
       is_published: false,
+      price_centavos: null,
+      terms_text: "",
+      checkout_enabled: false,
     };
     const error = validateCard({ ...newCard, id: "" });
     if (error) { setNotice(error); return; }
@@ -119,6 +140,9 @@ export default function ShopManager() {
         status_label: card.status_label.trim(),
         sort_order: card.sort_order,
         is_published: publish,
+        terms_text: card.terms_text,
+        price_centavos: card.price_centavos,
+        checkout_enabled: card.checkout_enabled,
         updated_at: new Date().toISOString(),
       });
       if (saved.error || !saved.data) throw new Error(saved.error?.message || "Unable to save card.");
@@ -126,6 +150,26 @@ export default function ShopManager() {
       setNotice(publish ? "Saved and published. Your cover now appears on /shop." : "Draft changes saved. This card is hidden from visitors.");
     } catch (error) { setNotice(error instanceof Error ? error.message : "Unable to save card."); }
     finally { setBusy(""); }
+  }
+
+  async function saveInstructions(card: Card) {
+    setBusy(card.id);
+    try {
+      const session = await getSession();
+      if (!session) throw new Error("Admin session expired.");
+      const res = await fetch("/api/shop/admin/config",{
+        method:"PUT",headers:{
+          Authorization:"Bearer "+session.access_token,
+          "Content-Type":"application/json",
+        },
+        body:JSON.stringify({product_id:card.id,instructions:instructions[card.id]||""}),
+      });
+      const response = await res.json();
+      if (!res.ok) throw new Error(response.error || "Unable to save instructions.");
+      setNotice("Post-payment instructions saved.");
+    } catch(error) {
+      setNotice(error instanceof Error?error.message:"Unable to save instructions.");
+    } finally { setBusy(""); }
   }
 
   async function upload(card: Card, file: File) {
@@ -254,6 +298,32 @@ export default function ShopManager() {
           <label className={styles.label}>Description (shown on View Details)
             <textarea className={styles.textarea} value={card.description} maxLength={3000}
               onChange={(e) => edit(card.id, { description: e.target.value })} />
+          </label>
+          <label className={styles.label}>Retail price (PHP)
+            <input className={styles.field} type="number" min="1" step="0.01"
+              value={card.price_centavos === null ? "" : (card.price_centavos/100).toFixed(2)}
+              placeholder="Enter your selling price"
+              onChange={(e) => edit(card.id, {
+                price_centavos:e.target.value?Math.round(Number(e.target.value)*100):null,
+              })} />
+          </label>
+          <label className={styles.label}>Terms and conditions (shown before ordering)
+            <textarea className={styles.textarea} rows={7} maxLength={15000}
+              value={card.terms_text} onChange={(e) => edit(card.id,{terms_text:e.target.value})}
+              placeholder="Write your own terms here" />
+          </label>
+          <label className={styles.label}>How to use the link (shown only after confirmed payment)
+            <textarea className={styles.textarea} rows={6} maxLength={10000}
+              value={instructions[card.id]||""}
+              onChange={(e) => setInstructions(current => ({...current,[card.id]:e.target.value}))}
+              placeholder="Write delivery and activation instructions" />
+          </label>
+          <button type="button" className={styles.secondary} disabled={busy!==""}
+            onClick={() => void saveInstructions(card)}>Save delivery instructions</button>
+          <label className={styles.label} style={{flexDirection:"row",alignItems:"center"}}>
+            <input type="checkbox" checked={card.checkout_enabled}
+              onChange={(e)=>edit(card.id,{checkout_enabled:e.target.checked})} />
+            Enable Order button after live payment setup
           </label>
           <label className={styles.label}>Display order
             <input className={styles.field} type="number" min="0" max="100000" value={card.sort_order}
