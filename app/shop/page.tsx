@@ -22,7 +22,7 @@ export default async function ShopPage() {
   const catalog = await loadPublishedShopCards();
 
   return (
-    <div className={`fluxora-theme ${styles.page}`} data-home-theme="gold">
+    <div className={`fluxora-theme ${styles.page}`} data-home-theme="gold" data-shop-theme="true">
       <SiteHeader links={NAV} cta={{ href: "/pricing", label: "View plans" }} />
       <main className={styles.main}>
         <div className={styles.shell}>
