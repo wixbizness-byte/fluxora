@@ -34,9 +34,15 @@ export async function checkWarzoneListing(serviceId: string): Promise<WarzoneLis
 
     const supplier = match as Record<string, unknown>;
     const name = typeof supplier.name === "string" ? supplier.name.trim().slice(0, 140) : "";
-    // Prevent accidental conflation if the supplier recycles a service ID.
-    if (!/\b(?:gemini|google)\b/i.test(name) || !/\bpro\b/i.test(name) ||
-        !/\b18\s*months?\b/i.test(name)) return { status: "not_found" };
+    // The supplier has renamed service S_01 to "Gemini New 7 Days Expiry Links".
+    // Recognize only that specific currently confirmed title (or the legacy
+    // 18-month title) to avoid misattributing a reused ID to this offer.
+    // A service match does NOT verify subscription duration or activation rights.
+    const currentTitle = serviceId === "S_01" &&
+      name.toLowerCase() === "gemini new 7 days expiry links";
+    const legacyTitle = /\b(?:gemini|google)\b/i.test(name) &&
+      /\bpro\b/i.test(name) && /\b18\s*months?\b/i.test(name);
+    if (!currentTitle && !legacyTitle) return { status: "not_found" };
 
     const orderable = supplier.orderable === true &&
       supplier.in_stock === true &&

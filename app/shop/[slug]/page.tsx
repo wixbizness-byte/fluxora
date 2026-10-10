@@ -60,21 +60,26 @@ export default async function ShopProductPage({ params }: PageProps) {
                   <h2>Supplier reference: Warzone Shop</h2>
                   <p>
                     {supplier?.status === "listed"
-                      ? "Warzone currently lists a matching service as orderable. This does not establish Google authorization or guarantee activation."
+                      ? "Warzone currently reports this service as orderable. This confirms neither the subscription duration nor Google authorization."
                       : supplier?.status === "paused"
-                      ? "A matching Warzone listing exists, but the supplier is not currently accepting API orders for it."
+                      ? "Warzone currently lists this service but reports it unavailable for API orders."
                       : supplier?.status === "not_found"
-                      ? "The provisional Warzone service ID could not be verified against a matching Google AI Pro 18-month listing."
+                      ? "The Warzone service ID or expected supplier title does not match the current listing."
                       : "Supplier availability has not been verified."}
                   </p>
                   <a href={card.supplier_url} target="_blank" rel="noopener noreferrer"
                     className={styles.supplierLink}>
                     Open Warzone Shop on Telegram <ExternalLink size={16} aria-hidden="true" />
                   </a>
+                  {supplier?.name ? (
+                    <p>Warzone listing name: <strong>{supplier.name}</strong></p>
+                  ) : null}
                   <p className={styles.supplierCaution}>
-                    This link goes directly to a third-party supplier, not Fluxora checkout.
-                    Its listing mentions a 15-hour hold warranty. Independently check the
-                    activation terms, eligibility, and reseller authorization.
+                    The current supplier name refers to “7 Days Expiry Links.”
+                    Whether seven days is the link's redemption window or the
+                    subscription term is not verified. An 18-month subscription,
+                    activation eligibility, and resale authorization are not confirmed.
+                    This Telegram link opens an independent supplier, not Fluxora checkout.
                   </p>
                 </div>
               ) : null}
