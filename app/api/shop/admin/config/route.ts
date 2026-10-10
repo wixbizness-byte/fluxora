@@ -46,7 +46,7 @@ export async function PUT(request: NextRequest) {
            max_supplier_price <= 0 || max_supplier_price > 100000000))) {
       return noStore({error:"Invalid instructions."},400);
     }
-    const rows=await shopDb<{delivery_instructions:string}>(
+    const rows=await shopDb<{delivery_instructions:string;max_supplier_price:number|null}>(
       "shop_private_products","?product_id=eq."+encodeURIComponent(product_id),
       "PATCH",{delivery_instructions:instructions,max_supplier_price,
         updated_at:new Date().toISOString()});
