@@ -6,15 +6,15 @@ import { fulfillPaidOrder } from "../../../lib/shop-fulfill";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-function validSignature(raw: string, header: string | null): boolean {
-  const secret = process.env.PAYMONGO_LIVE_WEBHOOK_SECRET;
+function validSignature(raw: string, header: string | null, mode: "test" | "live"): boolean {
+  const secret = mode === "test" ? process.env.PAYMONGO_TEST_WEBHOOK_SECRET : process.env.PAYMONGO_LIVE_WEBHOOK_SECRET;
   if (!secret || !header) return false;
   const pairs = Object.fromEntries(header.split(",").map(item => {
     const i = item.indexOf("=");
     return [item.slice(0,i).trim(), item.slice(i+1).trim()];
   }));
   const timestamp = pairs.t;
-  const signature = pairs.li; // PayMongo's live-mode signature (not te).
+  const signature = mode === "test" ? pairs.te : pairs.li;
   if (!/^\d{10,13}$/.test(timestamp||"") || !/^[0-9a-f]{64}$/i.test(signature||"")) return false;
   if (Math.abs(Date.now() - Number(timestamp) * 1000) > 600_000) return false;
   const expected = createHmac("sha256",secret).update(timestamp+"."+raw).digest();
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (raw.length > 128000) return new Response("Payload too large",{status:413});
   } catch { return new Response("Invalid request",{status:400}); }
 
-  if (!validSignature(raw,request.headers.get("paymongo-signature"))) {
+  if (!validSignature(raw,request.headers.get("paymongo-signature"),mode)) {
     return new Response("Invalid signature",{status:401});
   }
 
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
     if (event?.type !== "checkout_session.payment.paid") {
       return NextResponse.json({ received: true });
     }
-    if (event.livemode !== true) return new Response("Invalid payment mode",{status:400});
+    if (event.livemode !== (mode === "live")) return new Response("Invalid payment mode",{status:400});
 
     const checkout = event.data;
     const id = checkout?.attributes?.reference_number;
