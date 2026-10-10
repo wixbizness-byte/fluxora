@@ -56,7 +56,8 @@ export default function OrderResult() {
       <>
         <h2 style={{fontSize:23,marginBottom:12}}>{order.product_title}</h2>
         <p style={{color:"#b6c1d0",marginBottom:22}}>
-          {order.status==="delivered"?"Payment successful — your order is ready."
+          {order.status==="test_paid"?"Test payment confirmed. No real charge or activation link was issued."
+            : order.status==="delivered"?"Payment successful — your order is ready."
             : order.status==="needs_review"?"Payment is recorded. Your order is being reviewed."
             : order.status==="paid" || order.status==="fulfilling"?
               "Payment confirmed. Your order is being prepared."
