@@ -8,7 +8,7 @@ import styles from "./shop-cards.module.css";
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Digital Shop | Fluxora",
-  description: "Explore Fluxora's curated digital catalog, visual previews, and product details.",
+  description: "Browse Fluxora products and review details before ordering.",
 };
 
 const NAV = [
@@ -33,8 +33,7 @@ export default async function ShopPage() {
             <p className={styles.eyebrow}>Fluxora shop</p>
             <h1>Discover what's <em>next.</em></h1>
             <p className={styles.lead}>
-              Browse digital product previews with the same image-first experience as Fluxora Tools.
-              Product details are available; purchases are not enabled yet.
+              Choose a product, review its details and terms, then order.
             </p>
           </header>
           {catalog.status === "unavailable" ? (
@@ -46,8 +45,7 @@ export default async function ShopPage() {
             <ShopCardGrid cards={catalog.cards} unavailableIds={unavailableIds} />
           )}
           <p className={styles.disclaimer}>
-            Listings are informational previews only. No checkout or automatic supplier fulfillment
-            is available on this page.
+            Your orders are managed through Fluxora Shop.
           </p>
         </div>
       </main>
