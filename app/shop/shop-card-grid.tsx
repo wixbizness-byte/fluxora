@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ArrowUpRight, ImageOff, Search } from "lucide-react";
+import { ArrowUpRight, ImageOff, Search, Sparkles } from "lucide-react";
 import type { ShopCard } from "../lib/shop-public-cards";
 import styles from "./shop-cards.module.css";
 
@@ -35,7 +35,11 @@ export default function ShopCardGrid({ cards }: { cards: ShopCard[] }) {
                 {card.image_url ? (
                   <img src={card.image_url} alt={card.title} loading="lazy" decoding="async" />
                 ) : (
-                  <span className={styles.coverFallback}><ImageOff size={26} aria-hidden="true" /></span>
+                  <span className={styles.offerCover}>
+                    <Sparkles size={32} aria-hidden="true" />
+                    <strong>{card.title}</strong>
+                    <small>{card.category_label}</small>
+                  </span>
                 )}
               </a>
               <div className={styles.cardContent}>
