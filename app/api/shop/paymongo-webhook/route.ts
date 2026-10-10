@@ -1,6 +1,6 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
-import { shopLiveReady, getServerOrder, patchServerOrder } from "../../../lib/shop-server";
+import { shopPaymentMode, getServerOrder, patchServerOrder } from "../../../lib/shop-server";
 import { fulfillPaidOrder } from "../../../lib/shop-fulfill";
 
 export const runtime = "nodejs";
@@ -23,7 +23,8 @@ function validSignature(raw: string, header: string | null): boolean {
 }
 
 export async function POST(request: NextRequest) {
-  if (!shopLiveReady()) return new Response("Not configured",{status:503});
+  const mode = shopPaymentMode();
+  if (mode === "off") return new Response("Not configured",{status:503});
   let raw: string;
   try {
     raw = await request.text();
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const envelope = JSON.parse(raw);
-    const event = envelope?.data?.attributes;
+    const event = envelope?.data?.attributes?.type ? envelope.data.attributes : envelope?.data;
     if (event?.type !== "checkout_session.payment.paid") {
       return NextResponse.json({ received: true });
     }
